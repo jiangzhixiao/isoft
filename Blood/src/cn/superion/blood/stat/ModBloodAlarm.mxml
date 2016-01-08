@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:controls="cn.superion.base.components.controls.*"
+		   creationComplete="inita()">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import cn.superion.blood.util.renderer.ColumnItemRendererRhSign;
+			import cn.superion.report2.ReportPrinter;
+			import cn.superion.report2.ReportViewer;
+
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.remoting.RemoteObject;
+
+			private const MENU_NO:String="0505";
+			private var destination:String='bloodAlarmImpl';
+			private var destination1:String='centerSysParamImpl';
+
+			/**
+			 * 血液预警查询
+			 *
+			 * @author 吴小娟
+			 *
+			 */
+			//初始化
+			protected function inita():void
+			{
+				alarmDays.setFocus();
+				var bloodArc:ArrayCollection=BaseDict.bloodDict;
+				for each (var item:Object in bloodArc)
+				{
+					if (item.bloodName == '全部')
+					{
+						bloodArc.removeItemAt(bloodArc.getItemIndex(item));
+					}
+				}
+				bloodArc.addItemAt({blood: "", bloodName: '全部'}, 0);
+				bloodCode.dataProvider=bloodArc;
+				bloodCode.selectedIndex=0;
+
+				var bloodTypeArc:ArrayCollection=BaseDict.bloodTypeDict;
+				for each (var itemType:Object in bloodTypeArc)
+				{
+					if (itemType.bloodTypeName == '全部')
+					{
+						bloodTypeArc.removeItemAt(bloodTypeArc.getItemIndex(itemType));
+					}
+				}
+				bloodTypeArc.addItemAt({bloodType: "", bloodTypeName: '全部'}, 0);
+				bloodType.dataProvider=bloodTypeArc;
+				bloodType.selectedIndex=0;
+				btExport.enabled=false;
+			}
+
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					if (ctrl.className == "DropDownList")
+					{
+						ctrl.openDropDown();
+					}
+					ctrl.setFocus();
+				}
+			}
+
+			//获取警报天数
+			protected function alarmDays_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				var ro:RemoteObject=RemoteUtil.getRemoteObject(destination1, function(rev:Object):void
+					{
+						alarmDays.dataProvider=rev.data;
+					});
+				ro.findSysParamsByParaType('02');
+			}
+
+			//显示血型字典
+			protected function cboxBlood_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				bloodCode.dataProvider=BaseDict.bloodDict;
+			}
+
+			//显示成份字典
+			protected function cboxBloodType_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				bloodType.dataProvider=BaseDict.bloodTypeDict;
+			}
+
+			//查询
+			protected function btQuery_clickHandler():void
+			{
+				//连服务端
+				var params:Object={};
+				if (alarmDays.textInput.text)
+				{
+					params["alarmDays"]=Number(alarmDays.textInput.text);
+
+				}
+				if (bloodCode.selectedItem)
+				{
+					params["bloodCode"]=bloodCode.selectedItem.blood;
+				}
+				if (bloodType.selectedItem)
+				{
+					params["typeCode"]=bloodType.selectedItem.bloodType;
+				}
+				var paramQuery:ParameterObject=new ParameterObject();
+				paramQuery.conditions=params;
+
+				var ro:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+					{
+						if (rev.data && rev.data.length > 0)
+						{
+							ArrayCollUtils.addCopyFieldToArray(rev.data, 'typeCode', 'bloodType');
+							gridBloodAlarm.dataProvider=rev.data;
+							return;
+						}
+						gridBloodAlarm.dataProvider=[];
+//						Alert.show("没有检索到相关数据！", "提示信息");
+					});
+				ro.findBloodAlarmByAlarmDays(paramQuery);
+			}
+
+			//回车实现查找功能
+			private function keUpHandler(e:KeyboardEvent):void
+			{
+				if (!btQuery.enabled)
+				{
+					return;
+				}
+				if (e.keyCode == Keyboard.ENTER)
+				{
+					btQuery_clickHandler();
+				}
+			}
+
+			//RH阴的Label显示方式
+			private function rhSignLabel(item:Object, column:DataGridColumn):String
+			{
+				if (item.notData)
+				{
+					return '';
+				}
+				if (item.rhSign == '' || item.rhSign == '0')
+				{
+					item.rhSignName='阳性';
+					return '阳性';
+				}
+				else
+				{
+					item.rhSignName='阴性';
+					return '阴性';
+				}
+			}
+			private function loadReportXml(reportUrl:String,faryDetails:ArrayCollection, fdict:Dictionary,fprintSign:String):void{
+				var loader:URLStream=new URLStream();
+				loader.addEventListener(Event.COMPLETE, function(event:Event):void{
+					var stream:URLStream = event.currentTarget as URLStream;
+					var xml:XML=XML(stream.readMultiByte(stream.bytesAvailable,"utf-8"));
+					if (fprintSign == "1")
+					{
+						ReportPrinter.Print(xml, faryDetails, fdict);
+					}
+					else
+					{
+						ReportViewer.Instance.Show(xml, faryDetails, fdict);
+					}
+				});
+				var url:URLRequest = new URLRequest(reportUrl);
+				loader.load(url);
+			}
+			/**
+			 * 打印、预览处理事件
+			 * @param 参数说明
+			 * 		  lstrPurview 权限编号;
+			 * 		  isPrintSign 打印输出标示,预览：2，直接打印：1，输出：0
+			 */
+			protected function btPreview_clickHandler(lstrPurview:String, isPrintSign:String):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, lstrPurview))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				var bloodAlarmPrintItems:ArrayCollection=gridBloodAlarm.dataProvider as ArrayCollection;
+				var dict:Dictionary=new Dictionary();
+				var bloodItem:Object=bloodCode.selectedItem;
+				var bloodTypeItem:Object=bloodType.selectedItem;
+				dict["单位名称"]=AppInfo.sysUser.unitsName;
+				dict["日期"]=DateField.dateToString(new Date(), 'YYYY-MM-DD');
+				if (alarmDays.textInput.text)
+				{
+					dict["预警天数"]=alarmDays.textInput.text;
+				}
+				else
+				{
+					Alert.show("预警天数不能为空！", "提示信息");
+					return;
+				}
+				if (bloodItem)
+				{
+					dict["血型"]=bloodItem.bloodName;
+				}
+				else
+				{
+					dict["血型"]="";
+				}
+				if (bloodTypeItem)
+				{
+					dict["成份"]=bloodTypeItem.bloodTypeName;
+				}
+				else
+				{
+					dict["成份"]="";
+				}
+				dict["主标题"]="血液预警查询";
+				dict["制表人"]=AppInfo.sysUser.userName;
+				var strXml:String = "report/blood/stat/bloodAlarm.xml";
+				loadReportXml(strXml, bloodAlarmPrintItems, dict,isPrintSign);
+//				if (isPrintSign == '1')
+//				{
+//					ReportPrinter.LoadAndPrint("report/blood/stat/bloodAlarm.xml", bloodAlarmPrintItems, dict);
+//				}
+//				else
+//				{
+//					ReportViewer.Instance.Show("report/blood/stat/bloodAlarm.xml", bloodAlarmPrintItems, dict);
+//				}
+			}
+
+			//输出
+			protected function btExport_clickHandler(lstrPurview:String, isPrintSign:String):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+			//返回主页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				MainFrameUtil.closeTab(this);
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup width="100%"
+				  height="100%"
+				  gap="0">
+			<!-- 标题部分 -->
+
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%"
+						  paddingLeft="5"
+						  paddingRight="5">
+					<!-- 查询条件区 -->
+					<s:HGroup width="100%"
+							  paddingTop="5">
+						<mx:FormItem label="预警天数"
+									 fontSize="14"
+									 color="#0000FF"
+									 labelWidth="65"
+									 width="200">
+							<s:ComboBox id="alarmDays"
+										keyUp="keyUpCtrl(event,bloodCode)"
+										width="100%"
+										labelField="paraValue"
+										restrict="0-9"
+										creationComplete="alarmDays_creationCompleteHandler(event)"/>
+						</mx:FormItem>
+						<mx:FormItem height="23"
+									 label="血型"
+									 fontSize="14"
+									 color="#0000FF">
+							<s:DropDownList id="bloodCode"
+											labelField="bloodName"
+											keyUp="keyUpCtrl(event,bloodType)"
+											creationComplete="cboxBlood_creationCompleteHandler(event)">
+							</s:DropDownList>
+						</mx:FormItem>
+						<mx:FormItem height="23"
+									 label="成份"
+									 fontSize="14"
+									 color="#0000FF">
+							<s:DropDownList id="bloodType"
+											labelField="bloodTypeName"
+											keyUp="keyUpCtrl(event,btQuery)"
+											creationComplete="cboxBloodType_creationCompleteHandler(event)">
+							</s:DropDownList>
+						</mx:FormItem>
+
+						<mx:LinkButton id="btQuery"
+									   height="24"
+									   label=" 查 找"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="btQuery_clickHandler()"
+									   keyUp="keUpHandler(event)"/>
+					</s:HGroup>
+					<controls:SuperDataGrid id="gridBloodAlarm"
+											hasRowNo="true"
+											width="100%"
+											height="100%"
+											styleName="dataGrid">
+						<controls:columns>
+							<mx:DataGridColumn headerText="序号"
+											   width="2"
+											   textAlign="left"/>
+							<!--<mx:DataGridColumn headerText="产品码"
+								 dataField="productCode"
+								 width="3"
+								 textAlign="left"/>-->
+							<mx:DataGridColumn headerText="血袋编号"
+											   dataField="bloodBagCode"
+											   width="4"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="血液成份"
+											   dataField="bloodTypeName"
+											   width="5"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="血型"
+											   dataField="bloodName"
+											   width="2"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="Rh(D)"
+											   dataField="rhSign"
+											   width="2"
+											   textAlign="left"
+											   labelFunction="rhSignLabel"
+											   itemRenderer="cn.superion.blood.util.renderer.ColumnItemRendererRhSign"/>
+							<mx:DataGridColumn headerText="规格"
+											   dataField="spec"
+											   width="3"
+											   textAlign="left"/>
+							<!--<mx:DataGridColumn headerText="献血员编号"
+								 dataField="bloodDonorCode"
+								 width="4"
+								 textAlign="left"/>-->
+							<mx:DataGridColumn headerText="采血日期"
+											   dataField="collectDate"
+											   width="3"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="失效日期"
+											   dataField="availDate"
+											   width="3"
+											   textAlign="left"/>
+						</controls:columns>
+					</controls:SuperDataGrid>
+
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btPrint"
+									   label=" 打 印"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/print20.png')"
+									   click="btPreview_clickHandler('05','1')"/>
+						<mx:LinkButton id="btPreview"
+									   label=" 预 览"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="btPreview_clickHandler('05','2')"/>
+						<mx:LinkButton id="btExport"
+									   label=" 输 出"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/exp20.png')"
+									   click="btExport_clickHandler('08','0')"/>
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+
+			</s:BorderContainer>
+
+		</s:VGroup>
+
+	</s:BorderContainer>
+
+</mx:Module>

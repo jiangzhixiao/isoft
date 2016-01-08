@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" implements="com.flexicious.controls.interfaces.filters.IDynamicFilterControl,mx.managers.IFocusManagerComponent" paddingBottom="0" paddingTop="0" width="100%" height="100%"
+	horizontalScrollPolicy="off">
+	<mx:Script source="../filter/FilterInclude.as" />
+	<mx:Script>
+		<![CDATA[
+			import com.flexicious.controls.interfaces.filters.IDynamicFilterControl;
+			import com.flexicious.grids.filters.FilterExpression;
+			import com.flexicious.utils.UIUtils;
+			
+			import mx.controls.Alert;
+			import mx.core.IFlexDisplayObject;
+			import mx.events.CloseEvent;
+			import mx.events.DropdownEvent;
+			//Declare all our operations. These are the operations currently implemented.
+			private var operations:Array= [
+			new OperationData('Equals','等于',false),
+			new OperationData('NotEquals','不等于',false),
+			new OperationData('LessThan','小于',false),
+			new OperationData('LessThanEquals','小于等于',false),
+			new OperationData('GreaterThan','大于',false),
+			new OperationData('GreaterThanEquals','大于等于',false),
+			new OperationData('BeginsWith','以开头',false),
+			new OperationData('DoesNotContain','不包含',false),
+			new OperationData('Contains','包含',false),
+			new OperationData('EndsWith','以结束',false),
+			new OperationData('InList','在集合中',true,-1), //任何的数值型
+			new OperationData('NotInList','不在集合中',true,-1),//任何的数值型
+			new OperationData('Between','在之间',true,2)//只能在两个值之间使用 between
+			];
+			//Visual of the filter expression
+			[Bindable()]
+			private var _currentFilter:String="All";
+			//my filter expression
+			private var _filterExpression:FilterExpression = new FilterExpression();
+			private var _filterApplied:Boolean = false;
+			
+			//IDynamicFilterControl interface members (IDynamicFilterControl extends IFilterControl)
+			public function get filterExpression():FilterExpression{
+				return _filterExpression?_filterExpression.clone():null;
+			}
+			public function set filterExpression(val:FilterExpression):void {
+				_filterExpression=val;
+			}
+			public function clear():void{
+				_filterExpression.expression=null;
+				_filterExpression = null;
+				setLabel();
+			}
+			
+			
+			public function getValue():Object
+			{
+				return (_filterExpression==null || _filterExpression.expression==null)?null:_filterExpression.filterOperation + "__" + _filterExpression.expression.toString();
+			}
+			public function setValue(val:Object):void{
+				if(val && val.indexOf("__")>0){
+					_filterApplied=true;
+					_filterExpression.filterOperation = val.split("__")[0];
+					_filterExpression.expression = val.split("__")[1];
+				}
+				else
+					_filterApplied=false;
+				setLabel();
+			}
+			
+			//end IDynamicFilterControl interface members
+			
+			//set the visual
+			private function setLabel():void{
+				if(_filterExpression==null||(_filterExpression.expression==null)){
+					_currentFilter="All";
+				}
+				else 
+				{
+					for each(var operation:Object in operations){
+						if(operation.data == _filterExpression.filterOperation){
+							_currentFilter = operation.label + " " + _filterExpression.expression.toString();
+						}
+					}
+				}
+			}
+			//when the popup closes, and the user clicked OK, fire the change event
+			//this will need to match up with the filterTriggerEvent on the datagridcolumn
+			//since that defaults to change, we trigger a change
+			private function onFilterClose(event:CloseEvent):void
+			{
+				if (event.detail==Alert.OK)//user clicked ok on popup
+				{
+					//set the filter expression from the popup
+					_filterExpression.filterOperation = event.target.filterExpression.filterOperation;
+					_filterExpression.expression= event.target.filterExpression.expression;
+					setLabel();//set the visual
+					dispatchEvent(new Event(Event.CHANGE));//trigger the filter
+					_filterApplied=true;	
+				}
+				else if(event.detail==DynamicFilterPopup.CLEAR)
+				{
+					//set the filter expression from the popup
+					_filterExpression = null;
+					setLabel();//set the visual
+					dispatchEvent(new Event(Event.CHANGE));//trigger the filter
+					_filterApplied=false;	
+				}
+			}
+			private static var dynamicFilterPopup:DynamicFilterPopup;
+				
+			private function launchPopup(event:DropdownEvent):void
+			{
+				if(dynamicFilterPopup)
+				{
+					UIUtils.removePopUp(dynamicFilterPopup);	
+				}
+				if(!_filterExpression)_filterExpression=new FilterExpression();
+				dynamicFilterPopup=new DynamicFilterPopup();
+				dynamicFilterPopup.addEventListener(CloseEvent.CLOSE, onFilterClose,false,0,true);
+				dynamicFilterPopup.filterExpression=this._filterExpression; //the filter expression for the popup
+				dynamicFilterPopup.filterApplied=_filterApplied;
+				dynamicFilterPopup.operations=this.operations;//list of operations for the popup
+				dynamicFilterPopup.columnHeader = this.gridColumn.headerText;
+				UIUtils.addPopUp(dynamicFilterPopup,this.grid as DisplayObject,false,null);
+				UIUtils.positionBelow(dynamicFilterPopup as IFlexDisplayObject,this);
+			}
+			public override function setActualSize(w:Number, h:Number):void{
+				super.setActualSize(w,h);
+				popupBtn.height=h;
+				popupBtn.width=w;
+			}
+			public override function setFocus():void{
+				popupBtn.setFocus();
+			}
+			public override function drawFocus(isFocused:Boolean):void{
+				popupBtn.drawFocus(isFocused);
+			}
+		]]>
+	</mx:Script>
+	<mx:PopUpButton id="popupBtn" label="{_currentFilter}" openAlways="true" open="launchPopup(event)" width="100%" height="100%" paddingBottom="1" textAlign="left"/>
+</mx:HBox>

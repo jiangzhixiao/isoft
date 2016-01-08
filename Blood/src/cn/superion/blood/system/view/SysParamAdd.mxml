@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="460"
+			   height="285"
+			   backgroundColor="0xE2E8E8"
+			   creationComplete="init()"
+			   close="PopUpManager.removePopUp(this)">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.SysUser;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.base.util.StringUtils;
+			import cn.superion.vo.center.config.CdSysParam;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.ValidationResultEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.mxml.RemoteObject;
+
+			[Bindable]
+			public var fstrType:String;
+			[Bindable]
+			public var fCdSysParameter:CdSysParam;
+			public var data:Object;
+			private var _parentWin:*;
+			private var _this:*=this;
+			private var destination:String="centerSysParamImpl";
+
+			//初始化弹出页面
+			private function init():void
+			{
+				_parentWin=this.data.parentWin;
+				this.fstrType=this.data.fstrType;
+				if (fstrType == 'add')
+				{
+					this.title="新建";
+					this.txtParaCode.text='';
+					this.txtParaName.text='';
+					this.txtParaValue.text='';
+					this.txtParaDescription.text='';
+					this.txtParaCode.enabled=true;
+					this.txtParaCode.setFocus();
+				}
+				else
+				{
+					this.title="修改";
+					_parentWin=this.data.parentWin;
+					fCdSysParameter=_parentWin.gdSysParam.selectedItem;
+					this.txtParaCode.text=fCdSysParameter.paraCode;
+					this.txtParaName.text=fCdSysParameter.paraName;
+					this.txtParaValue.text=fCdSysParameter.paraValue;
+					this.txtParaDescription.text=fCdSysParameter.paraDescription;
+					this.txtParaCode.enabled=false;
+					this.txtParaName.setFocus();
+				}
+			}
+
+			//保存
+			private function btSave_clickHandler(e:Event):void
+			{
+				if (!validateAll())
+				{
+					return;
+				}
+				if (fstrType == 'add')
+				{
+					if(!checkParamCodeUnique())
+					{
+						return;
+					}
+					fCdSysParameter=new CdSysParam();
+					fCdSysParameter.application=AppInfo.APP_CODE;
+					fCdSysParameter.unitsCode=AppInfo.sysUser.unitsCode;
+					fCdSysParameter.paraCode=StringUtils.Trim(this.txtParaCode.text);
+					fCdSysParameter.paraName=StringUtils.Trim(this.txtParaName.text);
+					fCdSysParameter.paraValue=StringUtils.Trim(this.txtParaValue.text);
+					fCdSysParameter.paraDescription=StringUtils.Trim(this.txtParaDescription.text);
+					var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+							if (rev.error == null)
+							{
+								Alert.show("新增成功!", "提示");
+								txtParaCode.text='';
+								txtParaName.text='';
+								txtParaValue.text='';
+								txtParaDescription.text='';
+								_this.data.rebackcall();
+							}
+							else
+							{
+								Alert.show("新增失败!", "提示");
+							}
+						});
+					remoteObj.saveSysParam(fCdSysParameter, "add");
+				}
+				else
+				{
+
+					//获得父页面中选择项的值					
+					fCdSysParameter.paraName=StringUtils.Trim(txtParaName.text);
+					fCdSysParameter.paraValue=StringUtils.Trim(txtParaValue.text);
+					fCdSysParameter.paraDescription=StringUtils.Trim(txtParaDescription.text);
+					var remoteObj2:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+							if (rev.error == null)
+							{
+								Alert.show("修改成功!", "提示");
+								_this.data.rebackcall();
+							}
+							else
+							{
+								Alert.show("修改失败!", "提示");
+							}
+						});
+					remoteObj2.saveSysParam(fCdSysParameter, "update");
+				}
+			}
+
+			//判断新增 编码的唯一性
+			private function checkParamCodeUnique():Boolean
+			{
+				if(fstrType=='add')
+				{
+					var arrData:ArrayCollection=_parentWin.gdSysParam.dataProvider as ArrayCollection;
+					if(arrData!=null||arrData.length > 0 || arrData.getItemAt(0) != null)
+					{
+						for(var i:int=0;i<arrData.length;i++)
+						{
+							if(txtParaCode.text==arrData[i].paraCode)
+							{
+								txtParaCode.setFocus();
+//								Alert.show("该参数编号已存在，请重新输入！","提示信息");
+								return false;
+							}
+						}
+					}
+				}
+				return true;
+			}
+
+			//验证所有必填项
+			private function validateAll():Boolean
+			{
+				if(StringUtils.Trim(this.txtParaCode.text)=='')
+				{
+					this.txtParaCode.setFocus();
+					Alert.show("参考编码不能为空！","提示信息");
+					return false;
+				}
+				if(StringUtils.Trim(this.txtParaName.text)=='')
+				{
+					this.txtParaName.setFocus();
+					Alert.show("参考名称不能为空！","提示信息");
+					return false;
+				}
+				if(StringUtils.Trim(this.txtParaValue.text)=='')
+				{
+					this.txtParaValue.setFocus();
+					Alert.show("参考值不能为空！","提示信息");
+					return false;
+				}
+				return true;
+			}
+
+			// 回车事件
+			private function toNextControl(e:KeyboardEvent, fcontrolNext:*):void
+			{
+				if (e.keyCode == Keyboard.ENTER)
+				{
+					fcontrolNext.setFocus()
+				}
+			}
+
+			//关闭窗口
+			private function winClose():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+
+	<s:VGroup x="0"
+			  y="0"
+			  width="100%"
+			  height="100%"
+			  top="0">
+		<s:BorderContainer width="100%"
+						   height="100%"
+						   backgroundColor="0xE2E8E8"
+						   borderColor="#9ABBE6">
+			<s:VGroup width="100%"
+					  height="100%"
+					  left="2"
+					  right="5">
+				<mx:FormItem height="6">
+				</mx:FormItem>
+				<mx:FormItem label="参数编号"
+							 width="100%"
+							 color="#0000FF">
+					<mx:TextInput id="txtParaCode"
+								  width="100%"
+								  maxChars="10"
+								  keyDown="toNextControl(event,txtParaName)"
+								  restrict="0-9"/>
+				</mx:FormItem>
+				<mx:FormItem label="参数名称"
+							 width="100%"
+							 color="#0000FF">
+					<mx:TextInput id="txtParaName"
+								  width="100%"
+								  maxChars="20"
+								  keyDown="toNextControl(event,txtParaValue)"/>
+				</mx:FormItem>
+				<mx:FormItem label="　参数值"
+							 width="100%"
+							 color="#0000FF">
+					<mx:TextInput id="txtParaValue"
+								  width="100%"
+								  maxChars="10"
+								  keyDown="toNextControl(event,txtParaDescription)"/>
+				</mx:FormItem>
+				<mx:FormItem label="参数描述"
+							 width="100%">
+					<mx:TextArea id="txtParaDescription"
+								 width="100%"
+								 height="100"
+								 maxChars="80"/>
+				</mx:FormItem>
+			</s:VGroup>
+		</s:BorderContainer>
+		<!-- 操作按钮部分 -->
+		<s:HGroup height="31"
+				  paddingBottom="10"
+				  horizontalAlign="right"
+				  gap="5"
+				  width="100%">
+			<mx:LinkButton id="btSave"
+						   label="保存"
+						   width="86"
+						   height="26"
+						   fontSize="12"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/save20.png')"
+						   click="btSave_clickHandler(event)">
+			</mx:LinkButton>
+			<mx:LinkButton id="btCancel"
+						   label="取消"
+						   width="86"
+						   height="26"
+						   fontSize="12"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/return20.png')"
+						   click="winClose()">
+			</mx:LinkButton>
+			<mx:Spacer width="5"/>
+		</s:HGroup>
+		<mx:Spacer height="1"/>
+	</s:VGroup>
+</s:TitleWindow>

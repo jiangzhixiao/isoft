@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:print="com.flexicious.print.*" xmlns:customRenderers="com.flexicious.grids.columns.customRenderers.*"
+				title="Print Preview"  xmlns:controls="com.flexicious.controls.*" showCloseButton="true" close="UIUtils.removePopUp(this)"
+				implements="com.flexicious.print.printareas.IPrintPreview">	
+	<mx:Metadata>
+		[Event(name="pageOptionsChanged", type="com.flexicious.print.PrintPreviewEvent")]
+		[Event(name="pageIndexChanged", type="com.flexicious.print.PrintPreviewEvent")]
+		[Event(name="printRequested", type="com.flexicious.print.PrintPreviewEvent")]
+		[Event(name="columnsChanged", type="com.flexicious.print.PrintPreviewEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.flexicious.print.PrintController;
+			import com.flexicious.print.PrintOptions;
+			import com.flexicious.print.PrintPreviewEvent;
+			import com.flexicious.print.printareas.PageSize;
+			import com.flexicious.utils.UIUtils;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Image;
+			import mx.core.Container;
+			
+			import cn.superion.base.pdf.AlivePdfPrinter;
+			
+			import org.alivepdf.images.ColorSpace;
+			import org.alivepdf.layout.Mode;
+			import org.alivepdf.layout.Position;
+			import org.alivepdf.layout.Resize;
+			import org.alivepdf.layout.Size;
+			import org.alivepdf.layout.Unit;
+			import org.alivepdf.pages.Page;
+			import org.alivepdf.pdf.PDF;
+			import org.alivepdf.saving.Method;
+			
+			
+			[Bindable()]
+			public var pageSizes:ArrayCollection = new ArrayCollection([PageSize.PAGE_SIZE_LEGAL,PageSize.PAGE_SIZE_LETTER,PageSize.PAGE_SIZE_A3,PageSize.PAGE_SIZE_A4,PageSize.PAGE_SIZE_A5]);
+			[Bindable()]
+			public var layouts:ArrayCollection = new ArrayCollection([{"name":PageSize.PAGE_LAYOUT_POTRAIT},{"name":PageSize.PAGE_LAYOUT_LANDSCAPE}]);
+			
+			[Bindable()]
+			private var _currentPage:int=1;
+			public function get currentPage():int{
+				return _currentPage;
+			}
+			public function set currentPage(val:int):void{
+				_currentPage=val;
+			}
+			[Bindable()]
+			private var _totalPages:int=1;
+			public function get totalPages():int{
+				return _totalPages;
+			}
+			public function set totalPages(val:int):void{
+				_totalPages=val;
+			}
+			[Bindable()]
+			private var _printOptions:PrintOptions;
+			public function get printOptions ():PrintOptions{
+				return _printOptions;
+			}
+			public function set printOptions(val:PrintOptions):void{
+				_printOptions=val;
+				cbxColumns.selectedValues=new ArrayCollection();
+				rbnPageSize.selectedValue = val.pageSize.name;
+				rbnPageLayout.selectedValue = val.pageSize.isLandscape?PageSize.PAGE_LAYOUT_LANDSCAPE:PageSize.PAGE_LAYOUT_POTRAIT;
+				for each(var colToPrint:Object in val.columnsToPrint){
+					cbxColumns.selectedValues.addItem(colToPrint.name);
+				}
+			}
+			public function get content():Container{
+				return pageContent;
+			}
+			//called when the user changes any property like pagesize, layout or the page index
+			private function recreate(eventType:String="pageOptionsChanged"):void{
+				printOptions.pageSize = PageSize.getByName(rbnPageSize.selectedValue.toString()); 
+				printOptions.pageSize.isLandscape = rbnPageLayout.selectedValue ==PageSize.PAGE_LAYOUT_LANDSCAPE;
+				printOptions.columnsToPrint=new ArrayCollection(cbxColumns.selectedItems);
+				if(printOptions.columnsToPrint.length==1 && printOptions.columnsToPrint[0].name=="All"){
+					printOptions.columnsToPrint.removeAll();
+				}
+				dispatchEvent(new PrintPreviewEvent(eventType)); //this will cause the entire canvas to be redrawn, including rebuilding the grid
+			}
+			
+			//this simply shows the message saying we cannot change the actual print settings.
+			private function showSettingsMessage():void{
+				settingsMessage.visible=settingsMessage.includeInLayout=true;
+				
+			}
+			[Bindable()]
+			public var colWidth:int=110;
+			private var _progress:String="";
+			public function get progress():String
+			{
+				return _progress;
+			}
+			
+			public function set progress(value:String):void
+			{
+				var vals:Array=value.split("|");
+				_progress = value;
+				pb.visible=true;
+				pb.setProgress(parseInt(vals[0]),parseInt(vals[1]));
+				pb.label ="Processing page " + vals[0] + " of " + vals[1];
+				pb.validateNow();
+			}
+
+		]]>
+	</mx:Script>
+	<mx:HBox>
+		<mx:VBox >
+			<mx:Label text="纸张规格:"/>
+			<controls:ComboBox id="rbnPageSize" width="{colWidth}"  change="showSettingsMessage();recreate()" 
+				dataProvider="{pageSizes}" labelField="name" dataField="name"/>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="布局:"/>
+			<controls:ComboBox id="rbnPageLayout"  width="{colWidth}"  change="showSettingsMessage();recreate()"
+				 dataProvider="{layouts}" labelField="name" dataField="name"/>
+				 
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="列:"/>
+			<controls:MultiSelectComboBox id="cbxColumns"  change="recreate(PrintPreviewEvent.COLUMNS_CHANGED)" dataProvider="{_printOptions.availableColumns}" addAllItem="true"  
+										  labelField="name" dataField="name" width="{colWidth}" dropdownWidth="300" label="All" height="23" />
+		</mx:VBox>
+		<mx:VBox>
+			
+			<mx:HBox>
+				<mx:VBox>
+					<controls:CheckBox bindingSource="{_printOptions}" bindingProperty="includePageHeader" id="cbIncludePageHeader" change="cbIncludePageHeader.setSourceFromControl();recreate()" label="页头" />
+					<controls:CheckBox bindingSource="{_printOptions}" bindingProperty="includePageFooter" id="cbIncludePageFooter" change="cbIncludePageFooter.setSourceFromControl();recreate()" label="页尾" />
+				</mx:VBox>
+				<mx:VBox>
+					<controls:CheckBox bindingSource="{_printOptions}" bindingProperty="includePrintHeader" id="cbIncludePrintHeader" change="cbIncludePrintHeader.setSourceFromControl();recreate()" label="表头" />
+					<controls:CheckBox bindingSource="{_printOptions}" bindingProperty="includePrintFooter" id="cbIncludePrintFooter" change="cbIncludePrintFooter.setSourceFromControl();recreate()" label="表尾" />
+				</mx:VBox>
+			</mx:HBox>
+		</mx:VBox>
+	</mx:HBox>
+	<mx:HBox id="buttonsBox">
+		<mx:Button label="&lt;&lt;" width="{(colWidth-buttonsBox.getStyle('horizontalGap'))/2}" click="_currentPage=1;recreate(PrintPreviewEvent.PAGE_INDEX_CHANGED)" enabled="{_currentPage!=1}"/>
+		<mx:Button label="&lt;" width="{(colWidth-buttonsBox.getStyle('horizontalGap'))/2}" click="_currentPage--;recreate(PrintPreviewEvent.PAGE_INDEX_CHANGED)" enabled="{_currentPage!=1}"/>
+		<mx:Button label="&gt;" width="{(colWidth-buttonsBox.getStyle('horizontalGap'))/2}" click="_currentPage++;recreate(PrintPreviewEvent.PAGE_INDEX_CHANGED)"  enabled="{_currentPage!=_totalPages}"/>
+		<mx:Button label="&gt;&gt;" width="{(colWidth-buttonsBox.getStyle('horizontalGap'))/2}" click="_currentPage=totalPages;recreate(PrintPreviewEvent.PAGE_INDEX_CHANGED)"  enabled="{_currentPage!=_totalPages}"/>
+		<mx:Button label="打印" width="{colWidth}" click="dispatchEvent(new Event('printRequested'));UIUtils.removePopUp(this)" />
+		<mx:Button label="取消" width="{colWidth}" click="UIUtils.removePopUp(this)" />
+	</mx:HBox>
+	<mx:VBox id="settingsMessage" verticalGap="0" paddingBottom="0" paddingTop="0" visible="false" includeInLayout="false">
+		<mx:Label text="注意: 改变页面大小或布局只更新预览, 而不是实际的打印." color="red" />
+		<mx:Label text="请通过打印时显示的《打印对话框》，设置页面大小/布局" paddingTop="0" color="red"/>
+	</mx:VBox>
+	
+	<mx:Canvas id="pageContent"  borderStyle="solid" borderColor="black" height="100%">
+	</mx:Canvas>		
+	<mx:ControlBar width="100%" horizontalAlign="right">
+		<mx:ProgressBar visible="false" id="pb" mode="manual"/>
+		<mx:Button label="生成pdf" width="{colWidth}" click="printOptions.printable.pdfPrinter=new AlivePdfPrinter();printOptions.printToPdf=true;dispatchEvent(new PrintPreviewEvent(PrintPreviewEvent.PRINT_REQUESTED));" />
+		<mx:Button label="打印" width="{colWidth}" click="printOptions.printToPdf=false;dispatchEvent(new PrintPreviewEvent(PrintPreviewEvent.PRINT_REQUESTED));" />
+		<mx:Button label="取消" width="{colWidth}" click="UIUtils.removePopUp(this)" />
+	</mx:ControlBar>	
+</mx:TitleWindow>

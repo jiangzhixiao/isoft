@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:controls="cn.superion.base.components.controls.*"
+		   creationComplete="init()">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.blood.system.view.BloodTypeSpecAdd;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import cn.superion.vo.blood.system.BloodTypeSpecScope;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.RemoteObject;
+
+			private const MENU_NO:String="0605";
+			[Bindable]
+			private var selectItem:BloodTypeSpecScope;
+			[Bindable]
+			private var ro:RemoteObject;
+
+
+			//窗口初始化
+			public function init():void
+			{
+				var passParam:ParameterObject = new ParameterObject();
+				passParam.conditions={};
+				ro=RemoteUtil.getRemoteObject("bloodTypeSpecScopeImpl", fillGridData);
+				ro.findAll(passParam);
+			}
+
+			private function fillGridData(rev:Object):void
+			{
+				gridMustDictList.dataProvider=rev.data;
+			}
+
+			//新建
+			protected function btNew_clickHandler(event:MouseEvent):void
+			{
+				var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+
+				var win:BloodTypeSpecAdd=PopUpManager.createPopUp(topApp, BloodTypeSpecAdd, true) as BloodTypeSpecAdd;
+				win.isOpenType="1";
+				win.parentWin=this;
+				PopUpManager.centerPopUp(win);
+			}
+
+			//修改
+			protected function btChange_clickHandler(event:MouseEvent):void
+			{
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				/* if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "02"))
+				{
+					Alert.show("您无此按钮的操作权限！", "提示信息");
+					return;
+				} */
+
+				selectItem=gridMustDictList.selectedItem as BloodTypeSpecScope;
+				if (!selectItem)
+				{
+					Alert.show("请选择要修改的信息记录", "提示信息");
+					return;
+				}
+//				var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+				var win:BloodTypeSpecAdd=PopUpManager.createPopUp(this, BloodTypeSpecAdd, true) as BloodTypeSpecAdd;
+
+				win.isOpenType="2";
+				win.parentWin=this;
+//				FormUtils.fullScreenWindow( win);
+				PopUpManager.centerPopUp(win);
+			}
+
+			//删除
+			protected function btDel_clickHandler(event:MouseEvent):void
+			{
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				/* if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "03"))
+				{
+					Alert.show("您无此按钮的操作权限！", "提示信息");
+					return;
+				} */
+				selectItem=gridMustDictList.selectedItem as BloodTypeSpecScope;
+				if (!selectItem)
+				{
+					Alert.show("请选择要删除的信息记录", "提示信息");
+					return;
+				}
+				Alert.show("您是否要删除必检项目 " + selectItem.itemName + " ？", "提示信息", Alert.YES | Alert.NO, null, delCallBack);
+
+			}
+
+			private function delCallBack(rev:CloseEvent):void
+			{
+				if (rev.detail == Alert.YES)
+				{
+					selectItem=gridMustDictList.selectedItem as BloodTypeSpecScope;
+					ro=RemoteUtil.getRemoteObject("bloodTypeSpecScopeImpl", function(rev:Object):void
+						{
+							Alert.show("删除必检项目 " + selectItem.itemName + " 成功。", "提示信息");
+							init();
+						});
+					ro.deleteById(selectItem.autoId);
+				}
+			}
+
+			/**
+			 * LabelFunction :根据成分编码显示成分名称
+			 * */
+			private function labFunTypeCode(item:Object,column:DataGridColumn):String{
+				var ary:ArrayCollection = BaseDict.bloodTypeDict;
+				if(ary.length  == 0){
+					return " ";
+				}
+				var name:String ="";
+				for each (var obj:Object  in ary){
+					if(obj.bloodType == item.typeCode){
+						name =  obj.bloodTypeName;
+					}
+				}
+				return name;
+			}
+			//双击打开修改界面
+			protected function gridMustList_doubleClickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				/* if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "02"))
+				{
+					Alert.show("您无修改的操作权限！", "提示信息");
+					return;
+				} */
+				selectItem=gridMustDictList.selectedItem as BloodTypeSpecScope;
+				if (!selectItem)
+				{
+					return;
+				}
+				var win:BloodTypeSpecAdd=PopUpManager.createPopUp(this, BloodTypeSpecAdd, true) as BloodTypeSpecAdd;
+				win.isOpenType="2";
+				win.parentWin=this;
+				PopUpManager.centerPopUp(win);
+			}
+
+			//返回主页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				MainFrameUtil.closeTab(this);
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup x="0"
+				  y="0"
+				  width="100%"
+				  height="100%">
+
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%">
+					<controls:SuperDataGrid id="gridMustDictList"
+											width="100%"
+											height="100%"
+											styleName="dataGrid"
+											hasRowNo="false"
+											doubleClickEnabled="true"
+											doubleClick="gridMustList_doubleClickHandler(event)">
+						<controls:columns>
+							<mx:DataGridColumn headerText="成分"
+											   dataField="typeCode"
+											   labelFunction="labFunTypeCode"
+											   width="150"/>
+							<mx:DataGridColumn headerText="计价类别"
+											   width="70"
+											   dataField="itemClass"/>
+							<mx:DataGridColumn headerText="计价编码"
+											   width="120"
+											   dataField="itemCode"/>
+							<mx:DataGridColumn 
+											   width="0"
+											   visible="false"
+											   dataField="itemSpec"/>
+							<mx:DataGridColumn headerText="计价名称"
+											   dataField="itemName"
+											   width="300"/>
+							<mx:DataGridColumn headerText="单位"
+											   dataField="units"
+											   width="60"/>
+							<mx:DataGridColumn headerText="计价规格上限"
+											   dataField="specUpLimit"
+											   width="160"/>
+							<mx:DataGridColumn headerText="计价规格下限"
+											   dataField="specLowLimit"
+											   width="160"/>
+							<mx:DataGridColumn headerText="比例系数"
+											   dataField="ratio"
+											   width="160"/>
+							
+						</controls:columns>
+					</controls:SuperDataGrid>
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btNew"
+									   label=" 新 建"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btNew_clickHandler(event)"
+									   icon="@Embed(source='/assets/images/button/new20.png')"/>
+						<mx:LinkButton id="btChange"
+									   label=" 修 改"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btChange_clickHandler(event)"
+									   icon="@Embed(source='/assets/images/button/change20.png')"/>
+						<mx:LinkButton id="btDel"
+									   label=" 删 除"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/delete20.png')"
+									   click="btDel_clickHandler(event)"/>
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+
+			</s:BorderContainer>
+
+		</s:VGroup>
+
+	</s:BorderContainer>
+
+</mx:Module>

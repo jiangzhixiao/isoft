@@ -1,0 +1,893 @@
+/**
+////////////////////////////////////////////////////////////////////////////////
+//	
+//	Copyright 2014 vamos Labs LLC. All Rights Reserved.
+//
+//	This file is licensed under the vamos Component Library License. 
+//
+//	Only license holders are entitled to use this file subject to the  
+//	conditions of the license. All other uses are expressly forbidden. Visit 
+//	http://www.vamoslabs.com to view and purchase a license.
+//
+//	Apache Flex's source code notices are reproduced below.
+//
+// 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//  Licensed to the Apache Software Foundation (ASF) under one or more
+//  contributor license agreements.  See the NOTICE file distributed with
+//  this work for additional information regarding copyright ownership.
+//  The ASF licenses this file to You under the Apache License, Version 2.0
+//  (the "License"); you may not use this file except in compliance with
+//  the License.  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+*/
+
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+@namespace accordion "vamos.components.accordion.*";
+@namespace autoComplete "vamos.components.autoComplete.*";
+@namespace buttonBar "vamos.components.buttonBar.*";
+@namespace calculator "vamos.components.calculator.*";
+@namespace colorPicker "vamos.components.colorPicker.*";
+@namespace compassContainer "vamos.components.compassContainer.*";
+@namespace dataTip "vamos.components.dataTip.*";
+@namespace datePicker "vamos.scheduling.datePicker.*";
+@namespace expandingContainer "vamos.components.expandingContainer.*";
+@namespace dockingCompassContainer "vamos.components.dockingCompassContainer.*";
+@namespace heatmap "vamos.charts.heatmap.*";
+@namespace fieldSet "vamos.components.fieldSet.*";
+@namespace floatPaneControlBar "vamos.components.floatPaneControlBar.*";
+@namespace gauges "vamos.components.gauges.*";
+@namespace menuBar "vamos.components.menuBar.*";
+@namespace pane "vamos.components.pane.*";
+@namespace popUpButton "vamos.components.popUpButton.*";
+@namespace richTextEditor "vamos.components.richTextEditor.*";
+@namespace rotaryField "vamos.components.rotaryField.*";
+@namespace separators "vamos.components.separators.*";
+@namespace sliderField "vamos.components.sliderField.*";
+@namespace tabPaneNavigator "vamos.components.paneNavigators.tabPaneNavigator.*";
+@namespace timebarContainer "vamos.components.timebarContainer.*";
+@namespace timePicker "vamos.components.timePicker.*";
+@namespace toolbar "vamos.components.toolbar.*";
+@namespace wheelList "vamos.components.wheelList.*";
+@namespace clocks "vamos.components.clocks.*";
+@namespace spark "com.flexicious.grids.spark.*";
+@namespace grids "com.flexicious.grids.*";
+@namespace flexiciousControls "com.flexicious.controls.*";
+@namespace treegrid "com.flexicious.nestedtreedatagrid.*";
+@namespace skins "cn.vamos.base.skins.*";
+@namespace customRenderers "com.flexicious.grids.columns.customRenderers.*";
+/**
+*	Stockholm Theme
+*
+*	Border Dark						: #676767;
+*	Border Medium					: #9B9B9B;
+*	Border Light					: #CDCDCD;
+* 	Selection Color	Dark			: #006B9F;
+* 	Selection Color	Light			: #BFE8FC;
+*	Selection Border Color Hover	: #00A5F4;
+*	Selection Border Color Down		: #006B9F;
+*	Content Background Dark			: #D1D1D1;
+*	Content Background Medium		: #E9E9E9;
+*	Content Background Light		: #F4F4F4;
+*	UI Control Background			: #E6E6E6;
+*	UI Control Background Hover		: #BFE8FC;
+*	UI Control Background Down		: #ACD6EA;
+*	UI Control Height				: 24
+*	Drop Shadow						: blurX/Y 12" alpha 0.35 distance 3
+*	Symbol Color Dark				: #343434;
+*	Symbol Color Medium				: #525252;
+*	Symbol Color Hover/Down			: #000000;
+*	
+**/
+
+global
+{
+	alternating-row-colors: #FFFFFF, #F7F7F7;
+	baseline-shift: -1;
+	border-color: #9B9B9B;
+	border-alpha: 1;
+	caret-color: #00A5F4;
+	symbol-color: #525252;
+	color: #000000;
+	content-background-color: #E9E9E9;
+	content-background-alpha: 1;
+	corner-radius: 0;
+	focus-color: #4CB4FF;
+	focused-text-selection-color: #BBD3FD;
+	focus-thickness: 1;
+	header-colors: #E9E9E9, #E9E9E9;
+	modal-transparency-duration: 0; /*cannot be zero for blur to be applied */
+	modal-transparency-blur: 0.0;
+	modal-transparency: 0.0;
+	modal-transparency-color: #000000;
+	roll-over-color: #DEDEDE;
+	selection-color: #3399FF;
+	selection-duration: 0;
+	text-selected-color: #FFFFFF;
+	font-size: 14;
+	fontFamily:宋体;
+	
+}
+
+/**
+* vamos components
+**/
+
+accordion|Accordion
+{
+	background-color: #FFFFFF;
+}
+
+accordion|AccordionContainer
+{
+	skin-class: ClassReference("vamos.components.accordion.themes.stockholm.skins.AccordionContainerSkin");
+}
+
+autoComplete|AutoComplete
+{
+	skin-class: ClassReference("vamos.components.autoComplete.themes.stockholm.skins.AutoCompleteSkin");
+}
+
+buttonBar|ButtonBarBase
+{
+	skin-class: ClassReference("vamos.components.buttonBar.themes.stockholm.skins.ButtonBarSkin");
+}
+
+tabPaneNavigator|TabPaneNavigator
+{
+	skin-class: ClassReference("vamos.components.paneNavigators.tabPaneNavigator.themes.stockholm.skins.TabPaneNavigatorSkin");
+}
+
+buttonBar|TabBar
+{
+/*	skin-class: ClassReference("vamos.components.buttonBar.themes.stockholm.skins.TabBarSkin");*/
+	skin-class: ClassReference("cn.vamos.main.skins.TabBarSkin");
+}
+
+calculator|CalculatorGridEditor #popupButton
+{
+	skin-class: ClassReference("vamos.components.calculator.themes.stockholm.skins.CalculatorGridEditorButtonSkin");
+}
+
+colorPicker|ColorPicker
+{
+	skin-class: ClassReference("vamos.components.colorPicker.themes.stockholm.skins.ColorPickerSkin");
+}
+
+clocks|ClockDigital{
+	borderVisible:false;
+	backgroundColor:#E9F1F4;
+}
+
+clocks|ClockDigital s|Label {
+	fontSize:17; 
+	paddingLeft:0;
+	color:#087CC9;
+}
+
+compassContainer|CompassContainerBase
+{
+	gap: 4;
+	resize-region-width: 6;
+	resize-region-height: 6;
+	center-border-visible: true;
+	center-border-color: #9B9B9B;
+	north-border-color: #9B9B9B;
+	east-border-color: #9B9B9B;
+	south-border-color: #9B9B9B;
+	west-border-color: #9B9B9B;
+	skin-class: ClassReference("cn.vamos.main.skins.CompassContainerSkin");
+}
+
+datePicker|DatePicker
+{
+	skin-class: ClassReference("vamos.scheduling.datePicker.themes.stockholm.skins.DatePickerSkin");
+}
+
+dockingCompassContainer|DockingCompassContainer
+{
+	skin-class: ClassReference("vamos.components.dockingCompassContainer.themes.stockholm.skins.DockingCompassContainerSkin");
+}
+
+dataTip|DataTip
+{
+	background-color: #FFFFFF;
+	border-color: #777777;
+}
+
+expandingContainer|ExpandingContainer
+{
+	skin-class: ClassReference("vamos.components.expandingContainer.themes.stockholm.skins.ExpandingContainerSkin");
+}
+
+fieldSet|FieldSet
+{
+	corner-radius: 0;
+	skin-class: ClassReference("vamos.components.fieldSet.themes.stockholm.skins.FieldSetSkin");
+}
+
+floatPaneControlBar|FloatPaneControlBar
+{
+	skin-class: ClassReference("vamos.components.floatPaneControlBar.themes.stockholm.skins.FloatPaneControlBarSkin");
+}
+
+heatmap|Heatmap
+{
+	skin-class: ClassReference("vamos.charts.heatmap.themes.stockholm.skins.HeatmapSkin");
+}
+
+gauges|GaugeBase
+{
+	tick-offset: 10;
+	label-offset: 5;
+	major-tick-color: #454545;
+	minor-tick-color: #BCBCBC;
+}
+
+gauges|HLinearGauge
+{
+	skin-class: ClassReference("vamos.components.gauges.themes.stockholm.skins.HLinearGaugeSkin");
+}
+
+gauges|VLinearGauge
+{
+	skin-class: ClassReference("vamos.components.gauges.themes.stockholm.skins.VLinearGaugeSkin");
+}
+
+menuBar|MenuBar
+{
+	item-skin: ClassReference("vamos.components.menuBar.themes.stockholm.skins.MenuBarItemSkin");
+}
+
+richTextEditor|RichTextEditor
+{
+	background-color: #E9E9E9;
+}
+
+pane|Pane
+{
+	pane-chrome: #A2CEF4;
+	skin-class: ClassReference("vamos.components.pane.themes.stockholm.skins.PaneSkin");
+}
+
+popUpButton|PopUpButton
+{
+	skin-class: ClassReference("vamos.components.popUpButton.themes.stockholm.skins.PopUpButtonSkin");
+}
+
+rotaryField|RotaryField
+{
+	padding-top: 2;
+	padding-right: 0;
+	padding-bottom: 2;
+	padding-left: 0;
+	skin-class: ClassReference("vamos.components.rotaryField.themes.stockholm.skins.RotaryFieldSkin");
+}
+
+separators|SeparatorBase
+{
+	primary-stroke-color: #CDCDCD;
+	primary-stroke-alpha: 1;
+	primary-stroke-thickness: 1;
+	secondary-stroke-color: #FFFFFF;
+	secondary-stroke-alpha: 1;
+	secondary-stroke-thickness: 1;
+}
+
+sliderField|SliderField
+{
+	padding-top: 2;
+	padding-right: 0;
+	padding-bottom: 2;
+	padding-left: 0;
+	skin-class: ClassReference("vamos.components.sliderField.themes.stockholm.skins.SliderFieldSkin");
+}
+
+timebarContainer|TimebarContainerHScrollBar
+{
+	skin-class: ClassReference("vamos.components.timebarContainer.themes.stockholm.skins.TimebarContainerHScrollBarSkin");
+}
+
+toolbar|Toolbar
+{
+	skin-class: ClassReference("vamos.components.toolbar.themes.stockholm.skins.ToolbarSkin");
+}
+
+toolbar|ToolbarButton
+{
+	skin-class: ClassReference("vamos.components.toolbar.themes.stockholm.skins.ToolbarButtonSkin");
+}
+
+toolbar|ToolbarColorTransformButton
+{
+	skin-class: ClassReference("vamos.components.toolbar.themes.stockholm.skins.ToolbarColorTransformButtonSkin");
+}
+
+toolbar|ToolbarColorTransformIconToggleButton
+{
+	skin-class: ClassReference("vamos.components.toolbar.themes.stockholm.skins.ToolbarColorTransformIconToggleButtonSkin");
+}
+
+toolbar|ToolbarTabBar
+{
+	skin-class: ClassReference("vamos.components.toolbar.themes.stockholm.skins.ToolbarTabBarSkin");
+}
+
+wheelList|WheelList
+{
+	skin-class: ClassReference("vamos.components.wheelList.themes.stockholm.skins.WheelListSkin");
+}
+
+/**
+* Halo
+*/
+
+mx|Accordion
+{
+	border-color:			#cfcfcf;
+	background-color:		#f3f3f3;
+}
+mx|PopUpButton
+{
+	font-weight:			normal;
+}
+mx|TitleWindow
+{
+	font-size:				14;
+	font-weight:			normal;
+	color:					#000000;
+	title-style-name:		"titleStyle";
+	borderAlpha:0.9;
+}
+mx|Panel
+{
+	font-size:				14;
+	font-weight:			normal;
+	color:					#000000;
+	title-style-name:		"titleStyle";
+	borderAlpha:0.9;
+}
+
+mx|AccordionHeader
+{
+	header-height:			22;
+	border-style:			solid;
+	color:					#3F3F3F;
+	font-size:				14;	
+	font-weight:		bold;
+}
+
+mx|Button
+{
+	font-family:宋体;
+	font-weight:normal;
+	font-size:14;
+}
+
+mx|DateField
+{
+	disabledSkin: ClassReference(null);
+	downSkin: ClassReference(null);
+	upSkin: ClassReference(null);
+	overSkin: ClassReference(null);
+	skin: Embed("vamos/themes/stockholm/assets/icons/calendar.png");
+}
+
+mx|Menu
+{
+	border-skin: ClassReference("vamos.themes.stockholm.skins.halo.MenuBorderSkin");
+	branch-disabled-icon: ClassReference("vamos.themes.stockholm.skins.halo.MenuBranchDisabledIconHaloSkin"); 
+	branch-icon: ClassReference("vamos.themes.stockholm.skins.halo.MenuBranchIconHaloSkin"); 
+	check-disabled-icon: ClassReference("vamos.themes.stockholm.skins.halo.MenuCheckDisabledHaloSkin"); 
+	check-icon: ClassReference("vamos.themes.stockholm.skins.halo.MenuCheckHaloSkin"); 
+	content-background-color: #FFFFFF;
+	border-visible: true;
+	left-icon-gap: 20;
+	padding-bottom: 2;
+	padding-left: 5;
+	padding-right: 5;
+	padding-top: 2;
+	radio-disabled-icon: ClassReference("vamos.themes.stockholm.skins.halo.MenuRadioDisabledIconHaloSkin"); 
+	radio-icon: ClassReference("vamos.themes.stockholm.skins.halo.MenuRadioIconHaloSkin"); 
+	separator-skin: ClassReference("vamos.themes.stockholm.skins.halo.MenuSeperatorHaloSkin");
+}
+
+mx|ScrollBar
+{
+	down-arrow-disabled-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/down-arrow-disabled-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	down-arrow-up-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/down-arrow-up-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	down-arrow-over-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/down-arrow-over-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	down-arrow-down-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/down-arrow-down-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	down-arrow-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/down-arrow-up-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	thumb-up-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/thumb-up-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	thumb-over-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/thumb-over-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	thumb-down-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/thumb-down-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	thumb-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/thumb-up-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	track-disabled-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/track-disabled-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="2");
+	track-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/track-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="2");
+	up-arrow-disabled-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/up-arrow-disabled-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	up-arrow-up-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/up-arrow-up-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	up-arrow-over-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/up-arrow-over-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	up-arrow-down-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/up-arrow-down-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	up-arrow-skin: Embed(source='vamos/themes/stockholm/assets/halo/scrollBar/up-arrow-up-skin.png', scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+}
+mx|TextInput
+{
+	background-color: #FFFFFF;
+	content-background-color: #FFFFFF;
+}
+mx|Label{
+	fontFamily:宋体;
+	fontSize:14;
+}
+mx|ToolTip
+{
+	border-skin: ClassReference("vamos.themes.stockholm.skins.halo.ToolTipBorder");
+	color: #000000;
+	fontSize:13;
+	border-style: toolTip;
+	background-color: #FFFFFF;	
+	border-color: #676767;
+}
+
+mx|Tree
+{
+	/* itemRenderer factory must be applied inline */
+	selection-color: #00A5F4;
+	padding-top: 2;
+	padding-bottom: 2;
+	content-background-color: #FFFFFF;
+	default-leaf-icon: ClassReference(null);
+	disclosure-open-icon: ClassReference("vamos.themes.stockholm.skins.halo.TreeArrowDownHaloSkin");
+	disclosure-closed-icon: ClassReference("vamos.themes.stockholm.skins.halo.TreeArrowRightHaloSkin"); 
+	folder-open-icon: Embed(source="vamos/themes/assets/icons/folder-open.png");
+	folder-closed-icon: Embed(source="vamos/themes/assets/icons/folder-open.png");
+	open-duration: 100; /* do not set to 0, can cause selection issues */
+	text-selected-color: #FFFFFF;
+	use-roll-over: false;
+}
+
+.dataGrid{
+	font-family: 宋体;
+	font-size:14;
+	header-text-align :center;
+	vertical-grid-line-color:#CCCCCC;
+	header-style-name:myHeaderStyleName;
+}
+.myHeaderStyleName{
+	font-family: 宋体;
+	font-size:14;
+	text-align:center;
+}
+
+
+/**
+* Spark components
+**/
+
+s|Application
+{
+	backgroundColor: #007FBF;
+}
+
+s|Label{
+	font-family: 宋体;
+	font-size: 14;
+}
+
+s|Button
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.ButtonSkin");
+}
+
+s|Button.emphasized
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.ButtonEmphasizedSkin");
+}
+
+s|ButtonBar
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.ButtonBarSkin");
+}
+
+s|CheckBox
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.CheckBoxSkin");
+}
+
+s|ComboBox
+{
+	padding-top: 0;
+	padding-right: 0;
+	padding-bottom: 0;
+	padding-left: 0;
+	skin-class: ClassReference("vamos.themes.stockholm.skins.ComboBoxSkin");
+}
+
+s|DataGrid
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.DataGridSkin");
+}
+
+s|DropDownList
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.DropDownListSkin");
+}
+
+s|HScrollBar
+{
+	skin-class: ClassReference("cn.vamos.main.skins.HScrollBarSkin");
+}
+
+s|HSlider
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.HSliderSkin");
+}
+
+s|List
+{
+	content-background-color: #FFFFFF;
+	skin-class: ClassReference("vamos.themes.stockholm.skins.ListSkin");
+}
+
+s|Panel
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.PanelSkin");
+}
+
+s|MXFTETextInput
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.TextInputSkin");
+}
+
+s|NumericStepper
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.NumericStepperSkin");
+}
+
+s|RadioButton
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.RadioButtonSkin");
+	font-family: 宋体;
+	font-size:14;
+}
+
+s|RichEditableText
+{
+	
+}
+
+s|Spinner
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.SpinnerSkin");
+}
+
+s|TabBar
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.TabBarSkin");
+}
+
+s|TextArea
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.TextAreaSkin");
+}
+
+s|TextInput
+{
+	/* padding makes caret look better */
+	padding-top: 2;
+	padding-right: 0;
+	padding-bottom: 2;
+	padding-left: 0;
+	text-align:left;
+	font-family: 宋体;
+	font-size:14;
+	skin-class: ClassReference("vamos.themes.stockholm.skins.TextInputSkin");
+}
+
+timePicker|TimePicker
+{
+	skin-class: ClassReference("vamos.components.timePicker.themes.stockholm.skins.TimePickerSkin");
+}
+
+s|TitleWindow
+{
+	/* 如果使用stockholm，则无关闭皮肤 */
+	skin-class: ClassReference("vamos.themes.london.skins.TitleWindowSkin");
+}
+
+s|ToggleButton
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.ToggleButtonSkin");
+}
+
+s|VScrollBar
+{
+	skin-class: ClassReference("cn.vamos.main.skins.VScrollBarSkin");
+}
+
+s|VSlider
+{
+	skin-class: ClassReference("vamos.themes.stockholm.skins.VSliderSkin");
+}
+
+/* 表格相关样式 */
+grids|ExtendedDataGrid
+{
+	footerBackgroundColor: #CFCFCF;
+	filterBackgroundColor: #AFAFAF;
+	pagerBackgroundColor: #EFF1F2;
+	headerStyleName: 			"mydataGridHeaderStyle";
+	font-weight:				normal;
+	font-size:					11;
+	color:						#000000;
+	text-roll-over-color:		#000000;
+	text-selected-color:		#000000;
+	roll-over-color:			#e4e4e4;
+	selection-color:			#cdcdcd;
+	alternating-item-colors:	#cce8cf, #ffffff;
+	
+}
+
+flexiciousControls|Spinner{
+	fontFamily:arial;
+}
+
+grids|ExtendedAdvancedDataGrid
+{
+	
+	footerBackgroundColor: #CFCFCF;
+	filterBackgroundColor: #AFAFAF;
+	pagerBackgroundColor: #EFF1F2;
+	headerStyleName: 			"mydataGridHeaderStyle";
+	font-weight:				normal;
+	font-size:					11;
+	color:						#000000;
+	text-roll-over-color:		#000000;
+	text-selected-color:		#000000;
+	roll-over-color:			#e4e4e4;
+	selection-color:			#cdcdcd;
+	alternating-item-colors:	#f8f8f8, #ffffff;
+}
+
+
+.titleStyle
+{
+	font-size:			12;
+	font-weight:		normal;
+	color:				#000000;
+}
+
+.mydataGridHeaderStyle {
+	textAlign: 				left;
+	color:					#000000;
+	font-weight:				normal;
+	font-size:				11;
+}
+
+spark|ExtendedSparkDataGrid{
+	footerBackgroundColor: #E7F3FF;
+	filterBackgroundColor: #E7F3FF;
+	pagerBackgroundColor: #E7F3FF;
+	skinClass:ClassReference("cn.vamos.base.skins.CustomSkinApache");
+	font-family:				宋体;
+	font-weight:				normal;
+	font-size:					12;
+	color:						#000000;
+	alternating-item-colors:	#f8f8f8, #ffffff;
+	alternatingRowColors:  #FFFFFF, #E7F3FF; /*cce8cf豆沙绿，FFEBCD杏仁黄,E7F3FF浅蓝*/
+}
+
+treegrid|FlexDataGrid {
+	sortArrowSkin : ClassReference("mx.skins.halo.DataGridSortArrow");	
+	disclosureOpenIcon: Embed(source="themes/assets.swf", symbol="TreeDisclosureOpen");
+	disclosureClosedIcon: Embed(source="themes/assets.swf", symbol="TreeDisclosureClosed");
+	stretchCursor : Embed("themes/cursorStretch.swf");
+	columnGroupClosedIcon : Embed(source="themes/assets.swf", symbol="TreeDisclosureClosed");
+	columnGroupOpenIcon : Embed(source="themes/assets.swf", symbol="TreeDisclosureOpen");
+	multiColumnSortNumberHeight: 15;
+	columnGroupDrawTopBorder: false;
+	columnGroupVerticalGridLines: true;
+	columnGroupVerticalGridLineColor: #666666;
+	columnGroupRollOverColors: #298EBD, #298EBD;
+	columnGroupColors: #298EBD, #298EBD;
+	columnGroupVerticalGridLineThickness: 1;
+	
+	
+	columnGroupHorizontalGridLines:true;
+	columnGroupHorizontalGridLineColor:#666666;
+	columnGroupHorizontalGridLineThickness:1;
+	/*	selectionDisabledTextColor: #DDDDDD;*/
+	
+	headerStyleName : dataGridStyles;
+	footerStyleName : dataGridStyles;
+	filterStyleName : dataGridHeaderStyles;
+	pagerStyleName : dataGridStyles;
+	columnGroupStyleName:dataGridStyles;
+	
+	borderSides : "left,right,top,bottom";	
+	borderColor : 0;
+	backgroundColor : 16777215, 16777215;	
+	rendererColors : 16777215, 16777215;
+	
+/*	headerColors : #298EBD,#298EBD;*/
+	headerColors : #3F9AD8,#3F9AD8;
+	pagerColors : 16777215, 16777215;	
+	filterColors : 16777215, 16777215;
+	footerColors : #298EBD, #298EBD;
+	
+	/*	selectionColor: #3e3e3e, #3e3e3e;*/
+	
+	/*	contentBackgoundColor: #3e3e3e, #3e3e3e;*/
+	color:#000000;
+	selectionDisabledColor : "null";
+	lockedSeperatorColor : #6f6f6f;
+	textRollOverColor : 0;	
+	alternatingTextColors : 0, 0;
+	textSelectedColor : 0;	
+	selectionDisabledTextColor : 14540253;
+	activeCellColor:12049407;
+	errorBackgroundColor:#00FF00;
+	errorBorderColor:15875628;
+	
+	alternatingItemColors : #FFFFFF, #E7F3FF;
+	headerRollOverColors : #298EBD, #298EBD;	
+	rendererRollOverColors : 16777215, 16777215;
+	filterRollOverColors : 13619151, 13619151;
+	pagerRollOverColors : 15132390, 16777215;
+	footerRollOverColors : #298EBD, #298EBD;
+	fixedColumnFillColors : 12566463, 12566463;
+	
+	footerHorizontalGridLineColor : 6710886;
+	pagerHorizontalGridLineColor : 6710886;	
+	horizontalGridLineColor : 6908265;
+	footerVerticalGridLineColor : 6710886;
+	filterVerticalGridLineColor : 6710886;
+	verticalGridLineColor : 6908265;
+	rendererVerticalGridLineColor : 6710886;
+	pagerVerticalGridLineColor : 6710886;
+	headerHorizontalGridLineColor : 6710886;
+	headerVerticalGridLineColor : 6710886;
+	rendererHorizontalGridLineColor : 6710886;
+	filterHorizontalGridLineColor : 6710886;
+	
+	footerHorizontalGridLineThickness : 1;	
+	pagerHorizontalGridLineThickness : 1;
+	footerVerticalGridLineThickness : 1;
+	dropIndicatorThickness:2;	
+	borderThickness : 1;
+	filterVerticalGridLineThickness : 1;	
+	horizontalGridLineThickness : 1;
+	verticalGridLineThickness : 1;
+	pagerVerticalGridLineThickness : 1;
+	rendererVerticalGridLineThickness : 1;
+	headerHorizontalGridLineThickness : 1;
+	rendererHorizontalGridLineThickness : 1;
+	filterHorizontalGridLineThickness : 1;
+	headerVerticalGridLineThickness : 1;
+	lockedSeperatorThickness : 1;
+	
+	rendererPaddingBottom : 2;	
+	filterPaddingTop : 2;
+	filterPaddingLeft : 2;
+	rendererPaddingRight : 2;	
+	filterPaddingRight : 2;
+	footerPaddingBottom : 2;
+	filterPaddingBottom : 2;	
+	headerPaddingBottom : 2;	
+	pagerPaddingBottom : 2;	
+	pagerPaddingLeft : 2;	
+	rendererPaddingTop : 2;
+	pagerPaddingTop : 2;
+	paddingBottom : 2;	
+	headerPaddingRight : 2;
+	headerPaddingTop : 2;
+	pagerPaddingRight : 2;
+	footerPaddingLeft : 2;
+	paddingRight : 2;
+	headerPaddingLeft : 2;	
+	footerPaddingTop : 2;
+	footerPaddingRight : 2;
+	paddingTop : 2;
+	paddingLeft : 2;
+	rendererPaddingLeft : 2;
+	
+	horizontalGridLines : true;	
+	verticalGridLines : false;
+	headerHorizontalGridLines : true;
+	headerVerticalGridLines : true;
+	pagerVerticalGridLines : true;
+	pagerHorizontalGridLines : true;
+	filterVerticalGridLines : true;
+	filterHorizontalGridLines : true;	
+	footerVerticalGridLines : true;	
+	footerHorizontalGridLines : true;
+	rendererVerticalGridLines : true;
+	rendererHorizontalGridLines : true;
+	
+	headerDrawTopBorder : false;
+	pagerDrawTopBorder : false;
+	rendererDrawTopBorder : false;		
+	filterDrawTopBorder : false;	
+	footerDrawTopBorder : false;
+}
+
+.advancedDataGridStyles {
+	fontWeight : "bold";
+}
+.dataGridStyles {
+	fontWeight : "bold";
+	color:#ffffff;
+	textAlign:center;
+}
+
+.dataGridHeaderStyles {
+	/*headerBackgroundSkin : ClassReference("brownie.skins.DataGridHeaderSkin");*/
+	fontWeight : "bold";
+}
+
+.multiColumnSortNumberStyle {
+	fontSize:10;		
+	paddingTop:0;
+	paddingLeft:0;
+	paddingBottom:0;
+	paddingRight:0;
+}
+
+.columnGroupStyle {
+	fontWeight: "bold";
+	textAlign: "center";	
+}
+
+.watermark {
+	fontStyle : "italic";
+}
+
+.watermarkStyle {
+	color : #BBBBBB;
+	fontStyle : "italic";	
+}
+s|DefaultGridHeaderRenderer{
+	font-size: 12;
+	textAlign:center;
+	
+}
+/*对应列头的勾选框*/
+customRenderers|SelectAllCheckBoxHeaderRenderer{
+	backgroundColor:#3F9AD8;
+}
+
+flexiciousControls|MultiSelectComboBox{
+	buttonBoxStyleName:"msbButtonBox";
+	buttonStyleName:"msbButton";
+}
+.msbButton {
+	paddingTop : 1;
+	textDecoration : "underline";
+	leading : 0;
+	color : #555555;
+	textRollOverColor : 0;
+	fontSize : 11;
+	paddingBottom : 1;
+	paddingLeft : 2;
+	paddingRight : 2;	
+}
+
+.msbButtonBox {
+	borderStyle : "solid";
+	borderColor : 0;
+	backgroundColor : #FFFFFF;
+	horizontalAlign : "right";
+	horizontalGap : 2;	
+}

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"  title="Filter Popup - {columnHeader}" showCloseButton="true" close="PopUpManager.removePopUp(this);" xmlns:controls="com.flexicious.controls.*" xmlns:containers="com.flexicious.controls.containers.*"
+	borderAlpha="1">
+	<mx:Script>
+		<![CDATA[
+			import com.flexicious.grids.filters.FilterExpression;
+			import com.flexicious.utils.UIUtils;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			[Bindable()]
+			public var filterExpression:FilterExpression;
+			[Bindable()]
+			public var filterApplied:Boolean=false;
+			[Bindable()]
+			public var operations:Array;
+			[Bindable()]
+			public var columnHeader:String;
+			
+			public static const CLEAR:uint= 0x0012;
+			
+			private function onOk():void
+			{
+				close(Alert.OK);
+			}
+			
+			//event for search field enter key
+			private function onKeyUp(event:KeyboardEvent):void{
+				if(event.keyCode == Keyboard.ENTER)
+				{
+					onOk();
+				}
+				else if(event.keyCode == Keyboard.ESCAPE)
+				{
+					PopUpManager.removePopUp(this);
+				}
+			}
+			private function close(detail:uint):void
+			{
+				
+				if(detail==Alert.OK)
+				{
+					if(Validator.validateAll([vldOperation,vldExpression]).length==0)
+					{
+						var listValues:ArrayCollection;
+						if(cbxOperations.selectedItem.isListExpression)
+						{
+							listValues=new ArrayCollection(txtExpression.text.split(","));
+							if(cbxOperations.selectedItem.expressionCount != -1 && (listValues.length!= cbxOperations.selectedItem.expressionCount))
+							{
+								UIUtils.showMessage("Number of values needed for this operation not provided." +cbxOperations.selectedItem.expressionCount );
+								return;
+							}
+						}	
+						//we've passed validation here, so apply changes and close
+						frmFilter.applyChanges();
+						if(listValues)//list based filter operations need array collections of expression values
+							filterExpression.expression = listValues
+					}
+					else
+					{
+						return;
+					}
+				}
+				var closeEvent:CloseEvent=new CloseEvent(Event.CLOSE);
+				closeEvent.detail=detail;
+				dispatchEvent(closeEvent);
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Validator id="vldOperation" source="{cbxOperations}" property="selectedValue" required="true"/>
+	<mx:Validator id="vldExpression" source="{txtExpression}" property="text" required="true"/>
+	<containers:HBox id="frmFilter">
+			<mx:Label text="{columnHeader}"/>
+			<controls:ComboBox id="cbxOperations" bindingSource="{filterExpression}" bindingProperty="filterOperation" dataProvider="{operations}"  selectedValue="{filterExpression.filterOperation}" />
+			<controls:TextInput id="txtExpression" bindingSource="{filterExpression}" bindingProperty="expression" keyUp="onKeyUp(event)" watermark="{cbxOperations.selectedItem.isListExpression?'(输入以逗号分隔的搜索条件)':'(输入搜索条件)'}"/>
+	</containers:HBox>
+	<mx:ControlBar horizontalAlign="right">
+		<mx:Button label="清除条件" click="close(CLEAR)" enabled="{filterApplied}"/>
+		<mx:Button label="查找" click="close(Alert.OK)"/>
+		<mx:Button label="返回" click="PopUpManager.removePopUp(this);"/>
+	</mx:ControlBar>
+</mx:TitleWindow>

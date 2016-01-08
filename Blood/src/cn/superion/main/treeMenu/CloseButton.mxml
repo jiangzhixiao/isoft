@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark" borderVisible="false"
+                   backgroundImageFillMode="scale"
+				   xmlns:mx="library://ns.adobe.com/flex/mx" click="bordercontainer1_clickHandler(event)"
+				   width="96" height="25" backgroundColor="#EAF1FB" creationComplete="bordercontainer1_creationCompleteHandler(event)" xmlns:iconButton="vamos.components.iconButton.*">
+	<fx:Script>
+		<![CDATA[
+			import vamos.components.paneNavigators.tabPaneNavigator.TabPaneNavigator;
+			
+			import cn.superion.base.util.FormUtils;
+			
+			import mx.controls.Alert;
+			import mx.core.INavigatorContent;
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Group;
+			import spark.components.HGroup;
+			import spark.modules.ModuleLoader;
+			private var _linkVerticleButton:ToggleLinkButton=null;
+			private var _selected:Boolean=false;
+            private var _relatedTab:DisplayObject;
+			private var _relatedTabHost:TabPaneNavigator;
+			private var _label:Object;
+			private var _isRemoved:Boolean=false;
+			[Embed(source="/assets/images/button/closeunseleBg.png")]
+			[Bindable]   
+			private var selectedIcon:Class;
+			
+			[Embed(source="/assets/images/button/closeseleBg.png")]
+			[Bindable]   
+			private var unselectedIcon:Class;
+			
+			[Bindable]
+			private var _closeable:Boolean=true;
+			public function get closeable():Boolean
+			{
+				return _closeable;
+			}
+			
+			public function set closeable(value:Boolean):void
+			{
+				_closeable = value;
+			}
+			public function get linkVerticleButton():ToggleLinkButton
+			{
+				return _linkVerticleButton;
+			}
+
+			public function set linkVerticleButton(value:ToggleLinkButton):void
+			{
+				_linkVerticleButton = value;
+			}
+
+			public function get isRemoved():Boolean
+			{
+				return _isRemoved;
+			}
+
+			public function set isRemoved(value:Boolean):void
+			{
+				_isRemoved = value;
+			}
+
+			[Event(name="tabClose", type="flash.events.Event")]
+
+			public function get label():Object
+			{
+				return _label;
+			}
+
+			public function set label(value:Object):void
+			{
+				_label = value;
+			}
+
+			public function get relatedTabHost():TabPaneNavigator 
+			{
+				return _relatedTabHost;
+			}
+
+			public function set relatedTabHost(value:TabPaneNavigator ):void
+			{
+				_relatedTabHost = value;
+			}
+
+			public function get relatedTab():DisplayObject
+			{
+				return _relatedTab;
+			}
+
+			public function set relatedTab(value:DisplayObject):void
+			{
+				_relatedTab = value;
+			}
+
+			public function get selected():Boolean
+			{
+				return _selected;
+			}
+
+			public function set selected(value:Boolean):void
+			{
+				_selected = value;
+				if(value){
+					clearAllButtonSelectd();
+				}
+				_selected = value;
+				updateBackgroundColor();
+			}
+			private function updateBackgroundColor():void{
+				var backgroundcolor:String="#EAF1FB";
+				var backgroundImg:Object=unselectedIcon;
+				var titlecolor:String="#000000";
+				if(_selected){
+					backgroundcolor="#0990dd";
+					backgroundImg=selectedIcon
+					titlecolor="#ffffff";
+				}
+//				this.setStyle("backgroundColor",backgroundcolor);
+				this.setStyle("backgroundImage",backgroundImg);
+				
+				this.setStyle("color",titlecolor);
+				
+
+			}
+            private function clearAllButtonSelectd():void{
+				if(!this.parentDocument){
+					return;
+				}
+				var buttons:Array=FormUtils.getElementsByTag(this.parentDocument,CloseButton);
+				for each(var btItem:CloseButton in buttons){
+					btItem.selected=false;
+				}
+			}
+			protected function bordercontainer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.labTitle.text=String(_label);
+				this.width=this.labTitle.text.length*13+50;
+				updateBackgroundColor();
+			}
+			
+			protected function bordercontainer1_clickHandler(event:MouseEvent):void
+			{
+				if(_isRemoved){
+					return;
+				}
+				clearAllButtonSelectd();
+				this.selected=true;
+				if(_relatedTab){
+					_relatedTabHost.selectedChild=ModuleLoader(_relatedTab)
+					
+				}
+				if(_linkVerticleButton){
+					_linkVerticleButton.linkbutton1_clickHandler(null);
+				}
+			}
+			
+			public function close_clickHandler(event:MouseEvent):void
+			{
+				if(_selected){
+					selecPrePage()
+				}				
+				this.dispatchEvent(new Event("tabClose"));
+				Group(this.parent).removeElement(this);
+				_relatedTabHost.removeElement(IVisualElement( _relatedTab));
+				_isRemoved=true;
+			}
+			private function selectFirstPage():void{
+				var buttons:Array=FormUtils.getElementsByTag(this.parentDocument,CloseButton);
+				clearAllButtonSelectd();
+				if(buttons&&buttons.length>0){
+					buttons[0].dispatchEvent(new MouseEvent("click"));
+				}
+				this.linkVerticleButton.clearSelected(true);
+			}
+			private function selecPrePage():void{
+				var buttons:Array=FormUtils.getElementsByTag(this.parentDocument,CloseButton);
+				clearAllButtonSelectd();
+				if(buttons&&buttons.length>1){
+					buttons[buttons.length-2].dispatchEvent(new MouseEvent("click"));
+				}
+				this.linkVerticleButton.clearSelected(true);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Label id="labTitle"  horizontalCenter="0" verticalCenter="0" fontSize="12"/>
+	<iconButton:IconButton icon="@Embed(source='/assets/images/button/delete20.png')"
+						   label="Flyout label for the button"
+						   click="close_clickHandler(event)" visible="{_closeable}"
+						   flyoutDirection="left"/>
+	<!--<s:Image source="/assets/images/button/delete20.png" top="5" right="5" buttonMode="true" click="close_clickHandler(event)" visible="{_closeable}"/>-->
+</s:BorderContainer>

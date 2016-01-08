@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+////////////////////////////////////////////////////////////////////////////////
+//	
+//	Copyright 2014 vamos Labs LLC. All Rights Reserved.
+//
+//	This file is licensed under the vamos Component Library License. 
+//
+//	Only license holders are entitled to use this file subject to the  
+//	conditions of the license. All other uses are expressly forbidden. Visit 
+//	http://www.vamosabs.com to view and purchase a license.
+//
+//	Apache Flex's source code notices are reproduced below.
+//
+// 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//  Licensed to the Apache Software Foundation (ASF) under one or more
+//  contributor license agreements.  See the NOTICE file distributed with
+//  this work for additional information regarding copyright ownership.
+//  The ASF licenses this file to You under the Apache License, Version 2.0
+//  (the "License"); you may not use this file except in compliance with
+//  the License.  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+-->
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	    xmlns:s="library://ns.adobe.com/flex/spark"
+	    xmlns:fb="http://ns.adobe.com/flashbuilder/2009" 
+	    minWidth="35" minHeight="17" 
+	    alpha.disabled="0.5" alpha.inactive="0.5">
+	<!--- leave the min dimensions or will not work correctly -->
+
+	<!-- host component -->
+    <fx:Metadata>
+    	<![CDATA[ [HostComponent("spark.components.HScrollBar")] ]]>
+    </fx:Metadata> 
+    
+	<!-- states -->
+	<s:states>
+        <s:State name="normal" />
+        <s:State name="disabled" />
+        <s:State name="inactive" />
+    </s:states>
+    
+    <s:Button id="track" 
+			  width="54" height="16" 
+			  top="1" right="17" left="17" 
+			  focusEnabled="false" tabEnabled="false"
+              skinClass="cn.superion.main.skins.HScrollBarTrackSkin" />
+
+    <s:Button id="decrementButton" 
+			  width="17" height="16"
+			  top="1" left="0" 
+			  enabled.inactive="false" focusEnabled="false" tabEnabled="false"
+              skinClass="cn.superion.main.skins.ScrollBarLeftButtonSkin" />
+    
+    <s:Button id="incrementButton" 
+			  width="17" height="16"
+			  top="1" right="0"
+			  enabled.inactive="false" focusEnabled="false" tabEnabled="false"
+              skinClass="cn.superion.main.skins.ScrollBarRightButtonSkin" />
+	
+	<s:Button id="thumb" 
+			  top="1" 
+			  height="16" minWidth="15"
+			  visible.inactive="false" 
+			  focusEnabled="false" tabEnabled="false"
+			  skinClass="cn.superion.main.skins.HScrollBarThumbSkin" />
+	
+	<!--- provide 1 px white border on the top for clarity -->
+	<s:Line top="0" right="0" left="0">
+		<s:stroke>
+			<s:SolidColorStroke weight="1" color="#FFFFFF"
+								pixelHinting="true"
+								caps="square"/>
+		</s:stroke>
+	</s:Line>
+	
+</s:Skin>

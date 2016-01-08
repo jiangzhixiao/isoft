@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="420"
+			   height="388"
+			   backgroundColor="0xE2E8E8"
+			   creationComplete="init()"
+			   close="PopUpManager.removePopUp(this)"
+			   xmlns:controls="cn.superion.base.components.controls.*">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.components.controls.SimpleDictWin;
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.SimpleDictWinConfig;
+			import cn.superion.base.config.SysUser;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.base.util.StringUtils;
+			import cn.superion.blood.system.ModBloodTypeDict;
+			import cn.superion.vo.dataDict.CvBloodTypeDict;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.ValidationResultEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.mxml.RemoteObject;
+
+			[Bindable]
+			public var fstrType:String;
+			[Bindable]
+			public var fCdBloodTypeDict:CvBloodTypeDict;
+			public var data:Object;
+			private var _parentWin:ModBloodTypeDict;
+			private var _this:*=this;
+			private var destination:String="bloodTypeDictImpl";
+			private var _hisCodeName:String="";
+			private var _hisCodeName2:String="";
+
+//			public function set hisCodeName(v:String):void{
+//				this._hisCodeName = v;
+//			}
+
+			//初始化弹出页面
+			private function init():void
+			{
+				_parentWin=this.data.parentWin;
+				this.fstrType=this.data.fstrType;
+				if (fstrType == 'add')
+				{
+					this.title="新建";
+					txtTypeCode.text='';
+					txtTypeName.text='';
+					hisCode.txtContent.text='';
+					txtUnits.text='';
+					txtUsefulDay.text='';
+					txtFiveInputCode.text='';
+					txtPhoInputCode.text='';
+					tradePrice.text = "";
+//					hisCode2.txtContent.text = '';
+					txtTypeCode.enabled=true;
+					txtSerialNo.setFocus();
+				}
+				else
+				{
+					this.title="修改";
+					_parentWin=this.data.parentWin;
+					fCdBloodTypeDict=_parentWin.gdBloodTypeDict.selectedItem as CvBloodTypeDict;
+					txtSerialNo.text=fCdBloodTypeDict.serialNo+'';
+					txtTypeCode.text=fCdBloodTypeDict.typeCode;
+					txtTypeName.text=fCdBloodTypeDict.typeName;
+					txtUnits.text=fCdBloodTypeDict.units;
+					hisCode.txtContent.text=fCdBloodTypeDict.hisCode;
+					bloodCompareSign.selected=fCdBloodTypeDict.bloodCompareSign=='1'?true:false;
+//					fCdBloodTypeDict.bloodCompareSig=bloodCompareSign.selected?'1':'0';
+//					hisCode2.txtContent.text = fCdBloodTypeDict.hisCode2;
+					txtUsefulDay.text=fCdBloodTypeDict.usefulDay + '';
+					txtFiveInputCode.text=fCdBloodTypeDict.fiveInputCode;
+					txtPhoInputCode.text=fCdBloodTypeDict.phoInputCode;
+					tradePrice.text = fCdBloodTypeDict.tradePrice?fCdBloodTypeDict.tradePrice.toString():"0";
+					txtTypeCode.enabled=false;
+//					txtTypeName.setFocus();
+					txtSerialNo.setFocus();
+				}
+			}
+
+			//保存
+			private function btSave_clickHandler(e:Event):void
+			{
+				if (!validateAll())
+				{
+					return;
+				}
+				if (fstrType == 'add')
+				{
+					if (!checkTypeCodeUnique())
+					{
+						return;
+					}
+					fCdBloodTypeDict=new CvBloodTypeDict();
+					fCdBloodTypeDict.typeCode=StringUtils.Trim(this.txtTypeCode.text);
+					fCdBloodTypeDict.typeName=StringUtils.Trim(this.txtTypeName.text);
+					fCdBloodTypeDict.units=StringUtils.Trim(txtUnits.text);
+					fCdBloodTypeDict.hisCode=hisCode.txtContent.text;
+					fCdBloodTypeDict.serialNo=int(StringUtils.Trim(txtSerialNo.text));
+					fCdBloodTypeDict.bloodCompareSign=bloodCompareSign.selected?'1':'0';
+//					fCdBloodTypeDict.hisCode2 = hisCode2.txtContent.text;
+					fCdBloodTypeDict.usefulDay=int(StringUtils.Trim(txtUsefulDay.text));
+					fCdBloodTypeDict.phoInputCode=StringUtils.Trim(this.txtPhoInputCode.text);
+					fCdBloodTypeDict.fiveInputCode=StringUtils.Trim(this.txtFiveInputCode.text);
+					//进价、售价
+					fCdBloodTypeDict.tradePrice=fCdBloodTypeDict.retailPrice = Number(StringUtils.Trim(this.tradePrice.text));
+					var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+							if (rev.error == null)
+							{
+								Alert.show("新增成功!", "提示");
+								tradePrice.text='';
+								txtSerialNo.text='';
+								txtTypeCode.text='';
+								txtTypeName.text='';
+								hisCode.txtContent.text='';
+								txtUnits.text='';
+								txtUsefulDay.text='';
+								txtFiveInputCode.text='';
+								txtPhoInputCode.text='';
+								bloodCompareSign.selected=false;
+//								hisCode2.txtContent.text = '';
+								_this.data.rebackcall();
+							}
+							else
+							{
+								Alert.show("新增失败!", "提示");
+							}
+						});
+					remoteObj.save(fCdBloodTypeDict);
+				}
+				else
+				{
+					if (!checkTypeCodeUnique())
+					{
+						return;
+					}
+					//获得父页面中选择项的值	
+					fCdBloodTypeDict.serialNo=int(StringUtils.Trim(txtSerialNo.text));
+					fCdBloodTypeDict.typeCode=StringUtils.Trim(txtTypeCode.text);
+					fCdBloodTypeDict.typeName=StringUtils.Trim(txtTypeName.text);
+					fCdBloodTypeDict.units=StringUtils.Trim(txtUnits.text);
+					fCdBloodTypeDict.hisCode=hisCode.txtContent.text;
+					fCdBloodTypeDict.bloodCompareSign=bloodCompareSign.selected?'1':'0';
+//					fCdBloodTypeDict.hisCode2 = hisCode2.txtContent.text;
+					fCdBloodTypeDict.usefulDay=int(StringUtils.Trim(txtUsefulDay.text));
+					fCdBloodTypeDict.phoInputCode=StringUtils.Trim(txtPhoInputCode.text);
+					fCdBloodTypeDict.fiveInputCode=StringUtils.Trim(txtFiveInputCode.text);
+					//进价、售价
+					fCdBloodTypeDict.tradePrice=fCdBloodTypeDict.retailPrice = Number(StringUtils.Trim(this.tradePrice.text));
+					var remoteObj2:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+							if (rev.error == null)
+							{
+								Alert.show("修改成功!", "提示");
+								_this.data.rebackcall();
+							}
+							else
+							{
+								Alert.show("修改失败!", "提示");
+							}
+						});
+					remoteObj2.save(fCdBloodTypeDict);
+				}
+			}
+
+			//生成拼音，五笔码
+			private function changeTypeNameHandler(e:Event):void
+			{
+				if (txtTypeName.text == "")
+				{
+					txtPhoInputCode.text="";
+					txtFiveInputCode.text="";
+					return;
+				}
+				var ro:RemoteObject=RemoteUtil.getRemoteObject('baseCommonDictImpl', function(rev:Object):void
+					{
+						if (rev.data && rev.data.length > 0)
+						{
+							txtPhoInputCode.text=rev.data[0]
+							txtFiveInputCode.text=rev.data[1]
+						}
+					})
+				ro.findInputCode(txtTypeName.text)
+			}
+
+			//判断新增 编码的唯一性
+			private function checkTypeCodeUnique():Boolean
+			{
+				var arrData:ArrayCollection=_parentWin.gdBloodTypeDict.dataProvider as ArrayCollection;
+
+				if (fstrType == 'add')
+				{
+					if (arrData != null || arrData.length > 0 || arrData.getItemAt(0) != null)
+					{
+						for (var i:int=0; i < arrData.length; i++)
+						{
+							if(txtSerialNo.text == arrData[i].serialNo)
+							{
+								txtSerialNo.setFocus();
+								Alert.show("该排列序号已存在，请重新输入！", "提示信息");
+								return false;
+							}
+							if (txtTypeCode.text == arrData[i].itemCode)
+							{
+								txtTypeCode.setFocus();
+								Alert.show("该成份编号已存在，请重新输入！", "提示信息");
+								return false;
+							}
+						}
+					}
+				}
+//				else
+//				{
+////					var arrData:ArrayCollection=_parentWin.gdBloodTypeDict.dataProvider as ArrayCollection;
+//					if (arrData != null || arrData.length > 0 || arrData.getItemAt(0) != null)
+//					{
+//						for (var j:int=0; j < arrData.length; j++)
+//						{
+//							if(txtSerialNo.text == arrData[j].serialNo)
+//							{
+//								txtSerialNo.setFocus();
+//								Alert.show("该排列序号已存在，请重新输入！", "提示信息");
+//								return false;
+//							}
+//						}
+//					}
+//				}
+				return true;
+			}
+
+			//验证所有必填项
+			private function validateAll():Boolean
+			{
+				if (StringUtils.Trim(this.txtTypeCode.text) == '')
+				{
+					this.txtTypeCode.setFocus();
+					Alert.show("成分编号不能为空！", "提示信息");
+					return false;
+				}
+				if (StringUtils.Trim(this.txtTypeName.text) == '')
+				{
+					this.txtTypeName.setFocus();
+					Alert.show("参考名称不能为空！", "提示信息");
+					return false;
+				}
+				if(this.hisCode.txtContent.text == '')
+				{
+					Alert.show("对照编码不能为空", "提示信息");	
+					return false;
+				}
+				return true;
+			}
+
+			// 回车事件
+			private function toNextControl(e:KeyboardEvent, fcontrolNext:*):void
+			{
+				if (e.keyCode == Keyboard.ENTER)
+				{
+					fcontrolNext.setFocus()
+				}
+			}
+
+			//价格输入框移出事件
+			private function priceFix2(con:*):void
+			{
+				if (con.text != "" && con.text != "")
+				{
+					con.text=Number(con.text).toFixed(2);
+				}
+
+			}
+
+			//关闭窗口
+			private function winClose():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function hisCode_clickHandler(event:MouseEvent):void
+			{
+				var des:String="hisBaseDictImpl";
+				var ro:RemoteObject=RemoteUtil.getRemoteObject(des, function(rev:Object):void
+					{
+						var ss:Object=rev.data;
+					});
+				ro.findBaseData();
+			}
+
+			/**
+			 * 自动完成表格回调
+			 * */
+			private function showItemDict(rev:Object):void
+			{
+				hisCode.text=rev.itemCode;
+			}
+
+
+			protected function hisCode_queryIconClickHandler(callback:Function):void
+			{
+				var x:int=0;
+				var y:int=this.parentApplication.screen.height - 345;
+				var config:SimpleDictWinConfig=new SimpleDictWinConfig();
+				config.destination='hisBaseDictImpl';
+				config.method="findBaseData";
+				config.entityClassName="cn.superion.blood.tianjian.entity.CurrentPriceList";
+				config.serverOrderField="itemCode";
+				config.gridDataFields=['itemCode', 'itemName', 'itemSpec', 'units', 'price'];
+				config.gridHeadTexts=["编码", "名称", "规格", "单位", "价格"];
+				config.gridDataQueryOption=[{label: '名称', field: 'itemName'}, {label: '规格', field: 'itemSpec'}];
+				config.typeName="当前价表";
+				config.widths=[1, 2, 1, 1, 1];
+				config.callback=callback;
+				var win:SimpleDictWin=SimpleDictWin(PopUpManager.createPopUp(DisplayObject(FlexGlobals.topLevelApplication), SimpleDictWin));
+				win.height=340;
+				win.width=726;
+				win.dictWinConfig=config;
+				if (x == -1)
+				{
+					PopUpManager.centerPopUp(win);
+				}
+				else
+				{
+					win.x=x;
+					win.y=y;
+				}
+			}
+
+			private function getHisCode(rev:Object):void
+			{
+				hisCode.text=rev.itemCode;
+				_hisCodeName=rev.itemName;
+				txtTypeName.text = rev.itemName;
+				txtUnits.text=rev.units;
+				tradePrice.text=rev.price;	
+			}
+			private function getHisCode2(rev:Object):void
+			{
+//				hisCode2.text=rev.itemCode;
+			}
+		]]>
+	</fx:Script>
+
+	<s:VGroup x="0"
+			  y="0"
+			  width="100%"
+			  height="100%"
+			  top="0">
+		<s:BorderContainer width="100%"
+						   height="100%"
+						   backgroundColor="0xE2E8E8"
+						   borderColor="#9ABBE6">
+			<s:VGroup width="100%"
+					  height="100%"
+					  left="2"
+					  right="5">
+				<mx:FormItem height="6">
+				</mx:FormItem>
+				<mx:FormItem label="排列序号"
+							 width="100%"
+							 color="#0000FF">
+					<mx:TextInput id="txtSerialNo"
+								  width="100%"
+								  maxChars="2"
+								  keyDown="toNextControl(event,txtTypeCode)"/>
+				</mx:FormItem>
+				<mx:FormItem label="成分编号"
+							 width="100%"
+							 color="#0000FF">
+					<mx:TextInput id="txtTypeCode"
+								  width="100%"
+								  maxChars="2"
+								  restrict="0-9"
+								  keyDown="toNextControl(event,txtTypeName)"/>
+				</mx:FormItem>
+				<mx:FormItem label="成分名称"
+							 width="100%"
+							 color="#0000FF">
+					<mx:TextInput id="txtTypeName"
+								  width="100%"
+								  maxChars="20"
+								  change="changeTypeNameHandler(event)"
+								  keyDown="toNextControl(event,btSave)"/>
+				</mx:FormItem>
+				<mx:FormItem label="对照编码"
+							 width="100%"
+							 color="#0000FF">
+					<!--<controls:AutoCompleteByGridTextInput id="hisCode"
+						 width="123"
+						 destination="hisBaseDictImpl"
+						 method="findBaseData"
+						 baseQueryParameter="{{serverOrderField:'itemCode',
+						 entityClassName:'cn.superion.blood.tianjian.entity.CurrentPriceList'}}"
+						 dataFields="{['itemCode','itemName','spec','units','price']}"
+						 headerTexts="{['编码','名称','规格','单位','价格']}"
+						 widths="{[100,200,50]}"
+						 callback="showItemDict"/>-->
+					<controls:TextInputIcon mouseOver="this.toolTip = this._hisCodeName;"
+											width="100%"
+											id="hisCode"
+											queryIconClick="hisCode_queryIconClickHandler(getHisCode)"/>
+				</mx:FormItem>
+				<mx:FormItem label="单　　位"
+							 width="100%" >
+					<mx:TextInput id="txtUnits"
+								  width="100%"
+								  maxChars="10"
+								  keyDown="toNextControl(event,tradePrice)"/>
+				</mx:FormItem>
+				<mx:FormItem label="单　　价"
+							 width="100%">
+					<mx:TextInput id="tradePrice"
+								  width="100%"
+								  maxChars="10"
+								  keyDown="toNextControl(event,txtUsefulDay)"/>
+				</mx:FormItem>
+				<mx:FormItem label="有 效 期"
+							 width="100%">
+					<mx:TextInput id="txtUsefulDay"
+								  width="100%"
+								  maxChars="10"/>
+				</mx:FormItem>
+				<mx:FormItem label="五 笔 码"
+							 width="100%">
+					<mx:TextInput id="txtFiveInputCode"
+								  width="100%"
+								  maxChars="10"
+								  editable="false"/>
+				</mx:FormItem>
+				<mx:FormItem label="拼 音 码"
+							 width="100%">
+					<mx:TextInput id="txtPhoInputCode"
+								  width="100%"
+								  maxChars="10"
+								  editable="false"/>
+				</mx:FormItem>
+				<mx:FormItem width="100%"
+							 paddingLeft="45">
+					<s:CheckBox id="bloodCompareSign"
+								label="交叉配血标志"
+								width="100%"/>
+				</mx:FormItem>
+			</s:VGroup>
+		</s:BorderContainer>
+		<!-- 操作按钮部分 -->
+		<s:HGroup height="31"
+				  paddingBottom="10"
+				  horizontalAlign="right"
+				  gap="5"
+				  width="100%">
+			<mx:LinkButton id="btSave"
+						   label="保存"
+						   width="86"
+						   height="26"
+						   fontSize="12"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/save20.png')"
+						   click="btSave_clickHandler(event)">
+			</mx:LinkButton>
+			<mx:LinkButton id="btCancel"
+						   label="取消"
+						   width="86"
+						   height="26"
+						   fontSize="12"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/return20.png')"
+						   click="winClose()">
+			</mx:LinkButton>
+			<mx:Spacer width="5"/>
+		</s:HGroup>
+		<mx:Spacer height="1"/>
+	</s:VGroup>
+</s:TitleWindow>

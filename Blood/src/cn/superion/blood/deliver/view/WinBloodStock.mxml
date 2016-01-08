@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	 当前血液库存
+	 author:吴小娟   2011.06.16
+	 checked by
+-->
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="750"
+			   height="348"
+			   backgroundColor="0xE2E8E8"
+			   title="当前血液库存列表"
+			   close="btReturn_clickHandler(null)"
+			   creationComplete="doInit()"
+			   xmlns:controls="cn.superion.base.components.controls.*">
+
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.vo.blood.BloodRdsDetail;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.ListCollectionView;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+
+			public var callback:Function;
+			public var parentWin:BloodPatientApplyAdd;
+			private var _this:*=this;
+
+			private var lary:ArrayCollection=new ArrayCollection();
+
+			/**
+			 * 关闭按钮
+			 * */
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+			/**
+			 * 初始化
+			 * */
+			protected function doInit():void
+			{
+				var para:ParameterObject=new ParameterObject();
+				para.itemsPerPage=15;
+				var lstrTypeCode:String=(parentWin.typeCode.selectedItem || {}).bloodType;
+				lary=parentWin.gridPatientApplyList.dataProvider as ArrayCollection;
+				para.conditions={bloodCode: parentWin.bloodCode.selectedItem.blood, typeCode: lstrTypeCode};
+				pgBloodStock.config(para, 'patientApplyImpl', 'findDetailListInStock', stockCallback, null, true);
+				pgBloodStock.nItemsPerPage.value=15;
+				pgBloodStock.grid.selectedIndex=0
+				this.setFocus();
+				pgBloodStock.grid.setFocus();
+			}
+
+			/**
+			 * 表格自动查询的回调函数，将表格中含有的数据过滤掉
+			 * */
+			private function stockCallback(rev:Object):void
+			{
+				if (rev.data.length > 0)
+				{
+//					for each(var it:Object in rev.data){
+//						if(it.rhSign == '0'){
+//							it.rhSignName = "阳性";
+//						}
+//						if(it.rhSign == '1'){
+//							it.rhSignName = "阴性";
+//						}
+//					}
+					pgBloodStock.grid.dataProvider=filterData(rev.data, lary);
+				}
+			}
+
+			private function filterData(rawData:ArrayCollection, lary:ArrayCollection):ArrayCollection
+			{
+				var newAry:ArrayCollection=new ArrayCollection;
+
+				for each (var item:Object in rawData)
+				{
+					var found:Boolean=false;
+					for each (var item2:Object in lary)
+					{
+						if (item2.productCode == item.productCode)
+						{
+							found=true;
+							break;
+						}
+					}
+					if (!found)
+					{
+						newAry.addItem(item);
+					}
+				}
+				return newAry;
+			}
+
+			/**
+			 * 确认按钮，选中的记录回填到发放明细列表中
+			 * */
+			protected function btConfirm_clickHandler(event:MouseEvent):void
+			{
+				var gridAll:ArrayCollection=pgBloodStock.grid.dataProvider as ArrayCollection;
+				var lselItems:Array=new Array();
+				for each (var cur:BloodRdsDetail in gridAll)
+				{
+					if (cur.isSelected)
+					{
+						lselItems.splice(-1, 0, cur);
+					}
+				}
+				if (lselItems.length == 0)
+				{
+					lselItems=pgBloodStock.grid.selectedItems;
+				}
+
+				if (!lselItems || lselItems.length == 0)
+				{
+					Alert.show('请选择数据', '提示信息');
+					return;
+				}
+				callback(lselItems);
+				//关闭当前血液库存列表
+				PopUpManager.removePopUp(this);
+			}
+
+			/**
+			 * 确定回车事件处理方法
+			 * */
+			protected function btConfirm_keyUpHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER)
+				{
+					btConfirm_clickHandler(null);
+				}
+			}
+
+			/**
+			 * 双击列表事件，选中的记录回填到发放明细列表中
+			 * */
+			protected function pgBloodStock_itemDoubleClickHandler(event:Event):void
+			{
+				btConfirm_clickHandler(null);
+			}
+
+			/**
+			 * keyUp事件，按回车时，选中的记录回填到发放明细列表中
+			 * */
+			protected function pgBloodStock_keyUpHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER)
+				{
+					btConfirm_clickHandler(null);
+				}
+			}
+
+//			//rh阴 的label显示
+//			private function labFun(item:Object, col:DataGridColumn):String
+//			{
+//				if (col.dataField == 'rhSign')
+//				{
+//					if (item.rhSign == '1')
+//					{
+//						return '阴性';
+//					}
+//					if (item.rhSign == '0')
+//					{
+//						return '阳性';
+//					}
+//					return item.rhSign
+//				}
+//				return "";
+//			}
+
+			/**
+			 * 点击全选
+			 * */
+			protected function selectAll_changeHandler():void
+			{
+				for each (var item:Object in pgBloodStock.grid.dataProvider)
+				{
+					item.isSelected=this.selAll.selected;
+					pgBloodStock.grid.invalidateList();
+					ListCollectionView(pgBloodStock.grid.dataProvider).itemUpdated(item, "isSelected");
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:VerticalLayout paddingLeft="10"
+						  paddingRight="10"
+						  paddingTop="10"
+						  paddingBottom="10"/>
+	</s:layout>
+
+	<controls:PageGrid id="pgBloodStock"
+					   hasRowNo="false"
+					   keyUp="pgBloodStock_keyUpHandler(event)"
+					   itemDoubleClick="pgBloodStock_itemDoubleClickHandler(event)">
+		<controls:columns>
+			<mx:DataGridColumn headerText="选择"
+							   dataField="isSelected"
+							   width="50"
+							   textAlign="center"
+							   editable="false">
+				<mx:itemRenderer>
+					<fx:Component>
+						<mx:CheckBox change="isSelected()"
+									 selected="{data.isSelected}"
+									 textAlign="center">
+							<fx:Script>
+								import cn.superion.vo.blood.BloodRdsDetail; 
+								import mx.collections.ArrayCollection;
+								 
+								private function isSelected():void
+								{
+									data.isSelected=this.selected;
+									var flag:Boolean=true;
+									var arr:ArrayCollection=this.parentDocument.grid.dataProvider as ArrayCollection;
+									
+									// 表格中全部被勾选时，勾选按钮也被勾选    hjw 2013.2.21
+									for each (var rds:BloodRdsDetail in arr)
+									{
+										if (rds.isSelected == null || !rds.isSelected)
+										{
+											flag=false;
+											break;
+										}
+									}
+									if(flag)
+									{
+										this.parentDocument.owner.selAll.selected=true;
+									}else
+									{
+										this.parentDocument.owner.selAll.selected=false;
+									}
+								}
+							</fx:Script>
+						</mx:CheckBox>
+					</fx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="产品码"
+							   width="150"
+							   dataField="productCode"/>
+			<mx:DataGridColumn headerText="血型"
+							   width="70"
+							   dataField="bloodName"/>
+			<mx:DataGridColumn headerText="成分"
+							   width="200"
+							   dataField="typeName"/>
+			<mx:DataGridColumn headerText="RH"
+							   width="80"
+							   dataField="rhSignName2"/>
+			<mx:DataGridColumn width="0"
+							   visible="false"
+							   dataField="rhSign"/>
+			<mx:DataGridColumn headerText="规格"
+							   width="120"
+							   dataField="spec"/>
+			<mx:DataGridColumn headerText="单位"
+							   dataField="assiUnits"/>
+		</controls:columns>
+	</controls:PageGrid>
+	<s:HGroup width="100%"
+			  height="40"
+			  horizontalAlign="right"
+			  verticalAlign="middle"
+			  gap="5">
+		<s:HGroup width="100%"
+				  height="100%"
+				  verticalAlign="middle"
+				  paddingLeft="6">
+			<s:CheckBox id="selAll"
+						label="全选"
+						height="26" 
+						change="selectAll_changeHandler()"/>
+		</s:HGroup>
+		<mx:LinkButton id="btConfirm"
+					   icon="@Embed('//assets/images/button/confirm20.png')"
+					   label=" 确 认 "
+					   skin="mx.skins.halo.ButtonSkin"
+					   height="26"
+					   keyUp="btConfirm_keyUpHandler(event)"
+					   click="btConfirm_clickHandler(event)"/>
+		<mx:LinkButton id="btReturn"
+					   height="26"
+					   label=" 关 闭 "
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/return20.png')"
+					   click="btReturn_clickHandler(event)"/>
+	</s:HGroup>
+</s:TitleWindow>

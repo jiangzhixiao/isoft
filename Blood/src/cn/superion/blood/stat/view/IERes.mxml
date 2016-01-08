@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TextInput xmlns:fx="http://ns.adobe.com/mxml/2009"
+			  xmlns:s="library://ns.adobe.com/flex/spark"
+			  change="textinput1_changeHandler(event)"
+			  creationComplete="textinput1_creationCompleteHandler(event)"
+			  xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.RemoteUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.rpc.remoting.RemoteObject;
+			import mx.utils.ObjectUtil;
+			
+			protected function textinput1_changeHandler(event:Event):void
+			{
+				//立即更新emr_in_current_pats和inp_pats_visit
+				data.res = this.text;
+				data.isModify = true;
+//				var ro2:RemoteObject=RemoteUtil.getRemoteObject(ModVisitLog.DESTINATION, function(rev:Object):void
+//				{
+//					
+//				});
+//				ro2.updateEmrOutVisit(data.autoVisitId,"grade",data.grade);
+				
+			}
+
+			protected function textinput1_creationCompleteHandler(event:FlexEvent):void
+			{
+				if(!listData)return;
+				this.text = data.res;
+			}
+			
+			protected function combobox1_keyDownHandler(event:KeyboardEvent):void
+			{
+			}
+			
+		]]>
+	</fx:Script>
+
+</mx:TextInput>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pane:Pane xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:pane="vamos.components.pane.*" title="{paneTitle}"
+		 creationComplete="pane1_creationCompleteHandler(event)"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%">
+	<fx:Script>
+		<![CDATA[
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.events.ModuleEvent;
+			[Bindable]
+			public var url:String = "";
+			public var menuNo:String = "";
+			[Bindable]
+			public var paneTitle:String = "";
+			
+			private function onLoadingModule(event:ModuleEvent):void{
+				parentApplication.mainWin.loadingPane.floatPane(DisplayObject(FlexGlobals.topLevelApplication), true, true, false, null, moduleFactory);
+			}
+			private function onLoadErrorModule(event:ModuleEvent):void{
+				parentApplication.mainWin.loadingPane.closeFloatedPane();
+			}
+			private function onLoadedModule(event:ModuleEvent):void{
+				parentApplication.mainWin.loadingPane.closeFloatedPane();
+			}
+			protected function pane1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				moduleLoader.addEventListener(ModuleEvent.PROGRESS,onLoadingModule);
+				moduleLoader.addEventListener(ModuleEvent.READY,onLoadedModule);
+				moduleLoader.addEventListener(ModuleEvent.ERROR,onLoadErrorModule);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:ModuleLoader width="100%" height="100%" id="moduleLoader" url="{url}"/>
+</pane:Pane>

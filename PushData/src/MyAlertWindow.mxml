@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AlertWindow xmlns="com.everythingflex.air.components.*" 
+			 title="预警"
+			 xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			 xmlns:s="library://ns.adobe.com/flex/spark" 
+			 xmlns:mx="library://ns.adobe.com/flex/mx"
+			 width="350" height="250" xmlns:nestedtreedatagrid="com.flexicious.nestedtreedatagrid.*">
+	<fx:Script>
+		<![CDATA[
+			import com.flexicious.nestedtreedatagrid.events.FlexDataGridEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			[Embed(source="/assets/mail.png")]
+			private var alert:Class;
+			
+			[Embed(source="/assets/mail_new.png")]
+			private var info:Class;
+			
+			[Bindable]
+			public var alertMessage:String;
+			[Bindable]
+			public var _dataProvider:ArrayCollection;
+			public var _parent:*;
+			[Bindable]
+			public var alertType:String;
+			
+			private function setImage(s:String):Class{
+				if(s == NotificationType.CRITICAL) return alert;
+				return info;
+			}
+			
+			protected function gdNotice_itemClickHandler(event:FlexDataGridEvent):void
+			{
+				// TODO Auto-generated method stub
+				alertMessage = event.item.WARN_CONTENT;
+				var warnId:String = event.item.WARN_ID;
+				var ro:RemoteObject = new RemoteObject();
+				ro.destination = PushData.DESTINATION_2;
+				ro.showBusyCursor = true;
+				ro.endpoint = PushData.END_POINT;
+				ro.addEventListener(ResultEvent.RESULT,resultHandler);
+				ro.addEventListener(FaultEvent.FAULT,faultHandler);
+				ro.updateWarnRead(warnId);
+			}
+			protected function faultHandler(event:FaultEvent):void
+			{
+				Alert.show(event.fault.faultString,'提示');
+			}
+			protected function resultHandler(event:ResultEvent):void
+			{
+//				parentDocument.width=850;
+//				parentDocument.height=700;
+//				parentDocument.mainPane._dataProvider = event.result;
+			}
+			
+			protected function gdNotice_iconClickHandler(event:FlexDataGridEvent):void
+			{
+				// TODO Auto-generated method stub
+				trace("icon click");
+//				this.ownner.mainPane.visible = true;
+				_parent.mainPane.includeInLayout = true;
+				_parent.mainPane._dataProvider = _dataProvider;
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<s:HGroup width="100%" height="100%">
+		<nestedtreedatagrid:FlexDataGrid width="60%" id="gdNotice" height="100%" iconClick="gdNotice_iconClickHandler(event)"
+										 selectionMode="singleRow" dataProvider="{_dataProvider}"
+										 rowHeight="28" itemClick="gdNotice_itemClickHandler(event)"
+										 >
+			<nestedtreedatagrid:columns>
+				<nestedtreedatagrid:FlexDataGridColumn headerText="预警内容" headerAlign="center" dataField="WARN_CONTENT" 
+													   textAlign="left" wordWrap="true" columnWidthMode="fitToContent"
+													   icon="@Embed('/assets/16x16/columnSearch.png')"
+													   enableIcon="true"  showIconOnCellHover="true" 
+													   iconHandCursor="true"  iconRight="3" 
+													   />
+			</nestedtreedatagrid:columns>
+		</nestedtreedatagrid:FlexDataGrid>
+		
+		<mx:Text  text="{alertMessage}" fontWeight="bold" verticalCenter="0"
+				 width="40%" textAlign="center"/>
+	</s:HGroup>
+	<!--<mx:Image source="{setImage(alertType)}" verticalCenter="0" x="5"/>-->
+</AlertWindow>

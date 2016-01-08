@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 creationComplete="vgroup1_creationCompleteHandler(event)"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:textInput="vamos.components.textInput.*" 
+		 xmlns:iconButton="vamos.components.iconButton.*" 
+		 width="100%" height="100%" horizontalAlign="center" 
+		 paddingBottom="8" paddingTop="10" verticalAlign="middle" 
+		 gap="10"
+		 >
+	<fx:Declarations>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import cn.vamos.base.RemoteUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.messaging.ChannelSet;
+			import mx.messaging.Consumer;
+			import mx.messaging.Producer;
+			import mx.messaging.channels.StreamingAMFChannel;
+			import mx.messaging.config.ServerConfig;
+			import mx.messaging.events.MessageAckEvent;
+			import mx.messaging.events.MessageEvent;
+			import mx.messaging.messages.AsyncMessage;
+			import mx.messaging.messages.IMessage;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			import mx.utils.ArrayUtil;
+			[Bindable] 
+			public var result:ArrayCollection; 
+			import spark.components.Alert;
+			[Embed(source='/assets/16x16/login-person.png')]
+			[Bindable]
+			private var loginPerson:Class;
+			
+			[Embed(source='/assets/16x16/login-psd.png')]
+			[Bindable]
+			private var loginPassword:Class;
+			
+			[Embed(source='/assets/16x16/login.png')]
+			[Bindable]
+			private var login:Class;
+			
+			[Embed(source='/assets/16x16/logout.png')]
+			[Bindable]
+			private var loginOut:Class;
+			private var ro:RemoteObject = null;
+			public var _this:* = null;
+			public var mainPane:MainPane = null;
+			protected function vgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				userCode.setFocus();
+//				initRemote();
+				_this = parentDocument;
+				readLocalUserInfo();
+//				var channelSet:ChannelSet = ServerConfig.getChannelSet(ro.destination);
+				
+			}
+			
+			protected function exitBt_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				parentApplication.close();
+			}
+			
+			protected function autoLogin_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(autoLogin.selected){
+					autoPwd.selected = true;
+				}
+			}
+			protected function loginBt_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(userCode.text==''||password.text==''){
+					Alert.show('用户名，密码必填','提示');
+					return;
+				}
+				ro = RemoteUtil.getRemoteObject(PushData.DESTINATION_1,function(rev:Object):void{
+					resultHandler(rev);
+				});
+				ro.findSysUser(userCode.text,password.text);
+			}
+			
+			private function readLocalUserInfo():void{
+				if(parentDocument.shareObj.data.isAutoPwd){
+					userCode.text = parentDocument.shareObj.data.userCode;
+					password.text = parentDocument.shareObj.data.password;
+					autoPwd.selected = parentDocument.shareObj.data.isAutoPwd;
+					autoLogin.selected = parentDocument.shareObj.data.isAutoLogin;
+					
+				}
+				if(parentDocument.shareObj.data.isAutoLogin){
+					loginBt_clickHandler(null)
+				}
+				
+				
+			}
+			
+			protected function resultHandler2(rev:Object):void
+			{
+				parentDocument.width=850;
+				parentDocument.height=700;
+				mainPane._dataProvider = rev as ArrayCollection;
+			}
+			
+			private function initProducer(userCode:String):Producer{
+				var producer:Producer = new Producer();
+				producer.destination = "USER_"+userCode;
+				producer.addEventListener(MessageAckEvent.ACKNOWLEDGE,ack);
+				return producer;
+				 
+			}
+			
+			private function initConsumer(userCode:String):Consumer{
+				var consumer:Consumer = new Consumer();
+				consumer.destination ="USER_"+userCode;
+				consumer.addEventListener(MessageEvent.MESSAGE,messageHandler);
+				return consumer;
+			}
+			
+			
+			private function createMainPane():MainPane{
+				var pane:MainPane = new MainPane();
+				pane.percentWidth = 100;
+				pane.percentHeight = 100;
+				return pane;
+			}
+			//登陆成功后
+			protected function resultHandler(rev:Object):void
+			{
+				//更新ShareObject中的用户信息
+				//创建主面板
+				mainPane = createMainPane();
+				parentApplication.addElement(mainPane);
+				parentApplication.width = 850;
+				parentApplication.height = 700;
+				var userCode:String = rev.userCode;
+				var password:String = rev.password;
+				var isAutoLogin:Boolean = autoLogin.selected;
+				var isAutoPwd:Boolean = autoPwd.selected;
+				updateLocalUserInfo(userCode,password,isAutoLogin,isAutoPwd);
+				
+				//订阅远程目标
+				var msg:AsyncMessage = new AsyncMessage();
+				msg.headers = new Array();
+				msg.body = "New";//"New";
+				var channelSet:ChannelSet = new ChannelSet();
+				var streamingAmf:StreamingAMFChannel = new StreamingAMFChannel();
+				streamingAmf.url = PushData.CHANNEL_SET;
+				channelSet.addChannel(streamingAmf);
+				var producer:Producer = initProducer(userCode);
+				var consumer:Consumer = initConsumer(userCode);
+				producer.channelSet = channelSet;
+				consumer.channelSet = channelSet;
+				producer.send(msg);
+				consumer.subscribe();
+				parentDocument.loginPane.includeInLayout = parentDocument.loginPane.visible = false;
+				
+			}
+			private function updateLocalUserInfo(userCode:String,password:String,isAutoLogin:Boolean,isAutoPwd:Boolean):void{
+				parentDocument.shareObj.data.userCode = userCode;
+				parentDocument.shareObj.data.password = password;
+				parentDocument.shareObj.data.isAutoLogin = isAutoLogin;
+				parentDocument.shareObj.data.isAutoPwd = isAutoPwd;
+				
+				
+			}
+			private function ack(event:MessageAckEvent):void {
+				result = event.message.body as ArrayCollection;
+				
+				trace("成功订阅！client id--"+event.message.clientId+"messageId"+event.messageId);
+				//chart.source =generateURL(result.toArray());
+				//txt.text = result[0];
+				
+			}
+			
+			private function filterResult(newResult:ArrayCollection,result:ArrayCollection):ArrayCollection{
+				var code:String = userCode.text;
+				for each (var item:Object in result) 
+				{
+					if(item.USER_CODE == code){
+						newResult.addItem(item);
+					}
+				}
+				
+				return newResult;
+			}
+			private function messageHandler(event:MessageEvent):void { 
+				result = event.message.body as ArrayCollection;
+				//处理推送的数据
+//				var newResult:ArrayCollection = new ArrayCollection;
+				if(!result || result.length == 0 )return;
+//				newResult = filterResult(newResult,result);
+				trace("messageHandler 方法中：client id--"+event.message.clientId+"messageId"+event.message.messageId);
+				var a:MyAlertWindow = new MyAlertWindow();
+				a._parent = _this;
+				a.alertMessage = "网站发出预警，请核查！";
+				a._dataProvider = result;
+				a.alertType = NotificationType.INFORMATIONAL;
+				a.delayTime = Number(PushData.ALERTWIN_DELAY);
+				a.notify = false;
+				a.open();
+				//
+			}
+			protected function faultHandler(event:FaultEvent):void
+			{
+				Alert.show(event.fault.faultString,'提示');
+			}
+		]]>
+	</fx:Script>
+	<s:Group width="330" height="50">
+		<s:Rect top="0" right="0" bottom="0" left="0">
+			<s:fill>
+				<s:SolidColor color="Black" />
+			</s:fill>
+		</s:Rect>
+		<s:HGroup width="100%" height="100%"
+				  gap="0" horizontalAlign="center"
+				  verticalAlign="middle">
+			<s:Label text="网监平台提醒工具" color="White"
+					 fontSize="25" fontWeight="bold" textAlign="justify" fontFamily="仿宋"
+					 />
+		</s:HGroup>
+		
+	</s:Group>
+	
+	<s:Spacer height="6"/>
+	<textInput:TextInput id="userCode"
+						 width="200" height="30"
+						 prompt="用户名"
+						 restrict="a-zA-Z0-9"
+						 focusSkin="{null}"
+						 skinClass="cn.vamos.main.skins.TextInputSkin"
+						 iconClass="{loginPerson}"
+						 fontSize="15"/>
+	<textInput:TextInput id="password"
+						 width="200" height="30"
+						 prompt="密　码"
+						 restrict="a-zA-Z0-9"
+						 focusSkin="{null}"
+						 skinClass="cn.vamos.main.skins.TextInputSkin"
+						 iconClass="{loginPassword}"
+						 displayAsPassword="true"
+						 enter="if(password.text.length ==0)return;loginBt.setFocus();"
+						 fontSize="15"/>
+	<s:HGroup width="200" verticalAlign="middle" horizontalAlign="center" paddingLeft="0" paddingRight="0">
+		<s:CheckBox id="autoPwd" label="记住密码" skinClass="vamos.themes.stockholm.skins.CheckBoxSkin"/>
+		<s:CheckBox id="autoLogin" click="autoLogin_clickHandler(event)" label="自动登陆" skinClass="vamos.themes.stockholm.skins.CheckBoxSkin"/>
+	</s:HGroup>
+	<s:HGroup  fontSize="15" >
+		<iconButton:IconButton  icon="{login}" skinClass="cn.vamos.main.skins.IconButtonWhiteSkin"
+								id="loginBt" width="50"  label="登入系统" fontSize="15"
+								flyoutDirection="below" 
+								click="loginBt_clickHandler(event)"
+								flyoutBackgroundColor="#000000"
+								flyoutBackgroundAlpha="0.7" flyoutColor="white"/>
+		<s:Spacer width="30"/>
+		<iconButton:IconButton icon="{loginOut}" skinClass="cn.vamos.main.skins.IconButtonWhiteSkin"
+							   click="exitBt_clickHandler(event)"
+							   id="exitBt" width="50" label="关闭系统" flyoutDirection="below"
+							   flyoutBackgroundColor="#000000" fontSize="15"
+							   flyoutBackgroundAlpha="0.8" flyoutColor="white"
+							   />
+	</s:HGroup>
+</s:VGroup>

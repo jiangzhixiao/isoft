@@ -1,0 +1,53 @@
+<s:NavigatorContent xmlns:fx="http://ns.adobe.com/mxml/2009"
+				 xmlns:s="library://ns.adobe.com/flex/spark" width="100%" height="100%"
+					xmlns:extendedchart="cn.superion.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.flexicious.components.tinycharts.valueobjects.Series;
+			import mx.collections.ArrayCollection;
+			use namespace mx_internal;
+			
+			
+			[Bindable]
+			public var TICKER:ArrayCollection = new ArrayCollection([
+				{date:"1-Aug-05",open:42.57,high:43.08,low:42.08,close:42.75,additionalField1:42.89,additionalField2:43.04},
+				{date:"2-Aug-05",open:42.89,high:43.5,low:42.61,close:43.19,additionalField1:42.89,additionalField2:43.04},
+				{date:"3-Aug-05",open:43.19,high:43.31,low:42.77,close:43.22,additionalField1:42.89,additionalField2:43.04},
+				{date:"4-Aug-05",open:42.89,high:43,low:42.29,close:42.71,additionalField1:42.89,additionalField2:43.04},
+				{date:"5-Aug-05",open:42.49,high:43.36,low:42.02,close:42.99,additionalField1:42.89,additionalField2:43.04},
+				{date:"8-Aug-05",open:43,high:43.25,low:42.61,close:42.65,additionalField1:42.89,additionalField2:43.04},
+				{date:"9-Aug-05",open:42.93,high:43.89,low:42.91,close:43.82,additionalField1:42.89,additionalField2:43.04},
+				{date:"10-Aug-05",open:44,high:44.39,low:43.31,close:43.38,additionalField1:42.89,additionalField2:43.04},
+				{date:"11-Aug-05",open:43.39,high:44.12,low:43.25,close:44,additionalField1:42.89,additionalField2:43.04},
+				{date:"12-Aug-05",open:43.46,high:46.22,low:43.36,close:46.1,additionalField1:42.89,additionalField2:43.04}
+			]);
+			[Bindable()]
+			public var axisColor:uint=0xD5DEDD;
+			public function getMinMaxSum(series:Series):Array{
+				return [40,48,0,0.5]
+			}
+			
+		]]>
+	</fx:Script>
+ 		<extendedchart:ExtendedHLOCChart width="100%" height="100%" dataProvider="{TICKER}" id="hlocChart"
+						  creationComplete="hlocChart.verticalAxis.tickLabelPrecision=2;" verticalAxisWidth="50"
+						  skinClass="com.flexicious.skins.charts.HLOCChartSkin">
+			<extendedchart:series>
+				<extendedchart:ExtendedHLOCSeries closeField="close" displayName="TICKER" highField="high"
+										 minMaxSumIntervalFunction="getMinMaxSum"			 lowField="low" openField="open" xField="date"
+										 additionalField1="additionalField1" additionalField2="additionalField2"
+										 
+										 openLabel="Value for 50% data"
+										 closeLabel="Value for 55% data"
+										 highLabel="Maximum Value"
+										 lowLabel="Minimum Value"
+										 additionalField1Label="Average Value"
+										 additionalField2Label="Value for 95% Value"
+										 />
+			</extendedchart:series>
+		</extendedchart:ExtendedHLOCChart>
+ 	
+</s:NavigatorContent >

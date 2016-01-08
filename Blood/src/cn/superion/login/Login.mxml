@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="500" cornerRadius="18"
+				   height="300" borderWeight="2" borderColor="Black"
+				   xmlns:autoComplete="vamos.components.autoComplete.*"
+				   borderVisible="true"
+				   xmlns:login="cn.superion.login.*"
+				   creationComplete="init()" xmlns:textInput="vamos.components.textInput.*" 
+				   xmlns:iconButton="vamos.components.iconButton.*">
+	
+	<fx:Script>
+		<![CDATA[
+        import cn.superion.base.AppInfo;
+        import cn.superion.base.config.BaseDict;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.dataDict.DictDataProvider;
+        import cn.superion.main.constant.Constant;
+        import cn.superion.main.view.TabPane;
+        import cn.superion.vo.system.SysRole;
+        import cn.superion.vo.system.SysRoleData;
+			import cn.superion.vo.system.SysUser;
+
+			import com.adobe.net.DynamicURLLoader;
+
+        import mx.collections.ArrayCollection;
+
+        import mx.collections.ArrayCollection;
+
+		import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.BrowserManager;
+			import mx.managers.BrowserManager;
+			import mx.managers.IBrowserManager;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.URLUtil;
+
+			import spark.components.Application;
+
+			import spark.components.Application;
+
+			import spark.components.TitleWindow;
+			import spark.modules.ModuleLoader;
+
+			import vamos.components.pane.Pane;
+
+			private var currentWin:Login;
+
+			//重新注册客户端对应的服务端类
+			registerClassAlias("cn.superion.system.entity.SysRoleData", cn.superion.vo.system.SysRoleData);
+			[Embed(source='/assets/images/16x16/login-person.png')]
+			[Bindable]
+			private var loginPerson:Class;
+
+			[Embed(source='/assets/images/16x16/login-psd.png')]
+			[Bindable]
+			private var loginPassword:Class;
+
+			[Embed(source='/assets/images/16x16/login-unit.png')]
+			[Bindable]
+			private var loginUnit:Class;
+
+			[Embed(source='/assets/images/16x16/login-role.png')]
+			[Bindable]
+			private var loginRole:Class;
+
+			[Embed(source='/assets/images/16x16/login.png')]
+			[Bindable]
+			private var login:Class;
+
+			[Embed(source='/assets/images/16x16/logout.png')]
+			[Bindable]
+			private var loginOut:Class;
+			//初始当前窗口
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+//				if(ExternalInterface.available){ExternalInterface.call("setTitle", AppInfo.APP_NAME);}
+				if(ExternalInterface.available){ExternalInterface.call("setFlexFocus");}
+//				parentApplication.progressDisplay.close();
+				currentWin=this;
+
+				//var unitsArray:Array=[{unitsName: '--请选择单位--', unitsCode: ''}];
+				this.userCode.setFocus();
+
+				//加载当前基础数据字典
+				//DictDataProvider.init();
+				//判断是否开发模式
+				//				if (AppInfo.APP_MODE)
+				//				{
+				////					this.userCode.text="admin";
+				////					this.password.text="1";
+				//					this.checkCode.text=this.vcheckCode.text;
+				//				}
+			}
+
+
+			protected function exitBt_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				ExternalInterface.call('closeIE');
+			}
+
+			protected function loginBt_clickHandler(event:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (this.password.text == '')
+				{
+					this.password.setFocus();
+					return;
+				}
+				//验证登录
+				submitLogin();
+			}
+
+			//用户登录
+			private function submitLogin():void
+			{
+				var inputCode:String;
+				if (this.inputTypeCode.selectedValue == '拼音码')
+				{
+					inputCode='PHO_INPUT';
+				}
+				else
+				{
+					inputCode='FIVE_INPUT';
+				}
+				var ro:RemoteObject=RemoteUtil.getRemoteObject(Constant.DES_LOGIN,fillLogin);
+				var params:Object = {"userCode":this.userCode.text,"password":this.password.text,"application":"601","roleCode":rolesDdlb.selectedItem.roleCode};
+				ro.login(params);
+				ExternalInterface.call("setTitle", AppInfo.APP_NAME)
+			}
+
+			private function fillLogin(user:SysUser):void
+			{
+				//登录成功后，进行客户端数据处�gm 理
+                //重新过滤user
+				AppInfo.sysUser=user;
+				PopUpManager.removePopUp(currentWin);
+				parentApplication.mainWin.visible=true;
+				//显示加载后台数据进度条
+				parentApplication.progressDisplay.label = "数据加载中...";
+				parentApplication.progressDisplay.delayBeforeFloat = 0;
+				parentApplication.progressDisplay.show(this, true, moduleFactory);
+				//
+				parentApplication.logo.visible = true;
+				parentApplication.headerButtonWrapper.visible = true;
+				parentApplication.mainWin.currentAreaTxt.text=AppInfo.sysUser.userName;
+//				parentApplication.timer.start();
+				var msgWin:MsgWin = new MsgWin();
+				PopUpManager.addPopUp(msgWin,this,false);
+				msgWin.y = parentApplication.height - msgWin.height -20;
+				msgWin.x = parentApplication.width - msgWin.x-480;
+				//				msgWin.visible = false;
+				//加载高级字典数据
+//				DictDataProvider.initAdvance();
+				parentApplication.mainWin.tpFirstPage.url="cn/superion/main/ModFirstPage.swf"
+			}
+
+
+			//用户编号失去焦点时的情况
+			protected function userCode_focusOutHandler(event:FocusEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (this.userCode.text == "" || rolesDdlb.selectedItem)
+					return;
+//				var app:Application = Application (parentApplication);
+//				var url:String = app.url;
+//				trace(url);
+				var params:Object = {"userCode":this.userCode.text,"password":this.password.text,"application":"601"}
+				var ro:RemoteObject=RemoteUtil.getRemoteObject(Constant.DES_LOGIN, fillUnitsRoles);
+				ro.login(params);
+			}
+
+			//判断用户，并填充单位和角色
+			private function fillUnitsRoles(user:SysUser):void
+			{
+				if (user)
+				{
+					rolesDdlb.dataProvider =user.roles;
+
+				}
+			}
+
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					ctrl.setFocus();
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Declarations>
+		<s:RadioButtonGroup id="inputTypeCode"/>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup id="loginFrom" width="100%" height="100%" horizontalAlign="center" paddingBottom="8" paddingTop="10" verticalAlign="middle" gap="10"
+			 >
+		
+			<s:Group width="330" height="50">
+				<s:Rect top="0" right="0" bottom="0" left="0">
+					<s:fill>
+						<s:SolidColor color="Black" />
+					</s:fill>
+				</s:Rect>
+				<s:HGroup width="100%" height="100%"
+						  gap="0" horizontalAlign="center"
+						  verticalAlign="middle">
+					<s:Label text="血 库 管 理 系 统" color="White"
+							 fontSize="25" fontWeight="bold" textAlign="justify" fontFamily="仿宋"
+							 />
+				</s:HGroup>
+				
+			</s:Group>
+		
+		<s:Spacer height="6"/>
+			<textInput:TextInput id="userCode"
+						 width="200" height="30"
+						 prompt="用户名"
+						 focusSkin="{null}"
+						 skinClass="cn.superion.main.skins.TextInputSkin"
+						 iconClass="{loginPerson}"
+						 focusOut="userCode_focusOutHandler(event)"
+						 keyUp="keyUpCtrl(event,password)"
+						 fontSize="15"/>
+			<textInput:TextInput id="password"
+						 width="200" height="30"
+						 prompt="密　码"
+						 focusSkin="{null}"
+						 skinClass="cn.superion.main.skins.TextInputSkin"
+						 iconClass="{loginPassword}"
+						 displayAsPassword="true"
+						 enter="if(password.text.length ==0)return;loginBt.setFocus();"
+						 fontSize="15"/>
+			<!--	<autoComplete:AutoComplete id="unitsDdlb"
+										   width="200" height="30"
+										   iconClass="{loginUnit}"
+										   emptySetMessage="请选择单位"
+										   horizontalCenter="0" verticalCenter="0"
+										   labelField="unitsName"
+										   keyUp="keyUpCtrl(event,rolesDdlb)"
+										   requireSelection="false"/>-->
+				<autoComplete:AutoComplete id="rolesDdlb"
+										   width="200" height="30"
+										   iconClass="{loginRole}"
+										   emptySetMessage="请选择角色"
+										   horizontalCenter="0" verticalCenter="0"
+										   labelField="roleName"
+										   keyUp="keyUpCtrl(event,rolesDdlb)"
+										   requireSelection="true"/>
+		<s:HGroup  fontSize="15" >
+			<iconButton:IconButton  icon="{login}" skinClass="cn.superion.main.skins.IconButtonWhiteSkin"
+					   id="loginBt" width="50"  label="登入系统" fontSize="15"
+					   click="loginBt_clickHandler(event)" flyoutDirection="below" 
+					   flyoutBackgroundColor="#000000"
+					   flyoutBackgroundAlpha="0.7" flyoutColor="white"
+					   keyUp="loginBt_clickHandler(event)"/>
+			<s:Spacer width="30"/>
+			<iconButton:IconButton icon="{loginOut}" skinClass="cn.superion.main.skins.IconButtonWhiteSkin"
+					   id="exitBt" width="50" label="关闭系统" flyoutDirection="below"
+					   flyoutBackgroundColor="#000000" fontSize="15"
+					   flyoutBackgroundAlpha="0.8" flyoutColor="white"
+				       click="exitBt_clickHandler(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+	<!--<iconButton:IconButton 
+		x="524" y="288" id="loginBt2"
+						   label="登入系统"
+						   flyoutDirection="left"/>-->
+	<!--<iconButton:IconButton x="598" y="288" id="exitBt"
+						   label="关闭系统"  width="120" height="50"
+						   icon="@Embed(source='/assets/images/16x16/pdf.png')"
+						   flyoutDirection="right"/>-->
+</s:BorderContainer>

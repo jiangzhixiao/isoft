@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   close="titlewindow1_closeHandler(event)"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   backgroundColor="0xE2E8E8"
+			   width="1000"
+			   height="550"
+			   title="病人输血发放"
+			   xmlns:controls="cn.superion.base.components.controls.*">
+	<s:layout>
+		<s:VerticalLayout paddingLeft="5"
+						  paddingRight="5"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this)
+			}
+
+			protected function btAdd_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+
+			}
+
+
+			protected function btCheck_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:RadioButtonGroup id="phoFiveCode"/>
+	</fx:Declarations>
+
+	<s:HGroup width="100%"
+			  height="31"
+			  verticalAlign="bottom"
+			  paddingTop="10">
+		<mx:FormItem label="住院号"
+					 width="260"
+					 labelWidth="55">
+			<s:TextInput id="txtInpNo"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="床　号"
+					 width="110"
+					 labelWidth="47">
+			<s:TextInput id="txtBedNum"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+
+		<mx:FormItem label="姓　名"
+					 width="162">
+			<s:TextInput id="txtPersonName"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="性　别"
+					 width="100">
+			<s:TextInput id="txtSex"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="年　龄"
+					 width="125"
+					 labelWidth="47">
+			<s:TextInput id="txtAge"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="血　型"
+					 width="130">
+			<s:TextInput id="txtBloodCode"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem width="55"
+					 direction="horizontal">
+			<s:Label text="RH"/>
+			<s:CheckBox id="txtRhSign"
+						width="100%"/>
+		</mx:FormItem>
+	</s:HGroup>
+	<s:HGroup width="100%" height="31" verticalAlign="middle">
+		<mx:FormItem label="费　别" width="260" labelWidth="55">
+			<s:TextInput id="txtChargeType" width="100%" enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="病　区" width="280" labelWidth="47">
+			<s:TextInput id="txtWardCode" width="100%" enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="科　别" width="230" >
+			<s:TextInput id="txtDeptCode" width="100%" enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="医　生" width="100%">
+			<s:TextInput id="txtDoctor" width="100%" enabled="false"/>
+		</mx:FormItem>
+	</s:HGroup>
+	<s:HGroup width="100%">
+		<mx:HRule width="100%"/>
+	</s:HGroup>
+
+	<!-- 表体部分 -->
+	<s:BorderContainer width="500%"
+					   height="500%"
+					   backgroundColor="0xE2E8E8"
+					   borderStyle="solid"
+					   borderVisible="false"
+					   >
+		<s:VGroup width="100%"
+				  height="100%">
+			<s:HGroup width="100%" paddingLeft="10">
+
+				<mx:FormItem label="产品码"
+							 width="250">
+					<s:TextInput id="txtBarCode"
+								 width="100%"/>
+				</mx:FormItem>
+				<mx:FormItem label="血　型"
+							 width="280">
+					<s:TextInput id="txtBloodCoden"
+								 width="100%"
+								 enabled="false"/>
+				</mx:FormItem>
+				<mx:FormItem label="成  份"
+							 width="230">
+					<s:TextInput id="txtTypeCode"
+								 width="100%"
+								 enabled="false"/>
+				</mx:FormItem>
+				<mx:FormItem label="规  格"
+							 width="100%">
+					<s:TextInput id="txtSpec"
+								 width="100%"
+								 enabled="false"/>
+				</mx:FormItem>
+
+			</s:HGroup>
+			<controls:SuperDataGrid id="dgBloodDeliver"
+									hasRowNo="true"
+									width="100%"
+									height="100%"
+									styleName="dataGrid">
+				<controls:columns>
+					<mx:DataGridColumn headerText="产品码"
+									   width="6"/>
+					<mx:DataGridColumn headerText="血袋编号"
+									   width="4"/>
+					<mx:DataGridColumn headerText="血型"
+									   width="3"/>
+					<mx:DataGridColumn headerText="血液成份"
+									   width="4"/>
+					<mx:DataGridColumn headerText="RH"
+									   width="2"/>
+					<mx:DataGridColumn headerText="规格"
+									   width="4"/>
+					<mx:DataGridColumn headerText="献血者编号"
+									   width="5"/>
+					<mx:DataGridColumn headerText="采血日期"
+									   width="6"/>
+					<mx:DataGridColumn headerText="失效日期"
+									   width="6"/>
+					<mx:DataGridColumn headerText="数量"
+									   width="3"/>
+					<mx:DataGridColumn headerText="单位"
+									   width="3"/>
+					<mx:DataGridColumn headerText="单价"
+									   width="3"/>
+					<mx:DataGridColumn headerText="金额"
+									   width="4"/>
+				</controls:columns>
+			</controls:SuperDataGrid>
+			<!-- 操作按钮部分 -->
+			<s:HGroup height="31"
+					  paddingBottom="10"
+					  horizontalAlign="right"
+					  gap="5"
+					  width="100%">
+				<mx:LinkButton id="btNew"
+							   label=" 新 建"
+							   fontSize="12"
+							   width="86"
+							   height="26"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/new20.png')"/>
+				<mx:LinkButton id="btCheck"
+							   label=" 保 存"
+							   fontSize="12"
+							   width="86"
+							   height="26"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/save20.png')"/>
+				<mx:LinkButton id="btPrint"
+							   label=" 打 印"
+							   fontSize="12"
+							   width="86"
+							   height="26"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/print20.png')"/>
+				<mx:LinkButton id="btReturn"
+							   label=" 返 回"
+							   fontSize="12"
+							   width="86"
+							   height="26"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/return20.png')"
+							   click="btReturn_clickHandler(event)"/>
+				<mx:Spacer width="5"/>
+			</s:HGroup>
+			<mx:Spacer height="5"/>
+		</s:VGroup>
+	</s:BorderContainer>
+
+</s:TitleWindow>

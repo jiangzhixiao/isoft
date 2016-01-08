@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" showCloseButton="true"
+	close="PopUpManager.removePopUp(this)" title="My Date Picker : Choose Date Range" borderAlpha="1">
+	<mx:Script>
+		<![CDATA[
+			/*
+			* This is a custom date picker when the user
+			* chooses the custom option in the DateComboBox filter control 
+			* You can format dates differently.
+			*/
+			import com.flexicious.controls.DateComboBox;
+			import mx.controls.ComboBase;
+			import mx.controls.Alert;
+			import com.flexicious.utils.DateRange;
+			import mx.managers.PopUpManager;
+			private function clickHandler():void
+            {
+            	if(dateFieldStartDate.selectedDate==null
+            	||dateFieldEndDate.selectedDate==null
+            	||dateFieldStartDate.selectedDate>dateFieldEndDate.selectedDate)
+            		Alert.show("Start and End Dates are required and Start Date should be less than End Date.");
+				else	
+				{
+                	dateRange=new DateRange(DateRange.DATE_RANGE_CUSTOM,dateFieldStartDate.selectedDate, dateFieldEndDate.selectedDate);
+                	combo.customDateRange=dateRange;
+                	combo.dispatchEvent(new Event(Event.CHANGE));
+                	PopUpManager.removePopUp(this);
+                	combo=null;
+                	
+				}
+            }
+            private var millisecondsPerDay:int = 1000 * 60 * 60 * 24;
+
+            public var dateRange:DateRange;
+            public var combo:DateComboBox;
+            
+		]]>
+	</mx:Script>
+	
+            <mx:HBox>
+                <mx:DateField id="dateFieldStartDate" editable="true" formatString="DD/MM/YYYY" 
+                	showToday="true" initialize="dateFieldStartDate.selectedDate = new Date(new Date().getTime() - (30 * millisecondsPerDay));" width="133" />
+                <mx:DateField id="dateFieldEndDate" editable="true" formatString="DD/MM/YYYY" 
+                	showToday="true" initialize="dateFieldEndDate.selectedDate = new Date();"  width="134"/>
+            </mx:HBox>
+<mx:ApplicationControlBar width="100%" horizontalAlign="right">
+               <mx:Button label="Ok" click="clickHandler()"/>
+               <mx:Button label="Cancel" click="PopUpManager.removePopUp(this)"/>
+ </mx:ApplicationControlBar>
+</mx:TitleWindow>

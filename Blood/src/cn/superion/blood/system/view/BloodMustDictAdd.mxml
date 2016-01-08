@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				width="350" 
+				height="265"
+				backgroundColor="0xE2E8E8"
+				xmlns:controls="cn.superion.base.components.controls.*"
+				close="titlewindow1_closeHandler(event)"
+				creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.components.controls.SimpleDictWin;
+			import cn.superion.base.config.SimpleDictWinConfig;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.base.util.StringUtils;
+			import cn.superion.blood.system.ModBloodMustDict;
+			import cn.superion.vo.blood.system.CdBloodLisItemDict;
+			import cn.superion.vo.blood.system.CdBloodMustDict;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import spark.events.TextOperationEvent;
+			
+			[Bindable]
+			public var isOpenType:String="1";
+			[Bindable]
+			public var parentWin:ModBloodMustDict;
+			[Bindable]
+			public var mustDictInfo:CdBloodLisItemDict;
+			[Bindable]
+			private var ro:RemoteObject;
+			
+			//窗口初始化
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				if (isOpenType == "1")
+				{
+					this.title="新建";
+					mustDictInfo=new CdBloodLisItemDict();
+					txtItemCode.setFocus();
+				}
+				else
+				{
+					this.title="修改";
+					mustDictInfo=parentWin.gridMustDictList.selectedItem as CdBloodLisItemDict;
+					txtItemCode.editable=false;
+					txtItemName.enabled=false;
+				}
+			}
+			
+			//保存
+			protected function btSave_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(!saveValidate())
+				{
+					return;
+				}
+				if(!txtItemCode_check())
+				{
+					return;
+				}
+				ro=RemoteUtil.getRemoteObject("bloodLisItemDictImpl", saveCallBack);
+				mustDictInfo.extractSign = extractSign.selected ?"1":"0";
+				mustDictInfo.printSign = printSign.selected ?"1":"0"
+				mustDictInfo.mustSign = mustSign.selected ?"1":"0"
+				mustDictInfo.itemName = txtItemName.txtContent.text;	
+				ro.save(mustDictInfo);
+			}
+			//回调函数
+			private function saveCallBack(rev:Object):void
+			{
+				txtItemCode.setFocus();
+				Alert.show("必检项目保存成功！", "提示信息");
+				//重新加载数据
+				parentWin.init();
+				
+				//保存后，清空界面，可继续新建
+				if(isOpenType=='1')
+				{
+					txtItemCode.text="";
+					txtItemName.text="";
+					txtItemSpec.text="";
+					txtUnits.text="";
+					txtPhoInputCode.text="";
+					txtFiveInputCode.text="";
+				}
+				return;
+			}		
+			//
+			private function saveValidate():Boolean
+			{
+				if (StringUtils.Trim(this.txtItemCode.text) == '')
+				{
+					this.txtItemCode.setFocus();
+					Alert.show("请输入项目编码！", "提示信息");
+					return false;
+				}
+				return true;
+			}
+			
+			//关闭窗口
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}			
+			
+			//返回事件
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+			
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					ctrl.setFocus();
+				}
+			}
+			//验证项目编码唯一性
+			protected function txtItemCode_check():Boolean
+			{
+				// TODO Auto-generated method stub
+				//只在“新建“时验证
+				if(isOpenType=='1')
+				{
+					var arrData:ArrayCollection=parentWin.gridMustDictList.dataProvider as ArrayCollection;
+					if(arrData!=null||arrData.length > 0 || arrData.getItemAt(0) != null)
+					{
+						for(var i:int=0;i<arrData.length;i++)
+						{
+							if(txtItemCode.text==arrData[i].itemCode)
+							{
+								txtItemCode.setFocus();
+								Alert.show("该项目编码已存在，请重新输入！","提示信息");
+								return false;
+							}
+						}
+					}
+				}
+				return true;
+			}
+			//
+			protected function hisCode_queryIconClickHandler(callback:Function):void
+			{
+				var x:int=0;
+				var y:int=this.parentApplication.screen.height - 345;
+				var config:SimpleDictWinConfig=new SimpleDictWinConfig();
+				config.destination='bloodLisItemDictService';
+				config.method="findItemDict";
+				config.entityClassName="cn.superion.blood.lis.entity.UtDictItems";
+				config.serverOrderField="itemCode";
+				config.gridDataFields=['itemCode','itemName'];
+				config.gridHeadTexts=["编码", "名称"];
+				config.gridDataQueryOption=[{label: '编码', field: 'itemCode'}, {label: '名称', field: 'itemName'}];
+				config.typeName="LIS检验字典";
+				config.widths=[1, 2];
+				config.callback=callback;
+				var win:SimpleDictWin=SimpleDictWin(PopUpManager.createPopUp(DisplayObject(FlexGlobals.topLevelApplication), SimpleDictWin));
+				win.height=340;
+				win.width=726;
+				win.dictWinConfig=config;
+				if (x == -1)
+				{
+					PopUpManager.centerPopUp(win);
+				}
+				else
+				{
+					win.x=x;
+					win.y=y;
+				}
+			}
+			
+			protected function hisCode_queryIconClickHandler2(callback:Function):void
+			{
+				var x:int=0;
+				var y:int=this.parentApplication.screen.height - 345;
+				var config:SimpleDictWinConfig=new SimpleDictWinConfig();
+				config.destination='bloodLisItemDictService';
+				config.method="findItemDict2";
+				config.entityClassName="cn.superion.blood.lis.entity.LabRptitem";
+				config.serverOrderField="rptItemcode";
+				config.gridDataFields=['rptItemcode','rptItemname'];
+				config.gridHeadTexts=["编码", "名称"];
+				config.gridDataQueryOption=[{label: '拼音码', field: 'inputcode'}, {label: '名称', field: 'rptItemname'}];
+				config.typeName="LIS检验字典";
+				config.widths=[1, 2];
+				config.callback=callback;
+				var win:SimpleDictWin=SimpleDictWin(PopUpManager.createPopUp(DisplayObject(FlexGlobals.topLevelApplication), SimpleDictWin));
+				win.height=340;
+				win.width=726;
+				win.dictWinConfig=config;
+				if (x == -1)
+				{
+					PopUpManager.centerPopUp(win);
+				}
+				else
+				{
+					win.x=x;
+					win.y=y;
+				}
+			}
+			
+			private function getLisCode(rev:Object):void
+			{
+				txtItemCode.text=rev.itemCode;
+				txtItemName.text=rev.itemName;
+				itemName.text = rev.itemName;
+			}
+
+			protected function itemName_valueCommitHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (txtItemName.text == "")
+				{
+					txtPhoInputCode.text="";
+					txtFiveInputCode.text="";
+					return;
+				}
+				ro=RemoteUtil.getRemoteObject('baseCommonDictImpl', function(rev:Object):void
+				{
+					if (rev.data && rev.data.length > 0)
+					{
+						txtPhoInputCode.text=rev.data[0];
+						txtFiveInputCode.text=rev.data[1];
+					}
+				})
+				ro.findInputCode(txtItemName.text);
+			}
+
+		]]>
+	</fx:Script>
+		
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup x="0"
+			  width="100%"
+			  height="239"
+			  top="0">
+		<s:BorderContainer width="100%"
+						   height="195"
+						   backgroundColor="0xE2E8E8"
+						   borderColor="#9ABBE6">
+			<s:VGroup
+					  height="185"
+					  left="2"
+					  right="5">
+				<mx:FormItem height="6">	
+				</mx:FormItem>
+				<mx:FormItem width="100%" 
+							 height="26" 
+							 label="LIS 编码"
+							 color="#0000FF">
+					<s:TextInput id="txtItemCode"
+								 width="100%"
+								 editable="false"
+								 maxChars="20"
+								 text="@{mustDictInfo.itemCode}"
+								 restrict="0-9"
+								 />
+				</mx:FormItem>
+				<mx:FormItem width="100%" 
+							 height="26" 
+							 label="LIS 名称"
+							 color="#0000FF">
+					<s:TextInput id="itemName"
+								 visible="false"
+								 includeInLayout="false"
+								 valueCommit="itemName_valueCommitHandler(event)"/>
+					<controls:TextInputIcon width="100%"
+											id="txtItemName"
+											text="{mustDictInfo.itemName}"
+											queryIconClick="hisCode_queryIconClickHandler2(getLisCode);"/>
+				</mx:FormItem>
+				<mx:FormItem width="100%" 
+							 height="26" 
+							 label="规　　格" 
+							 visible="false"
+							 includeInLayout="false"
+							 textAlign="center">			
+					<s:TextInput id="txtItemSpec" 
+								 width="100%"
+								 visible="false"
+								 includeInLayout="false"
+								 text="@{mustDictInfo.itemSpec}"
+								 maxChars="20"
+								 />
+				</mx:FormItem>
+				<mx:FormItem width="100%" 
+							 height="26" 
+							 label="单　　位"  visible="false"
+							 includeInLayout="false">
+					<s:TextInput id="txtUnits"
+								 width="100%"
+								 visible="false"
+								 includeInLayout="false"
+								 text="@{mustDictInfo.units}"
+								 maxChars="10"
+								 />
+				</mx:FormItem>
+				<mx:FormItem width="100%" 
+							 height="26" 
+							 label="五 笔 码" >
+					<s:TextInput id="txtFiveInputCode"
+								 width="100%"
+								 maxChars="10"
+								 text="@{mustDictInfo.fiveInputCode}"
+								 editable="false"
+								 />
+				</mx:FormItem>
+				<mx:FormItem width="100%" 
+							 height="26" 
+							 label="拼 音 码" >
+					<s:TextInput id="txtPhoInputCode"
+								 width="100%"
+								 maxChars="10"
+								 text="@{mustDictInfo.phoInputCode}"
+								 editable="false"
+								 />
+				</mx:FormItem>
+				<mx:FormItem width="100%" horizontalAlign="center"
+							 height="26"  direction="horizontal"
+							  >
+
+					<s:CheckBox label="必检标志" id="mustSign"  selected="{mustDictInfo.mustSign=='1'?true:false}"/>
+					<s:CheckBox label="自动提取" id="extractSign" selected="{mustDictInfo.extractSign=='1'?true:false}"/>
+					<s:CheckBox label="打印标志" id="printSign" selected="{mustDictInfo.printSign=='1'?true:false}"/>
+				</mx:FormItem>
+			</s:VGroup>
+		</s:BorderContainer>
+		<!-- 操作按钮部分 -->
+		<s:HGroup height="31"
+				  paddingBottom="10"
+				  horizontalAlign="right"
+				  gap="5"
+				  width="100%">
+			<mx:LinkButton id="btSave"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 保 存"							   
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/save20.png')"
+						   click="btSave_clickHandler(event)"
+						   keyUp="keyUpCtrl(event,btReturn)"/>
+			<mx:LinkButton id="btReturn"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 返 回"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/return20.png')"
+						   click="btReturn_clickHandler(event)"/>
+			<mx:Spacer width="5"/>
+		</s:HGroup>
+		<mx:Spacer height="1"/>
+	</s:VGroup>
+</s:TitleWindow>

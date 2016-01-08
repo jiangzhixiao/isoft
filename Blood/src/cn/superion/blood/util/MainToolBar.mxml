@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   height="45">
+	<fx:Declarations>
+
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="printClick", type="flash.events.Event")]
+		[Event(name="expClick", type="flash.events.Event")]
+		[Event(name="autoClick", type="flash.events.Event")]
+		[Event(name="addClick", type="flash.events.Event")]
+		[Event(name="modifyClick", type="flash.events.Event")]
+		[Event(name="deleteClick", type="flash.events.Event")]
+		[Event(name="saveClick", type="flash.events.Event")]
+		[Event(name="cancelClick", type="flash.events.Event")]
+		[Event(name="verifyClick", type="flash.events.Event")]
+		[Event(name="abandonClick", type="flash.events.Event")]
+		[Event(name="addRowClick", type="flash.events.Event")]
+		[Event(name="delRowClick", type="flash.events.Event")]
+		[Event(name="queryClick", type="flash.events.Event")]
+		//盘库
+		[Event(name="storageClick", type="flash.events.Event")]
+		[Event(name="firstPageClick", type="flash.events.Event")]
+		[Event(name="prePageClick", type="flash.events.Event")]
+		[Event(name="nextPageClick", type="flash.events.Event")]
+		[Event(name="lastPageClick", type="flash.events.Event")]
+		[Event(name="refeshClick", type="flash.events.Event")]
+		
+		[Event(name="helpClick", type="flash.events.Event")]
+		[Event(name="exitClick", type="flash.events.Event")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.components.controls.SuperDataGrid;
+			import cn.superion.base.util.ObjectUtils;
+
+			import com.adobe.utils.ArrayUtil;
+
+			import flexlib.scheduling.util.DateUtil;
+
+			import mx.collections.ArrayCollection;
+			import mx.collections.CursorBookmark;
+			import mx.collections.ICollectionView;
+			import mx.collections.IList;
+			import mx.collections.IViewCursor;
+			import mx.collections.ListCollectionView;
+			import mx.collections.Sort;
+			import mx.collections.SortField;
+			import mx.controls.Alert;
+			import mx.controls.Button;
+			import mx.controls.DataGrid;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			import mx.utils.ArrayUtil;
+			import mx.utils.ObjectUtil;
+
+			import spark.components.SkinnableContainer;
+			public var masterAry:ArrayCollection=new ArrayCollection();
+			private var _keyField:String=null;
+
+			/**
+			 * @private
+			 * arc,前台的数据集，当获取数据时，把ArrayCollection赋予该变量
+			 * */
+			private var _arc:ArrayCollection=null;
+			/**
+			 * @private
+			 * callback,回调函数，每次操作数据集合后，都会调用该函数，用来处理新取出的数据
+			 * */
+			private var _callback:Function=null;
+
+			private var cursor:IViewCursor=null;
+			/**
+			 * @private
+			 *  deleteSuccess,保存成功后，将true赋予改值，自动将放弃灰化
+			 * */
+			private var _saveSuccess:Boolean=false;
+			/**
+			 * @private
+			 *  verifyEnabled,审核成功后，将true赋予改值，自动改变审核按钮状态
+			 * */
+			private var _verifyEnabled:Boolean=true;
+
+			/**
+			 * @private
+			 *  deleteSuccess,删除成功后，将true赋予改值，自动删除对应的数据,并将下一个、或上一个数据查询出来
+			 * */
+			private var _deleteSuccess:Boolean=false;
+
+			/**
+			 * @private
+			 *  firstPageRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btFirstPage
+			 * */
+			private var _firstPageRawState:Boolean=false;
+
+			/**
+			 * @private
+			 *  prePageRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btPrePage
+			 * */
+			private var _prePageRawState:Boolean=false;
+
+			/**
+			 * @private
+			 *  nextPageRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btNextPage
+			 * */
+			private var _nextPageRawState:Boolean=false;
+
+			/**
+			 * @private
+			 *  lastPageRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btLastPage
+			 * */
+			private var _lastPageRawState:Boolean=false;
+
+			/**
+			 * @private
+			 *  modifyRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btModify
+			 * */
+			private var _modifyRawState:Boolean=false;
+
+			/**
+			 * @private
+			 *  delRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btDelete
+			 * */
+			private var _delRawState:Boolean=false;
+			/**
+			 * @private
+			 *  delRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btAdd save cancel addRow,delRow
+			 * */
+			private var _addRawState:Boolean=false;
+			private var _saveRawState:Boolean=false;
+			private var _delRowRawState:Boolean=false;
+			private var _addRowRawState:Boolean=false;
+			private var _cancelRawState:Boolean=false;
+
+			/**
+			 * @private
+			 *  verifyRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btVerify
+			 * */
+			private var _verifyRawState:Boolean=false;
+
+			/**
+			 * @private
+			 *  verifyRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btPrint
+			 * */
+			private var _printRawState:Boolean=false;
+
+			/**
+			 * @private
+			 *  verifyRawState,记录每次翻页时，对应按钮的状态，点“放弃”时，该值赋予btExp
+			 * */
+			private var _expRawState:Boolean=false;
+
+
+			//解析获取来的视图数据
+			public function rebuildViewData(v:ArrayCollection, key:String):void
+			{
+				var i:int=0;
+				var firstItem:Object=v.getItemAt(0); //主记录
+				var ary:ArrayCollection=new ArrayCollection(); //存放明细
+				for (var k:int=0; k < v.length; k++)
+				{
+					if (v.getItemAt(0)[key] == firstItem[key])
+					{
+						//获取明细
+						ary.addItem(v.getItemAt(0));
+						v.removeItemAt(0);
+						v.refresh();
+					}
+				}
+				//
+				if (v.length == 0)
+					return;
+				var obj:Object=new Object();
+				obj.key=firstItem;
+				obj.value=ary;
+				masterAry.addItem(obj);
+				rebuildViewData(v, key);
+			}
+
+			public function rebuildViewData2(v:ArrayCollection):void
+			{
+				var i:int=0;
+				var master:Object={}; //主记录
+				var viewCursor:IViewCursor=v.createCursor();
+				var viewSort:Sort=new Sort();
+				viewSort.fields=[_keyField];
+				v.sort=viewSort;
+				while (!viewCursor.afterLast)
+				{
+					var currentValue:String=viewCursor.current[_keyField];
+					viewCursor.moveNext();
+					var nextValue:String=viewCursor.current[_keyField];
+					if (currentValue == nextValue)
+					{
+						var obj:Object=new Object();
+						obj.key=viewCursor.current;
+					}
+
+				}
+			}
+
+			/**
+			 *  验证重复数据,若有重复的，定位到已存在的那条数据上,grid中的数据根据sortFields来排序。
+			 *  @param grid 表格的id
+			 *  @param item 要比较的对象.
+			 *  @param sortFields 要排序的字段数组.
+			 * */
+			public static function takeItem(grid:DataGrid, item:*, sortFields:Array):void
+			{
+				//findXXX方法前提是，试图先排序
+				var sort:Sort=new Sort();
+
+				if (!sortFields || sortFields.length == 0)
+				{
+					var error:Error=new Error("sorted fields is null!");
+					return;
+				}
+				//获取集合
+				var ary:ListCollectionView=grid.dataProvider as ArrayCollection;
+				//创建排序字段
+				var fieldsAry:Array=[];
+				//要查找的对象，用于传入findAny方法中
+				var matchObj:Array=[];
+				for (var c:int=0; c < sortFields.length; c++)
+				{
+					fieldsAry.push(new SortField(sortFields[c], true));
+
+				}
+				//截取排序字段
+				for each (var s:String in sortFields)
+				{
+					if (item.hasOwnProperty(s))
+					{
+						matchObj[s]=item[s];
+					}
+				}
+				sort.fields=fieldsAry;
+				ary.sort=sort;
+				ary.refresh();
+				var cursor:IViewCursor=ary.createCursor();
+				var isFinded:Boolean=cursor.findAny(matchObj);
+				if (isFinded)
+				{
+					var findedIndex:int=cursor.bookmark.getViewIndex();
+					grid.selectedIndex=findedIndex;
+					return;
+				}
+				ary.addItem(item);
+			}
+
+			/**
+			 *  验证重复数据,若有重复的，定位到已存在的那条数据上,grid中的数据不排序.
+			 *  @param grid 表格的id.
+			 *  @param item 传入的对象.通常是字典数据.
+			 *  @param fields 该数组中的字段组合，作为比较的唯一值.
+			 *  @param targetClass 要转成的对象.
+			 * */
+			public static function convertItem(grid:SuperDataGrid, item:*, fields:Array, targetClass:*=null):void
+			{
+				//获取集合
+				var ary:ListCollectionView=grid.dataProvider as ArrayCollection;
+				var found:Boolean=false;
+				var index:int=0;
+				var selectedIndex:int=0;
+				for each (var it:* in ary)
+				{
+					if (found)
+						break;
+					selectedIndex++;
+					index=0;
+					for each (var s:String in fields)
+					{
+						if (it[s] == item[s])
+						{
+							index++;
+							//字段全匹配，则符合
+							if (index == fields.length)
+							{
+								found=true;
+								break;
+							}
+							;
+						}
+					}
+				}
+				if (found)
+				{
+					grid.selectedIndex=selectedIndex - 1;
+					return;
+				}
+				//传入，则给targetClass赋值
+				if (targetClass != null)
+				{
+					ary.addItem(classTransfer(item, targetClass));
+				}
+				else
+				{
+					ary.addItem(item);
+				}
+				grid.dataProvider=ary;
+				grid.selectedIndex=ary.length > 0 ? ary.length - 1 : -1;
+			}
+
+			/**
+			 *  类型转换.
+			 *  @param item 传入的对象.通常是字典数据.
+			 *  @param targetClass 要转成的对象.
+			 * */
+			public static function classTransfer(item:Object, targetClass:*):*
+			{
+				var propertyNames:Array=ObjectUtil.getClassInfo(targetClass, null, null).properties;
+				for each (var qname:QName in propertyNames)
+				{
+					var property:String=qname.localName;
+					if (item.hasOwnProperty(property))
+						targetClass[property]=item[property];
+					else
+						targetClass[property]=isNaN(targetClass[property]) ? 0 : targetClass[property];
+				}
+				return targetClass;
+			}
+
+			/**
+			 *  将集合的数据类型转为指定类型.
+			 *  @param aryCol 传入的集合.
+			 *  @param targetClass 要转成的类型.
+			 * */
+			public static function aryColTransfer(aryCol:ArrayCollection, targetClass:*):ArrayCollection
+			{
+				var newAry:ArrayCollection=new ArrayCollection();
+				for each (var item:* in aryCol)
+				{
+					var classFactory:ClassFactory=new ClassFactory(targetClass);
+					var instance:Object=classFactory.newInstance()
+					classTransfer(item, instance);
+					newAry.addItem(instance);
+				}
+				return newAry;
+
+			}
+
+			/**
+			 * 验证是否有重复的记录,重复返回true
+			 * @param item:要验证的记录；ary：ArrayCollection
+			 * */
+			public static function findDuplicateItem(item:Object, field:String, ary:ArrayCollection):Boolean
+			{
+				var isFound:Boolean=false;
+				for each (var it:Object in ary)
+				{
+					if (it[field] == item[field])
+					{
+						isFound=true;
+						break
+					}
+				}
+				return isFound;
+			}
+
+			private static function findValidatedItem(grid:SuperDataGrid, validateFields:Array, invalidateValues:Array):Object
+			{
+				//获取集合
+				var ary:ListCollectionView=grid.dataProvider as ArrayCollection;
+				var found:Boolean=false;
+				var index:int=0;
+				var selectedIndex:int=0;
+				var errorFields:Array=[]; //当前记录验证出错的字段
+				var errorFieldsValues:Array=[];
+				for each (var it:* in ary)
+				{
+					if (found)
+						break;
+					selectedIndex++;
+					index=0;
+					for each (var s:String in validateFields)
+					{
+						//将错误的字段和值放在数组中
+						index++;
+						if (it[s] == invalidateValues[index - 1])
+						{
+							found=true;
+							errorFields.push(s);
+							errorFieldsValues.push(invalidateValues[index - 1]);
+						}
+					}
+				}
+				if (found)
+				{
+					grid.selectedIndex=selectedIndex - 1;
+					var obj:Object=new Object();
+					obj.errorFieldsValues=errorFieldsValues;
+					obj.errorFields=errorFields;
+					return obj;
+				}
+				return null;
+			}
+
+			/**
+			 *  数据集合简单验证定位
+			 *  @param grid 表格的id.
+			 *  @param validateFields 传入的集合.
+			 *  @param invalidateValues 错误的值.
+			 * 例如：要对一个对象有以下几个属性：'age','name','gender','birthday'；
+			 * 若要验证其中的['age','name']字段不为['0','jzx']的
+			 * 则validateFields = ['age','name'],invalidateValues = ['0','jzx']
+			 * */
+			public static function validateItem(grid:SuperDataGrid, validateFields:Array, invalidateValues:Array):Boolean
+			{
+				var obj:Object=findValidatedItem(grid, validateFields, invalidateValues);
+				if (obj != null)
+				{
+					var errorAlert:Array=[];
+					var errorFieldsValues:Array=obj.errorFieldsValues;
+					var index:int=0;
+					for each (var field:* in obj.errorFields)
+					{
+						index++;
+						var headerText:String=getColumnHeaderTextByField(grid, field);
+						errorAlert.push("'" + headerText + "'不能为:" + errorFieldsValues[index - 1] + ";");
+					}
+					Alert.show(errorAlert.toString(), "错误");
+					return false;
+				}
+				return true;
+			}
+
+			/**
+			 *  根据传入的字段、找出表格对应列的标题
+			 *  @param grid 表格的id.
+			 *  @param field 作为查询的字段.
+			 * */
+			private static function getColumnHeaderTextByField(grid:SuperDataGrid, field:*):String
+			{
+				for each (var col:DataGridColumn in grid.columns)
+				{
+					if (col.dataField == field)
+						return col.headerText;
+				}
+				return "";
+			}
+
+	 
+
+			/**
+			 * 给指定日期+(24*3600*1000-1000);
+			 * */
+			public static function addOneDay(date:Date):Date
+			{
+				//
+				return flexlib.scheduling.util.DateUtil.addTime(new Date(date), flexlib.scheduling.util.DateUtil.DAY_IN_MILLISECONDS - 1000);
+			}
+
+			/**
+			 * @param comp:要加载上下文菜单的组件；
+			 * @param menuItemsName:菜单项目的名称；
+			 * @param functions:当选中菜单中某一项目时，调用该回调函数；
+			 * */
+			public static function initContextMenu(comp:UIComponent, menuItemsName:Array, functions:Array):ContextMenu
+			{
+				var contextMenu:ContextMenu=new ContextMenu();
+				contextMenu.hideBuiltInItems();
+				var menuItems:Array=[];
+				for (var i:int=0; i < menuItemsName.length; i++)
+				{
+					var menuItem:ContextMenuItem=new ContextMenuItem(menuItemsName[i]);
+					menuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, functions[i]);
+					menuItems.push(menuItem);
+				}
+				contextMenu.customItems=menuItems;
+				comp.contextMenu=contextMenu;
+				return contextMenu;
+			}
+
+			public static function reBuildCurrentArray(ary:ArrayCollection, startIndex:int, endIndex:int):ArrayCollection
+			{
+				var newAry:ArrayCollection=new ArrayCollection();
+				for (var i:int=startIndex; i < endIndex; i++)
+				{
+					newAry.addItem(ary.getItemAt(i));
+				}
+				return newAry;
+			}
+
+			/**
+			 * 设置组件是否可用
+			 * rootId:指定的父组件id；b:true，为可用
+			 * */
+			public static function setToolKitEnable(rootId:UIComponent, b:Boolean):void
+			{
+				var childs:Number=rootId.numChildren;
+				for (var i:int=0; i < childs; i++)
+				{
+					var disObj:UIComponent=rootId.getChildAt(i) as UIComponent;
+					disObj.enabled=b;
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:HorizontalLayout verticalAlign="bottom"
+							paddingTop="5"/>
+	</s:layout>
+
+	<!--<mx:LinkButton id="btPrint"
+				   label="打印"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('printClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/print16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/print16_function_disabled.png')"/>
+	<mx:LinkButton id="btExp"
+				   label="输出"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('expClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/exp16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/exp16_function_disabled.png')"/>
+	<mx:Image id="imageList1"
+			  source="@Embed(source='/assets/images/titlebars/list_separator5_function.png')"/>
+	<mx:LinkButton id="btAuto"
+				   label="自动"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('autoClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/automatism16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/automatism16_function_disabled.png')"/>
+	<mx:LinkButton id="btAdd"
+				   label="增加"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('addClick'))}"
+				   icon=" @Embed(source='/assets/images/titlebars/add16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/add16_function_disabled.png')"/>
+	<mx:LinkButton id="btModify"
+				   label="修改"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('modifyClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/change16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/change16_function_disabled.png')"/>
+	<mx:LinkButton id="btDelete"
+				   label="删除"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('deleteClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/delete16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/delete16_function_disabled.png')"/>
+	<mx:LinkButton id="btSave"
+				   label="保存"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('saveClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/save16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/save16_function_disabled.png')"/>
+	<mx:LinkButton id="btCancel"
+				   label="放弃"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('cancelClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/quit16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/quit16_function_disabled.png')"/>
+	<mx:LinkButton id="btVerify"
+				   label="审核"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('verifyClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/auditing16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/auditing16_function_disabled.png')"/>
+	<mx:LinkButton id="btAbandon"
+				   label="作废"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('abandonClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/abandon16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/abandon16_function_disabled.png')"/>
+	<mx:Image id="imageList2"
+			  source="@Embed(source='/assets/images/titlebars/list_separator5_function.png')"/>
+	<mx:LinkButton id="btAddRow"
+				   label="增行"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('addRowClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/addrow16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/addrow16_function_disabled.png')"/>
+	<mx:LinkButton id="btDelRow"
+				   label="删行"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('delRowClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/decrow16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/decrow16_function_disabled.png')"/>
+	<mx:Image id="imageList3"
+			  source="@Embed(source='/assets/images/titlebars/list_separator5_function.png')"/>
+	<mx:LinkButton id="btStorage"
+				   label="盘库"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('storageClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/plan16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/plan16_function_disabled.png')"/>
+	<mx:LinkButton id="btCreateBill"
+				   label="生单"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('createBillClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/genBill16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/genBill16_function_disabled.png')"/>
+	<mx:Image id="imageList4"
+			  source="@Embed(source='/assets/images/titlebars/list_separator5_function.png')"/>
+	<mx:LinkButton id="btQuery"
+				   label="查询"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('queryClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/query16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/query16_function_disabled.png')"/>
+	<mx:Image id="imageList5"
+			  source="@Embed(source='/assets/images/titlebars/list_separator5_function.png')"/>
+	<mx:LinkButton id="btFirstPage"
+				   label="首张"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('firstPageClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/page-first16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/page-first16_function_disabled.png')"/>
+
+	<mx:LinkButton id="btPrePage"
+				   label="上一张"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('prePageClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/page-prev16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/page-prev16_function_disabled.png')"/>
+	<mx:LinkButton id="btNextPage"
+				   label="下一张"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('nextPageClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/page-next16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/page-next16_function_disabled.png')"/>
+	<mx:LinkButton id="btLastPage"
+				   label="末张"
+				   height="35"
+				   labelPlacement="bottom"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   click="{this.dispatchEvent(new Event('lastPageClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/page-last16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/page-last16_function_disabled.png')"/>
+	<mx:Image id="imageList6"
+			  source="@Embed(source='/assets/images/titlebars/list_separator5_function.png')"/>
+	<mx:LinkButton id="btRefesh"
+				   label="刷新"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('refeshClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/refurbish_16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/refurbish_16_function_disabled.png')"/>
+
+	<mx:LinkButton id="btHelp"
+				   label="帮助"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('helpClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/help16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/help16_function_disabled.png')"/>
+	<mx:LinkButton id="btExit"
+				   label="退出"
+				   height="35"
+				   labelVerticalOffset="-3"
+				   color="#ffffff"
+				   labelPlacement="bottom"
+				   click="{this.dispatchEvent(new Event('exitClick'))}"
+				   icon="@Embed(source='/assets/images/titlebars/exit16_function.png')"
+				   disabledIcon="@Embed(source='/assets/images/titlebars/exit16_function_disabled.png')"/>-->
+</s:BorderContainer>

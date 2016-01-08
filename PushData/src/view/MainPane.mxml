@@ -1,0 +1,699 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   creationComplete="bordercontainer1_creationCompleteHandler(event)"
+				   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:separators="vamos.components.separators.*" xmlns:nestedtreedatagrid="com.flexicious.nestedtreedatagrid.*" xmlns:controls="com.flexicious.controls.*" xmlns:ns="http://flex.apache.org/experimental/ns" xmlns:customDatePicker="com.flexicious.controls.customDatePicker.*" xmlns:dateFormatCombo="cn.vamos.base.dateFormatCombo.*">
+	<s:backgroundFill> 
+		<s:SolidColor 
+			color="white" 
+			alpha="0.7"/> 
+	</s:backgroundFill> 
+	<fx:Declarations>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import cn.vamos.base.RemoteUtil;
+			import cn.vamos.base.SystemConstants;
+			import cn.vamos.base.filter.MyFilter;
+			import cn.vamos.base.filter.MyFilterExpression;
+			
+			import com.flexicious.grids.filters.FilterExpression;
+			import com.flexicious.nestedtreedatagrid.events.ExtendedFilterPageSortChangeEvent;
+			import com.flexicious.nestedtreedatagrid.events.FlexDataGridEvent;
+			import com.flexicious.nestedtreedatagrid.filter.AdvancedFilter;
+			import com.flexicious.nestedtreedatagrid.interfaces.IFlexDataGridCell;
+			import com.flexicious.utils.UIUtils;
+			
+			import entity.MonitorUsersConfig;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.FlexNativeMenu;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.MenuEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.RemoteObject;
+			import mx.utils.ArrayUtil;
+			[Bindable]
+			public var _dataProvider:ArrayCollection;
+			[Bindable]
+			public var _dataProvider2:ArrayCollection;
+			
+			[Bindable]
+			public var _dataProvider3:ArrayCollection;
+			private var myMenu:FlexNativeMenu; 
+			
+			//菜单图标
+			[Bindable]
+			[Embed(source="/assets/16x16/add.png")]
+			private var iconAdd:Class;
+			
+			[Bindable]
+			[Embed(source="/assets/16x16/delete.png")]
+			private var iconDel:Class;
+			
+			[Bindable]
+			[Embed(source="/assets/16x16/lock.png")]
+			private var iconLock:Class;
+			
+			//已读，未读图标
+			[Bindable]
+			[Embed(source="/assets/16x16/email.png")]
+			private var iconUnRead:Class;
+			
+			[Bindable]
+			[Embed(source="/assets/16x16/email_open.png")]
+			private var iconRead:Class;
+			
+			//预警图标
+			[Bindable]
+			[Embed(source="/assets/16x16/flag_green.png")]
+			private var iconGreen:Class;
+			
+			[Bindable]
+			[Embed(source="/assets/16x16/flag_yellow.png")]
+			private var iconYellow:Class;
+			
+			[Bindable]
+			[Embed(source="/assets/16x16/flag_red.png")]
+			private var iconRed:Class;
+			private var roConfig:RemoteObject = null;
+			private var roMaster:RemoteObject = null;
+			private var roDetail:RemoteObject = null;
+			
+			
+			protected function bordercontainer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				findAllConfig();
+			}
+			
+			protected function gdMaster_itemClickHandler(event:FlexDataGridEvent):void
+			{
+				// TODO Auto-generated method stub
+				var filter:MyFilter=new MyFilter(null);
+				filter.pageIndex=0;
+				filter.pageSize=gdDetail.pageSize;
+				var expression:FilterExpression = new FilterExpression();
+				expression.columnName = "warnId";
+				expression.expression = event.item.warnId;
+				expression.filterOperation = FilterExpression.FILTER_OPERATION_TYPE_EQUALS;
+				var myExpression:MyFilterExpression = new MyFilterExpression(expression);
+				filter.arguments.addItem(myExpression);
+				roDetail = RemoteUtil.getRemoteObject(PushData.DESTINATION_2,function(rev:Object):void{
+					gdDetail.totalRecords=rev.totalRecords;
+					_dataProvider2 = rev.records as ArrayCollection;
+				});
+				roDetail.findWarnDetails(filter);
+			}
+			
+			public function findAllWarnResult():void{
+				var filter:MyFilter=new MyFilter(null);
+				filter.pageIndex=0;
+				filter.pageSize=gdMaster.pageSize;
+				roMaster = RemoteUtil.getRemoteObject(PushData.DESTINATION_1,function(rev:Object):void{
+					_dataProvider = rev.records as ArrayCollection;
+					gdMaster.totalRecords=rev.totalRecords;
+				});
+				roMaster.findWarnMasters(filter);
+			}
+			
+			protected function findAllConfig():void
+			{
+				var filter:MyFilter=new MyFilter(null);
+				filter.pageIndex=0;
+				filter.pageSize=gdMaster.pageSize;
+				roConfig = RemoteUtil.getRemoteObject(PushData.DESTINATION_2,function(rev:Object):void{
+					gridConfig.totalRecords=rev.totalRecords;
+					_dataProvider3 = recreateResult(rev.records) //as ArrayCollection;
+				});
+				roConfig.findUsesConfigs(filter);
+			}
+			
+			private function onFilterPageSortChange(event:ExtendedFilterPageSortChangeEvent):void
+			{
+				roMaster.findWarnMasters(new MyFilter(event.filter));
+			}
+			
+			private function onFilterPageSortChange2(event:ExtendedFilterPageSortChangeEvent):void
+			{
+				//增加一个隐含条件：当前选中的父记录
+				var expression:FilterExpression = new FilterExpression();
+				expression.columnName = "warnId";
+				expression.expression = gdMaster.selectedItem?gdMaster.selectedItem.warnId:null;//选中的父记录
+				expression.filterOperation = FilterExpression.FILTER_OPERATION_TYPE_EQUALS;
+				var myExpression:MyFilterExpression = new MyFilterExpression(expression);
+				//
+				var myFilter:MyFilter = new MyFilter(event.filter);
+				myFilter.arguments.addItem(myExpression);
+				roDetail.findWarnDetails(myFilter);
+			}
+			
+			private function onFilterPageSortChange3(event:ExtendedFilterPageSortChangeEvent):void
+			{
+				roConfig.findUsesConfigs(new MyFilter(event.filter));
+			}
+			
+			
+			protected function resultHandler4(event:ResultEvent):void
+			{
+				Alert.show('删除成功！','提示');
+			}
+			protected function resultHandler3(event:ResultEvent):void
+			{
+				var result:ArrayCollection = event.result as ArrayCollection;
+				if(result  &&result.length>0){
+					findAllConfig();
+				}
+			}
+			
+			protected function resultHandler2(event:ResultEvent):void
+			{
+				
+			}
+			private function recreateResult(_dataProvider3:ArrayCollection):ArrayCollection{
+				for each(var it:Object in _dataProvider3){
+					if(it.operateTime){
+						var temp:String = it.operateTime;
+						var newArray:Array = [];
+						var tempArray:Array = temp.split(",");
+						for each(var str:String in tempArray){
+							newArray.push(str);
+						}
+						it.operateTime = newArray;
+					}else{
+						it.operateTime = [];
+					}
+				}
+				return _dataProvider3;
+			}
+			protected function resultHandler(event:ResultEvent):void
+			{
+				_dataProvider2 = event.result as ArrayCollection;
+			}
+			protected function faultHandler(event:FaultEvent):void
+			{
+				Alert.show(event.fault.faultString,'提示');
+			}
+			
+			protected function reloadButton_clickHandler(event:MouseEvent):void
+			{
+				if(event.target.id == 'reloadButton'){
+					findAllWarnResult();
+				}else{
+					findAllConfig();
+				}
+			}
+			protected function add_clickHandler(event:MouseEvent):void
+			{
+				addRow();
+			}
+				
+			protected function loginOut_clickHandler(event:MouseEvent):void
+			{
+				parentApplication.loginPane.visible = true;
+				parentApplication.removeElement(parentApplication.loginPane.mainPane);
+				parentApplication.width=500;
+				parentApplication.height=400;
+				
+				//
+				var ro:RemoteObject = new RemoteObject();
+				ro.destination = PushData.DESTINATION_1;
+				ro.showBusyCursor = true;
+				ro.endpoint = PushData.END_POINT;
+				ro.logOut(parentApplication.loginPane.userCode.text);
+				
+			}
+			
+			protected function del_clickHandler(event:MouseEvent):void
+			{
+				var selectedItems:Array = gridConfig.selectedItems;
+				if(!selectedItems || selectedItems.length == 0)return;
+				var autoIds:ArrayCollection = UIUtils.extractPropertyValues(selectedItems,"autoId");
+				Alert.show("确定删除所选的记录?", "提示?", 3, this, function(event:CloseEvent):void{
+					if(event.detail==Alert.YES){   
+						delRow(autoIds);
+					}  
+				}); 
+			}
+			protected function iconFunction(cell:IFlexDataGridCell, state:String=""):*{
+				if(cell.column.dataField == 'warnGrade'){
+					if(cell.rowInfo.isDataRow){
+						var grade:String = cell.rowInfo.data.warnGrade;
+						return grade == '1'?iconGreen:grade =='2'?iconYellow:grade =='3'?iconRed:null;
+					}
+				}else if(cell.column.dataField == 'readSign'){
+					if(cell.rowInfo.isDataRow){
+						return cell.rowInfo.data.readSign == '1'?iconRead:iconUnRead;
+					}
+				}
+				
+				return null;
+			}		
+			private function labFun(item:Object, dgColumn:Object):String{
+				if(dgColumn.dataField == 'useRange' && item.useRange){
+					if(item.useRange is String){
+						return item.useRange == '01'?"栏目扣分细则":item.useRange == '02'?"栏目":"用户";
+					}else{
+						return item.useRange.code == '01'?"栏目扣分细则":item.useRange == '02'?"栏目":"用户";
+					}
+					return "";
+					
+				}else if(dgColumn.dataField == 'frequencyUnit' && item.frequencyUnit){
+					
+					if(item.frequencyUnit is String){
+						return item.frequencyUnit == '01'?"小时":item.frequencyUnit == '02'?"天":"";
+					}else{
+						return item.frequencyUnit.code == '01'?"小时":item.frequencyUnit == '02'?"天":"";
+					}
+					return "";
+					
+					
+				}else if(dgColumn.dataField == 'columnName'){
+					return item.columnName;
+				}
+				else if(dgColumn.dataField == 'ruleName'){
+					return item.ruleName;
+				}else if(dgColumn.dataField == 'readSign'){
+					return item.readSign == '1'?"已读":"未读";
+				}
+				else if(dgColumn.dataField == 'operateTime'){
+					var ss:String = "";
+					for each(var value:String in item.operateTime){
+						ss = ss.concat(value+"|")
+					}
+					var result:String = ss.substring(0,ss.length-1);
+					return result;
+				}
+				return "";
+				
+			}
+			
+			protected function gridConfig_itemRightClickHandler(event:FlexDataGridEvent):void
+			{
+				// TODO Auto-generated method stub
+				gridConfig.customContextMenuItems=[
+					{type:'Item with Icon',caption:'增加',icon:iconAdd},
+					{type:'Item with Icon',caption:'删除',icon:iconDel}
+					//					,"列动作:"+event.cell.column.headerText,{type:'Separator'}
+				];
+			}
+			/**
+			 * 向数据库写入一条空数据
+			 * */
+			private function addRow():void{
+				
+				var config:MonitorUsersConfig =  new MonitorUsersConfig();
+				config.userCode = parentApplication.loginPane.userCode.text;
+				config.columnCode = "010101";
+				config.monitorFrequency = 0;
+				roConfig.addUsersConfig(config);
+				
+			}
+			public function updateRow(willUpdateItem:Object):void{
+				
+				var ss:Object = willUpdateItem.operateTime;
+				roConfig.addUsersConfig(willUpdateItem);
+				
+			}
+			
+			private function delRow(autoIds:ArrayCollection):void{
+				
+				var ro:RemoteObject = new RemoteObject();
+				ro.destination = PushData.DESTINATION_2;
+				ro.showBusyCursor = true;
+				ro.endpoint = PushData.END_POINT;
+				ro.addEventListener(ResultEvent.RESULT,resultHandler3);
+				ro.addEventListener(FaultEvent.FAULT,faultHandler);
+				ro.delUsersConfig(autoIds);
+				
+			}
+			
+			protected function gridList_itemRightClickMenuSelectHandler(event:FlexDataGridEvent):void
+			{
+				
+				var menuItemLabel:String = (event.triggerEvent as MenuEvent).label;
+				switch(menuItemLabel)
+				{
+					case "增加":
+					{
+						addRow();
+						break;
+					}
+					case "删除":
+					{
+						delRow(event.item.autoId);
+						break;
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:HGroup width="100%" height="100%">
+		<s:VGroup width="50%" height="100%">
+			<s:HGroup width="100%" horizontalAlign="center"  verticalAlign="middle">
+				<s:Label fontSize="20" fontWeight="bold" text="监测数据"/>
+				<s:Button id="reloadButton"
+						  toolTip="刷新监测数据"
+						  click="reloadButton_clickHandler(event)"
+						  skinClass="cn.vamos.main.skins.ReloadButtonSkin" 
+						  />
+			</s:HGroup>
+			<nestedtreedatagrid:FlexDataGrid width="100%" id="gdMaster" pageSize="10" height="40%"
+											 filterPageSortChange="onFilterPageSortChange(event)"
+											 selectionMode="singleRow"  itemClick="gdMaster_itemClickHandler(event)"
+											 rowHeight="28" dataProvider="{_dataProvider}"
+											 filterPageSortMode="server"  enableFilters="true"
+											 enablePaging="true"  
+											 >
+				<nestedtreedatagrid:columns>
+					<nestedtreedatagrid:FlexDataGridColumn headerText="消息编号"
+														   dataField="warnId" textAlign="left" 
+														   />
+					<nestedtreedatagrid:FlexDataGridColumn headerText="预警级别" dataField="warnGrade" 
+														   textAlign="left" enableIcon="true"
+														   iconFunction="iconFunction"
+														   filterControl="MultiSelectComboBox" filterComboBoxBuildFromGrid="true" 
+														   width="70"
+														   />
+					<nestedtreedatagrid:FlexDataGridColumn headerText="消息内容" width="80"
+														   dataField="warnContent" textAlign="left" 
+														   filterOperation="Contains" filterControl="TextInput"
+														   />
+					<nestedtreedatagrid:FlexDataGridColumn headerText="消息状态" iconFunction="iconFunction"
+														   enableIcon="true" width="30" labelFunction="labFun"
+														   iconRight="5" 
+														   dataField="readSign" textAlign="left" 
+														   />
+					<nestedtreedatagrid:FlexDataGridColumn headerText="创建日期" format="date"
+														   formatterDateFormatString="YYYY-MM-DD"
+														   filterControl="DateComboBox"
+														   dataField="createDate" textAlign="left" 
+														   />
+				</nestedtreedatagrid:columns>
+			</nestedtreedatagrid:FlexDataGrid>
+			
+			<nestedtreedatagrid:FlexDataGrid width="100%" id="gdDetail" pageSize="10" height="60%"
+											 selectionMode="singleRow" 
+											 filterPageSortChange="onFilterPageSortChange2(event)"
+											 rowHeight="28" dataProvider="{_dataProvider2}"
+											 filterPageSortMode="server" enableFilters="true"
+											 enablePaging="true"  
+											 >
+				<nestedtreedatagrid:columns>
+					<nestedtreedatagrid:FlexDataGridColumn headerText="扣分细则" dataField="ruleId" 
+														   textAlign="left"
+														   width="70"
+														   />
+					<nestedtreedatagrid:FlexDataGridColumn headerText="栏目"  
+														   dataField="columnCode" textAlign="left" 
+														   />
+					<nestedtreedatagrid:FlexDataGridColumn headerText="指标"   
+														   filterOperation="Contains" filterControl="TextInput"
+														   dataField="indexCode" textAlign="left" 
+														   />
+					<nestedtreedatagrid:FlexDataGridColumn headerText="创建日期" format="date"
+														   formatterDateFormatString="YYYY-MM-DD"
+														   dataField="createDate" textAlign="left" 
+														   />
+				</nestedtreedatagrid:columns>
+			</nestedtreedatagrid:FlexDataGrid>
+			
+		</s:VGroup>
+		<separators:VSeparator height="100%" primaryStrokeColor="#3F9AD8"
+							   paddingBottom="6" paddingTop="21"/>
+		<s:VGroup width="50%" height="100%">
+			<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle">
+				<s:Button  id="add" label="增加" 
+						   toolTip="增加" icon="{iconAdd}"
+						   click="add_clickHandler(event)"
+						   />
+				<s:Button  id="del" label="删除"
+						   toolTip="删除" icon="{iconDel}"
+						   click="del_clickHandler(event)"
+						   />
+				<s:Label fontSize="20" fontWeight="bold" text="栏目监测配置"/>
+				<s:Button  id="reloadButton2"
+						  toolTip="刷新配置数据" icon="{iconAdd}"
+						  click="reloadButton_clickHandler(event)"
+						  skinClass="cn.vamos.main.skins.ReloadButtonSkin" 
+						  />
+				<s:Button  id="loginOut" icon="{iconLock}"
+						   toolTip="注销" label="注销"
+						   click="loginOut_clickHandler(event)"
+						   />
+				
+			</s:HGroup>
+			<nestedtreedatagrid:FlexDataGrid width="100%" id="gridConfig" pageSize="8" height="100%"
+											 preferencePersistenceKey="editableCells" editorEnterRight="true"
+											 selectionMode="multipleRows" filterPageSortMode="server"
+											 filterPageSortChange="onFilterPageSortChange3(event)"
+											 rowHeight="28" dataProvider="{_dataProvider3}" editable="true"
+											 itemRightClickMenuSelect="gridList_itemRightClickMenuSelectHandler(event)"
+											 itemRightClick="gridConfig_itemRightClickHandler(event)"
+											 enablePaging="true"  
+											 >
+				<nestedtreedatagrid:columns>
+					<nestedtreedatagrid:FlexDataGridCheckBoxColumn/>
+					<nestedtreedatagrid:FlexDataGridColumn headerText="栏目"  editable="true"
+														   editorDataField="selectedItem"
+														   labelFunction="labFun"
+														   itemEditor="{new ClassFactory(IEColumn)}"
+														   dataField="columnName" textAlign="left" 
+														   />
+					<nestedtreedatagrid:FlexDataGridColumn headerText="扣分细则" dataField="ruleName" 
+														   textAlign="left" editable="true"
+														   editorDataField="selectedItem"
+														   labelFunction="labFun"
+														   width="70"
+														   itemEditor="{new ClassFactory(IERule)}"
+														   />
+					<nestedtreedatagrid:FlexDataGridColumn headerText="范围"   editable="true"
+														   labelFunction="labFun" editorDataField="selectedItem"
+														   dataField="useRange" textAlign="left"
+														   >
+						<nestedtreedatagrid:itemEditor>
+							<fx:Component>
+								<controls:ComboBox labelField="rname" creationComplete="combobox1_creationCompleteHandler(event)"
+									dataProvider="{SystemConstants.ranges}"
+									change="changeHandler(event)" >
+									<fx:Script>
+										<![CDATA[
+											import cn.vamos.base.SystemConstants;
+											
+											import com.flexicious.nestedtreedatagrid.FlexDataGridContainerBase;
+											
+											import mx.events.FlexEvent;
+											protected function changeHandler(event:Event):void
+											{
+												(parent as FlexDataGridContainerBase).grid.getCurrentEditingCell().rowInfo.data.useRange = this.selectedItem.code;
+												var willUpdateItem:Object = (parent as FlexDataGridContainerBase).grid.getCurrentEditingCell().rowInfo.data;
+												trace(willUpdateItem.useRange);
+												parentDocument.updateRow(willUpdateItem);
+											}
+											
+											protected function combobox1_creationCompleteHandler(event:FlexEvent):void
+											{
+												// TODO Auto-generated method stub
+												this.selectedIndex =-1;
+												var item:Object = (parent as FlexDataGridContainerBase).grid.getCurrentEditingCell().rowInfo.data;
+												if(item.useRange){
+													
+													this.selectedIndex =item.useRange =="01"?0:item.useRange =="02"?1:2;
+												}
+												
+												
+											}
+											
+										]]>
+									</fx:Script>
+								</controls:ComboBox>
+								
+							</fx:Component>
+						</nestedtreedatagrid:itemEditor>
+					</nestedtreedatagrid:FlexDataGridColumn>
+					<nestedtreedatagrid:FlexDataGridColumn headerText="开始时间"   editable="true"
+														   dataField="startTime" textAlign="left" 
+														   >
+						<nestedtreedatagrid:itemEditor>
+							<fx:Component>
+								<controls:TextInput inputMask="__:__" restrict="0-9" inputMaskDelimiters="/,(,),-,:" 
+													inputCharValidFunction="validateTime"
+													focusOut="textinput1_focusOutHandler(event)"
+													>
+									<fx:Script>
+										<![CDATA[
+											import com.flexicious.nestedtreedatagrid.FlexDataGrid;
+											
+											import mx.events.FlexEvent;
+											protected function textinput1_changeHandler(event:Event):void
+											{
+												// TODO Auto-generated method stub
+											}
+											private function validateTime(inputText:String):Boolean{
+												var selBeginIdx:int = this.selectionBeginIndex;
+												var existText:String = this.text;
+												if(selBeginIdx == 0){// 
+													if(Number(inputText)>2){
+														return false;
+													}
+													return true;
+												}
+												if(selBeginIdx == 1){//
+													if(existText.indexOf("2")>-1){
+														if(Number(inputText)>4){
+															return false;
+														}
+														return true;
+													}
+													return true;
+												}
+												
+												if(selBeginIdx == 3){
+													//输入为24的情况
+													if(existText.indexOf("24")>-1){
+														if(Number(inputText)==0){
+															return true;
+														}else{
+															return false;
+														}
+													}else{
+														if(Number(inputText)>5){
+															return false;
+														}
+													}
+													
+												}
+												return true;
+											}
+											
+											
+											protected function textinput1_focusOutHandler(event:FocusEvent):void
+											{
+												// TODO Auto-generated method stub
+												if(!this.text)return;
+												if(FlexDataGrid(this.owner).getCurrentEditingCell()){
+													var rowData:Object = FlexDataGrid(this.owner).getCurrentEditingCell().rowInfo.data;
+													if(rowData && rowData.startTime!=this.text){
+														rowData.startTime = this.text;
+														var willUpdateItem:Object = FlexDataGrid(this.owner).getCurrentEditingCell().rowInfo.data;
+														FlexDataGrid(this.owner).parentDocument.updateRow(willUpdateItem);
+													}
+												}
+											}
+											
+										]]>
+									</fx:Script>
+								</controls:TextInput>
+							</fx:Component>
+						</nestedtreedatagrid:itemEditor>
+					</nestedtreedatagrid:FlexDataGridColumn>
+					<nestedtreedatagrid:FlexDataGridColumn headerText="频率" editable="true" width="20"
+														   dataField="monitorFrequency" textAlign="left" 
+														   >
+						<nestedtreedatagrid:itemEditor>
+							<fx:Component>
+								<controls:NumericTextInput  change="changeHandler(event)" >
+									<fx:Script>
+										<![CDATA[
+											import com.flexicious.nestedtreedatagrid.FlexDataGrid;
+											protected function changeHandler(event:Event):void
+											{
+												if(FlexDataGrid(this.owner).getCurrentEditingCell()){
+													
+													FlexDataGrid(this.owner).getCurrentEditingCell().rowInfo.data.monitorFrequency = Number(this.text);
+													var willUpdateItem:Object = FlexDataGrid(this.owner).getCurrentEditingCell().rowInfo.data;
+													FlexDataGrid(this.owner).parentDocument.updateRow(willUpdateItem);
+												}
+											}
+											
+										]]>
+									</fx:Script>
+								</controls:NumericTextInput>
+								
+							</fx:Component>
+						</nestedtreedatagrid:itemEditor>
+						</nestedtreedatagrid:FlexDataGridColumn>
+					<nestedtreedatagrid:FlexDataGridColumn headerText="单位" editable="true" width="30"
+														   labelFunction="labFun"
+														   editorDataField="selectedItem"
+														   dataField="frequencyUnit" textAlign="left" 
+														   >
+						<nestedtreedatagrid:itemEditor>
+							<fx:Component>
+								<controls:ComboBox labelField="uname" creationComplete="combobox2_creationCompleteHandler(event)"
+												   dataProvider="{SystemConstants.units}"
+												   change="changeHandler(event)" >
+									<fx:Script>
+										<![CDATA[
+											import mx.events.FlexEvent;
+											import cn.vamos.base.SystemConstants;
+											
+											import com.flexicious.nestedtreedatagrid.FlexDataGridContainerBase;
+											protected function changeHandler(event:Event):void
+											{
+												(parent as FlexDataGridContainerBase).grid.getCurrentEditingCell().rowInfo.data.frequencyUnit = this.selectedItem.code;
+												var willUpdateItem:Object = (parent as FlexDataGridContainerBase).grid.getCurrentEditingCell().rowInfo.data;
+												parentDocument.updateRow(willUpdateItem);
+											}
+											
+											protected function combobox2_creationCompleteHandler(event:FlexEvent):void
+											{
+												// TODO Auto-generated method stub
+												this.selectedIndex =-1;
+												var item:Object = (parent as FlexDataGridContainerBase).grid.getCurrentEditingCell().rowInfo.data;
+												if(item.frequencyUnit){
+													
+													this.selectedIndex =item.frequencyUnit =="01"?0:1;
+												}
+											}
+											
+										]]>
+									</fx:Script>
+								</controls:ComboBox>
+								
+							</fx:Component>
+						</nestedtreedatagrid:itemEditor>
+					</nestedtreedatagrid:FlexDataGridColumn>
+					<nestedtreedatagrid:FlexDataGridColumn headerText="执行时间点"  editable="true" 
+														   dataField="operateTime" textAlign="left" editorDataField="selectedItems"
+														   labelFunction="labFun"
+														   >
+						<nestedtreedatagrid:itemEditor>
+							<fx:Component>
+								<controls:MultiSelectComboBox searchBoxWatermark="快找" change="multiselectcombobox1_changeHandler(event)"
+																 labelField="operateTime" dataProvider="{SystemConstants.hours}" >
+									<fx:Script>
+										<![CDATA[
+											import cn.vamos.base.SystemConstants;
+											
+											import com.flexicious.nestedtreedatagrid.FlexDataGridContainerBase;
+											
+											import vamos.scheduling.calendar.dataTypes.SelectedCalendarData;
+											
+											protected function multiselectcombobox1_changeHandler(event:Event):void
+											{
+												// TODO Auto-generated method stub
+//												(parent as FlexDataGridContainerBase).grid.getCurrentEditingCell().rowInfo.data.operateTime = [];
+												var newItems:Array = this.selectedItems;
+												newItems.reverse();
+												(parent as FlexDataGridContainerBase).grid.getCurrentEditingCell().rowInfo.data.operateTime = newItems;
+												var willUpdateItem:Object = (parent as FlexDataGridContainerBase).grid.getCurrentEditingCell().rowInfo.data;
+												parentDocument.updateRow(willUpdateItem);
+											}
+											
+										]]>
+									</fx:Script>
+								</controls:MultiSelectComboBox>
+
+							</fx:Component>
+						</nestedtreedatagrid:itemEditor>
+					</nestedtreedatagrid:FlexDataGridColumn>
+				</nestedtreedatagrid:columns>
+			</nestedtreedatagrid:FlexDataGrid>
+		</s:VGroup>
+	</s:HGroup>	
+		
+</s:BorderContainer>

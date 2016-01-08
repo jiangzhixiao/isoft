@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Label xmlns:mx="http://www.adobe.com/2006/mxml"
+		  color="#030697"
+		  textAlign="center"
+		  fontWeight="bold"
+		  fontFamily="Arial"
+		  fontSize="16"
+		  click="drawVCode()"
+		  creationComplete="drawVCode()"
+		  toolTip="换一张">
+	<mx:Script>
+		<![CDATA[
+			public function drawVCode():void
+			{
+				drawRandomPoint(this)
+			}
+
+			public function drawRandomPoint(con:Object):void
+			{
+				con.text=GenerateCheckCode();
+				var g:Graphics=con.graphics;
+				g.clear();
+				var i:int;
+				var color:int;
+				for (i=0; i < 8; i++)
+				{
+					color=Math.ceil(Math.random() * 55 * 55 * 54)
+					g.lineStyle(2, color, 0.7)
+					var sx:int=Math.ceil(Math.random() * con.width)
+					var sy:int=Math.ceil(Math.random() * con.height)
+					var ex:int=Math.ceil(Math.random() * con.width)
+					var ey:int=Math.ceil(Math.random() * con.height)
+					g.moveTo(sx, sy)
+					g.lineTo(ex, ey)
+				}
+				for (i=0; i < 100; i++)
+				{
+					color=Math.ceil(Math.random() * 255 * 255 * 254)
+					g.lineStyle(2, color, 0.7)
+					var rx:int=Math.ceil(Math.random() * con.width)
+					var ry:int=Math.ceil(Math.random() * con.height)
+					g.moveTo(rx, ry)
+					g.lineTo(rx + 1, ry + 1)
+				}
+			}
+
+			//生成随机码
+			private function GenerateCheckCode():String
+			{
+				//初始化
+				var ran:Number;
+				var number:Number;
+				var code:String;
+				var checkCode:String="";
+				//生成四位随机数
+				for (var i:int=0; i < 4; i++)
+				{
+					//Math.random生成数为类似为0.1234
+					ran=Math.random();
+					number=Math.round(ran * 10000);
+					//如果是2的倍数生成一个数字
+					if (number % 2 == 0)
+					{
+						//"0"的ASCII码是48  
+						code=String.fromCharCode(48 + (number % 10));
+					}
+					else
+					{
+						//生成一个字母
+						//"A"的ASCII码为65
+						code=String.fromCharCode(65 + (number % 26));
+					}
+					checkCode+=code;
+				}
+				return checkCode;
+			}
+		]]>
+	</mx:Script>
+</mx:Label>

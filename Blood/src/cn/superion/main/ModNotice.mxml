@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   width="100%"
+		   height="100%"
+		   xmlns:controls="cn.superion.base.components.controls.*"
+		   creationComplete="doInit()">
+
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.main.view.NoticeAdd;
+			import cn.superion.vo.notice.CdNotice;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.mxml.RemoteObject;
+
+			
+			//模块编号
+			private var menuNo:String="";
+
+			//窗口打开初始化
+			protected function doInit():void
+			{
+				// TODO Auto-generated method stub
+				this.addEventListener("detailRow", detailClickHandler);
+
+				var parameter:ParameterObject=new ParameterObject();
+				parameter.conditions={NoticeType: ""};
+				gridNoticeList.config(parameter, "noticeImpl", "findCdNoticeListByCondtion", null, null, true);
+			
+//				menuNo=MainFrameUtil.getMenuNo(this);
+			}
+
+			//双击详细页面
+			private function detailClickHandler(event:Event):void
+			{
+				var selectItem:CdNotice=gridNoticeList.grid.selectedItem as CdNotice;
+				if (!selectItem)
+				{
+					return;
+				}
+
+				var win:NoticeAdd=PopUpManager.createPopUp(this, NoticeAdd, true) as NoticeAdd;
+
+				win.noticeNo=selectItem.noticeNo;
+				win.isOpenType="3";
+				win.parentWin=this;
+				win.noticeItem=selectItem;
+				PopUpManager.centerPopUp(win);
+
+			}
+
+			//类型转换
+			private function noticeTypeLabel(item:Object, column:DataGridColumn):String
+			{
+				if (item.noticeType == '' || item.noticeType == '1' || item.noticeType == null)
+				{
+					return '普通';
+				}
+				else
+				{
+					return '紧急';
+				}
+			}
+
+
+			//返回主页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+//				DefaultPage.gotoDefaultPage(this);
+			}
+
+			//新建事件
+			protected function btNew_clickHandler(event:MouseEvent):void
+			{
+//				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, menuNo, "01"))
+//				{
+//					Alert.show("您无此按钮操作权限！", "提示");
+//					return;
+//				}
+
+				var win:NoticeAdd=PopUpManager.createPopUp(this, NoticeAdd, true) as NoticeAdd;
+
+				win.isOpenType="1";
+				win.parentWin=this;
+				win.parentMenuNo=menuNo;
+				PopUpManager.centerPopUp(win);
+			}
+
+			//修改事件
+			protected function btChange_clickHandler(event:MouseEvent):void
+			{
+//				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, menuNo, "02"))
+//				{
+//					Alert.show("您无此按钮操作权限！", "提示");
+//					return;
+//				}
+
+				var selectItem:CdNotice=gridNoticeList.grid.selectedItem as CdNotice;
+				if (!selectItem)
+				{
+					Alert.show("请选择要修改的信息记录", "提示信息");
+					return;
+				}
+
+				var win:NoticeAdd=PopUpManager.createPopUp(this, NoticeAdd, true) as NoticeAdd;
+				win.noticeNo=selectItem.noticeNo;
+				win.parentMenuNo=menuNo;
+				win.isOpenType="2";
+				win.parentWin=this;
+				win.noticeItem=selectItem;
+				PopUpManager.centerPopUp(win);
+			}
+
+			//详细事件
+			protected function btDetail_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var selectItem:CdNotice=gridNoticeList.grid.selectedItem as CdNotice;
+				if (!selectItem)
+				{
+					return;
+				}
+
+				var win:NoticeAdd=PopUpManager.createPopUp(this, NoticeAdd, true) as NoticeAdd;
+				win.noticeNo=selectItem.noticeNo;
+				win.isOpenType="2";
+				win.parentWin=this;
+				win.noticeItem=selectItem;
+				PopUpManager.centerPopUp(win);
+			}
+
+			//删除事件
+			protected function btDel_clickHandler(event:MouseEvent):void
+			{
+//				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, menuNo, "03"))
+//				{
+//					Alert.show("您无此按钮操作权限！", "提示");
+//					return;
+//				}
+
+				var selectItem:CdNotice=gridNoticeList.grid.selectedItem as CdNotice;
+				if (!selectItem)
+				{
+					Alert.show("请选择要删除的信息记录", "提示信息");
+					return;
+				}
+				Alert.show("您是否要删除： " + selectItem.noticeTitle + "通知信息?", "提示信息", Alert.YES | Alert.NO, null, deleteCallback);
+			}
+
+			private function deleteCallback(rev:CloseEvent):void
+			{
+				if (rev.detail == Alert.YES)
+				{
+					var selectItem:CdNotice=gridNoticeList.grid.selectedItem as CdNotice;
+					var remoteObj:RemoteObject=RemoteUtil.getRemoteObject("noticeImpl", function(rev:Object):void
+						{
+							Alert.show("删除：" + selectItem.noticeTitle + "通知成功，请确定！", "提示信息");
+							gridNoticeList.refresh();
+						});
+					remoteObj.delCdNoticeByNoticeNo(selectItem.noticeNo);
+				}
+			}
+			
+			protected function gridNoticeList_mouseOverHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				callout.open(gridNoticeList)
+			}
+			
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+			<s:Callout id="callout">
+				<s:VGroup>
+					<s:Label text="预览"/>
+					<s:Button label="关闭" click="callout.close()"/>
+				</s:VGroup>
+			</s:Callout>
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup x="0"
+				  y="0"
+				  width="100%"
+				  height="100%">
+			
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="#EEF2F3"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%">
+					<controls:PageGrid id="gridNoticeList" mouseOver="gridNoticeList_mouseOverHandler(event)"
+									   styleName="dataGrid"
+									   hasRowNo="true">
+						<controls:columns>
+							<mx:DataGridColumn headerText="序号"
+											   width="40"/>
+							<mx:DataGridColumn headerText="类型"
+											   dataField="noticeType"
+											   width="60"
+											   labelFunction="noticeTypeLabel"
+											   visible="false"/>
+							<mx:DataGridColumn headerText="主题"
+											   textAlign="left"
+											   dataField="noticeTitle"/>
+							<mx:DataGridColumn headerText="发布日期"
+											   dataField="createDate"
+											   width="100"/>
+							<mx:DataGridColumn headerText="发布人"
+											   dataField="createPerson"
+											   width="80"/>
+							<mx:DataGridColumn headerText="详细"
+											   dataField=""
+											   width="40">
+								<mx:itemRenderer>
+									<fx:Component>
+										<mx:LinkButton useHandCursor="true"
+													   buttonMode="true"
+													   mouseChildren="false"
+													   toolTip="详细"
+													   click="dispatchEvent(new Event('detailRow', true))"/>
+									</fx:Component>
+								</mx:itemRenderer>
+							</mx:DataGridColumn>
+						</controls:columns>
+					</controls:PageGrid>
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btNew"
+									   label=" 新 建"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btNew_clickHandler(event)"
+								/>
+						<mx:LinkButton id="btChange"
+									   label=" 修 改"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btChange_clickHandler(event)"/>
+						<mx:LinkButton id="btDel"
+									   label=" 删 除"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btDel_clickHandler(event)"/>
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:BorderContainer>
+		</s:VGroup>
+	</s:BorderContainer>
+
+</s:Module>

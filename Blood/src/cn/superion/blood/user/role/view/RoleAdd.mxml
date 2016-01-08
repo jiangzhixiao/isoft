@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:controls="cn.superion.base.components.controls.*"
+			   xmlns:view="cn.superion.blood.user.role.view.*"
+			   width="910"
+			   height="516"
+			   backgroundColor="0xE2E8E8"
+			   close="titlewindow1_closeHandler(event)"
+			   creationComplete="init()">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.blood.user.role.ModRole;
+			import cn.superion.vo.system.SysDataView;
+			import cn.superion.vo.system.SysRole;
+			import cn.superion.vo.system.SysRoleData;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.mxml.RemoteObject;
+
+			private const MENU_NO:String="0102";
+			[Bindable]
+			public var parentWin:ModRole;
+
+			[Bindable]
+			public var isAdd:Boolean=true;
+
+			[Bindable]
+			public var roleInfo:SysRole;
+
+			[Bindable]
+			private var isEditable:Boolean=true;
+
+			[Bindable]
+			private var sysRoleDatas:ArrayCollection;
+			private var dataArray:ArrayCollection;
+
+			//窗口打开初始化
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				if (isAdd)
+				{
+					this.title='增加角色';
+					isEditable=true;
+					roleInfo=new SysRole();
+					roleInfo.shareIndic='1';
+					this.roleCode.setFocus();
+				}
+				else
+				{
+					this.title='修改角色';
+					isEditable=false;
+
+					this.roleName.setFocus();
+				}
+				//初始化菜单树信息
+				queryMenusByRoleCode(roleInfo.roleCode);
+				//初始当前数据权限的值
+				initDataViews();
+			}
+
+			// 获取当前角色所授权的菜单
+			private function queryMenusByRoleCode(roleCode:String):void
+			{
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject("roleImpl", queryMenusCallback);
+				remoteObj.findMenuListByRoleCode(roleCode);
+			}
+
+			//菜单回调函数，并生成当前树
+			private function queryMenusCallback(rev:Object):void
+			{
+				if (rev == null && rev.data == null)
+				{
+					return;
+				}
+				dataArray=rev.data as ArrayCollection;
+				//
+				var config:Object={};
+				config.dataList=dataArray;
+				config.labelField='menuName';
+				config.rootParentCode='00';
+				config.parentCodeField='appParentCode';
+				config.codeField='appMenuNo';
+				//
+				var treeData:*=ArrayCollUtils.buildTreeData(config);
+				if (treeData.menuName == "root")
+				{
+					//多个应用程序
+					treeData.menuName="应用程序";
+				}
+				menusTree.dataProvider=treeData;
+				menusTree.openItems=[treeData];
+			}
+
+			//初始当前数据权限的值
+			private function initDataViews():void
+			{
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject("roleImpl", function(rev:Object):void
+					{
+						if (rev != null && rev.data != null)
+						{
+							dgDataView.purviewDg.dataProvider=rev.data as ArrayCollection;
+						}
+					});
+				remoteObj.findDataViewList();
+			}
+
+
+			//窗口关闭事件
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+
+			//保存事件
+			protected function btSave_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "04"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+								
+				var strSave:String="add";
+				if (isAdd)
+				{
+					strSave="add";
+				}
+				else
+				{
+					strSave="";
+				}
+				//判断角色编号
+				if (this.roleCode.text == '' || this.roleCode.text == null)
+				{
+					this.roleCode.setFocus();
+					Alert.show("角色编号不能为空，请重新输入！", "提示信息");
+					return;
+				}
+				//判断用户名称
+				if (this.roleName.text == '' || this.roleName.text == null)
+				{
+					this.roleName.setFocus();
+					Alert.show("角色名称不能为空，请重新输入！", "提示信息");
+					return;
+				}
+
+				//当前树中赋角色编码的值
+				for each (var item:SysRoleData in dataArray)
+				{
+					item.roleCode=roleInfo.roleCode
+				}
+
+				//保存当前角色信息
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject("roleImpl", saveCallback);
+				remoteObj.saveRole(roleInfo, dataArray, strSave);
+			}
+
+			private function saveCallback(rev:Object):void
+			{
+				isAdd=false;
+				this.roleName.setFocus();
+				Alert.show(this.roleName.text + "角色信息保存成功！", "提示信息");
+
+				parentWin.roleContent.btQuery_clickHandler();
+			}
+
+			//返回事件
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var comps:Array=[roleCode, roleName];
+				for each (var item:TextInput in comps)
+				{
+					this.removeErrorString(item);
+				}
+				PopUpManager.removePopUp(this);
+			}
+
+			private function removeErrorString(comp:TextInput):void
+			{
+				if (comp.errorString != '')
+				{
+					comp.text='';
+					comp.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OUT));
+				}
+			}
+
+			//共享标志
+			protected function shareIndic_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				roleInfo.shareIndic=shareIndic.selected ? '1' : '0';
+			}
+
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					ctrl.setFocus();
+				}
+			}
+
+			//验证角色编号是否存在
+			protected function roleCode_focusOutHandler(event:FocusEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (isEditable && this.roleCode.text != "")
+				{
+					var ro:RemoteObject=RemoteUtil.getRemoteObject("roleImpl", checkUniqueCallback);
+					ro.findRoleByRoleCode(this.roleCode.text);
+				}
+				else
+				{
+					this.roleCode.errorString='';
+				}
+			}
+
+			private function checkUniqueCallback(rev:Object):void
+			{
+				var revData:ArrayCollection=rev.data as ArrayCollection;
+				if (rev.data != null && revData.length > 0 && revData.getItemAt(0) != null)
+				{
+					this.roleCode.errorString='该角色编号已存在，请重新输入！';
+					this.roleCode.setFocus();
+				}
+				else
+				{
+					this.roleCode.errorString='';
+				}
+			}
+
+			//菜单项点击事件
+			protected function menusTree_itemClickHandler(event:ListEvent):void
+			{
+				if(menusTree.selectedItem.appMenuNo == "00")
+				{
+					return;
+				}
+				var lselMenu:SysRoleData=menusTree.selectedItem as SysRoleData;
+				var lpurviewNo:String=lselMenu.purviewNo ? lselMenu.purviewNo : "";
+
+				var lpurviewDgData:ArrayCollection=dgDataView.purviewDg.dataProvider as ArrayCollection;
+				for each (var item:SysDataView in lpurviewDgData)
+				{
+					if (lpurviewNo.indexOf(item.purviewNo) > -1)
+					{
+						item.isSelected=true;
+					}
+					else
+					{
+						item.isSelected=false;
+					}
+//					trace(item);
+				}
+				dgDataView.purviewDg.invalidateList();
+//				trace(lselMenu.purviewNo);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup x="0"
+			  y="0"
+			  width="100%"
+			  height="100%">
+		<s:BorderContainer width="100%"
+						   height="100%"
+						   backgroundColor="0xE2E8E8"
+						   borderColor="#9ABBE6">
+			<s:HGroup width="100%"
+					  height="100%">
+				<!-- 角色内容显示区域 -->
+				<mx:Form id="basicView"
+						 height="100%"
+						 paddingLeft="5"
+						 paddingRight="4"
+						 borderColor="#9ABBE6"
+						 borderStyle="inset">
+					<mx:FormItem label="角色编号"
+								 width="100%"
+								 indicatorGap="10"
+								 color="#0000FF">
+						<s:TextInput id="roleCode"
+									 width="100%"
+									 text="@{roleInfo.roleCode}"
+									 editable="{isEditable}"
+									 maxChars="10"
+									 color="#000000"
+									 keyUp="keyUpCtrl(event,roleName)"
+									 focusOut="roleCode_focusOutHandler(event)"/>
+					</mx:FormItem>
+					<mx:FormItem label="角色名称"
+								 width="100%"
+								 indicatorGap="10"
+								 color="#0000FF">
+						<s:TextInput id="roleName"
+									 width="100%"
+									 text="@{roleInfo.roleName}"
+									 maxChars="20"
+									 color="#000000"
+									 keyUp="keyUpCtrl(event,shareIndic)"/>
+					</mx:FormItem>
+					<mx:FormItem label="共享标志"
+								 width="100%"
+								 indicatorGap="10"
+								 color="#0000FF">
+						<s:CheckBox id="shareIndic"
+									selected="{roleInfo.shareIndic == '1' ? true:false}"
+									change="shareIndic_changeHandler(event)"
+									keyUp="keyUpCtrl(event,btSave)"/>
+					</mx:FormItem>
+				</mx:Form>
+				<!-- 授权菜单树 -->
+				<s:VGroup width="100%"
+						  height="100%"
+						  verticalAlign="middle">
+					<s:Label text="菜单权限"
+							 paddingTop="2"
+							 color="#0000FF"/>
+					<controls:CheckBoxTree id="menusTree"
+										   width="100%"
+										   height="100%"
+										   chkEditable="true"
+										   labelField="menuName"
+										   checkField="hasPurview"
+										   itemClick="menusTree_itemClickHandler(event)"/>
+				</s:VGroup>
+				<!-- 授权数据权限 -->
+				<view:RoleAddData id="dgDataView"
+								  width="250"/>
+			</s:HGroup>
+		</s:BorderContainer>
+		<!-- 操作按钮部分 -->
+		<s:HGroup height="31"
+				  paddingBottom="10"
+				  horizontalAlign="right"
+				  gap="5"
+				  width="100%">
+			<mx:LinkButton id="btSave"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 保 存"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/save20.png')"
+						   click="btSave_clickHandler(event)"/>
+			<mx:LinkButton id="btReturn"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 返 回"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/return20.png')"
+						   click="btReturn_clickHandler(event)"/>
+			<mx:Spacer width="5"/>
+		</s:HGroup>
+		<mx:Spacer height="1"/>
+	</s:VGroup>
+
+</s:TitleWindow>

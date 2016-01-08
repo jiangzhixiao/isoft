@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100" height="100" backgroundColor="0xCFCFCF">
+	<fx:Script>
+		<![CDATA[
+			import com.flexicious.nestedtreedatagrid.FlexDataGrid;
+			
+			import mx.controls.Alert;
+//			[Embed(source="//assets/images/edit.png")]
+//			private var edit_img:Class;
+//			[Embed(source="//assets/images/delete.png")]
+//			private var delete_img:Class;
+			
+			//exposing a data property will make the grid set it 
+			public var data:Object;
+			
+			//exposing a grid property will make the grid set it 
+			public var grid:Object;
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:HGroup paddingLeft="3" paddingTop="3">
+		<s:Label text="编辑" click="Alert.show('编辑 ' + data.legalName);grid.hideTooltip()" useHandCursor="true"
+				 buttonMode="true" mouseChildren="false" paddingTop="2"/>
+	</s:HGroup>
+	<s:HGroup paddingLeft="3" paddingTop="3">
+		<s:Label text="删除" click="Alert.show('删除 '+ data.legalName);grid.hideTooltip()" useHandCursor="true"
+				 buttonMode="true" mouseChildren="false" paddingTop="2"/>
+	</s:HGroup>
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+</s:BorderContainer>

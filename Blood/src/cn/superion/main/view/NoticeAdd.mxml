@@ -1,0 +1,682 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="930"
+			   height="494"
+			   backgroundColor="#EEF2F3"
+			   close="titlewindow1_closeHandler(event)"
+			   creationComplete="doInit()">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.base.util.UploadRo;
+			import cn.superion.main.ModNotice;
+			import cn.superion.vo.notice.CdNotice;
+			import cn.superion.vo.notice.CdNoticeFiles;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.mxml.RemoteObject;
+
+			private const MENU_NO:String="0902";
+			[Bindable]
+			public var isOpenType:String="1";
+			[Bindable]
+			private var isEditable:Boolean=true;
+
+			[Bindable]
+			public var parentWin:ModNotice;
+
+			[Bindable]
+			private var noticeInfo:CdNotice;
+
+			[Bindable]
+			private var upLoadSize:Number=0; //当前已上传的文件个数
+
+			[Bindable]
+			private var _upLoadRo:UploadRo=new UploadRo();
+			[Bindable]
+			private var destination:String="noticeImpl";
+			[Bindable]
+			private var saveMethod:String="saveCdNotice"; //服务端保存的方法
+			[Bindable]
+			private var txtItems:Array;
+
+			[Bindable]
+			private var arrNoticeFiles:ArrayCollection;
+			
+			public var noticeItem:CdNotice;
+			
+			public var parentMenuNo:String;
+			public var noticeNo:String;
+			
+
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+			//
+			protected function doInit():void
+			{
+				_upLoadRo.isMultiUpload=true;
+				_upLoadRo.selectedCallback=upLoadCompleteHandler;
+				_upLoadRo.maxSize=50 * 1024 * 1024;
+				_upLoadRo.maxFilesNum=3;
+
+				//当前已定义的文本
+				txtItems=[txUpload1, txUpload2, txUpload3];
+
+				if (isOpenType == "1")
+				{
+					this.title='增加通知';
+					isEditable=true;
+					noticeInfo=new CdNotice();
+				}
+				else if (isOpenType == "2")
+				{
+					this.title='修改通知';
+					isEditable=true;
+					noticeInfo=noticeItem
+
+					noticeTitle.text=noticeInfo.noticeTitle;
+					noticeContent.htmlText=noticeInfo.noticeContent;
+						
+					queryNoticeFiles();
+				}
+				else
+				{
+					this.title='查看通知';
+					isEditable=false;
+
+					this.noticeTitle.editable=isEditable;
+					this.noticeContent.enabled=isEditable;
+					this.btUpload.enabled=isEditable;
+					noticeInfo=noticeItem;
+					
+					queryNoticeFiles();
+				}
+				displayDelButton(isEditable);
+
+				this.noticeTitle.setFocus();
+			}
+
+			//显示下载还是删除按钮
+			private function displayDelButton(isDelButton:Boolean):void
+			{
+				if (isDelButton)
+				{
+					this.btDownload1.width=0;
+					this.btDownload1.visible=false;
+					this.btDownload2.width=0;
+					this.btDownload2.visible=false;
+					this.btDownload3.width=0;
+					this.btDownload3.visible=false;
+				}
+				else
+				{
+					this.btDelFile1.width=0;
+					this.btDelFile1.visible=false;
+					this.btDelFile2.width=0;
+					this.btDelFile2.visible=false;
+					this.btDelFile3.width=0;
+					this.btDelFile3.visible=false;
+				}
+			}
+
+			//查询当前附件明细记录
+			private function queryNoticeFiles():void
+			{
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, findCallback);
+				remoteObj.findCdNoticeDetailByNoticeNo(noticeInfo.noticeNo);
+			}
+
+			private function findCallback(rev:Object):void
+			{
+				var revData:ArrayCollection=rev.data as ArrayCollection;
+				if (rev.data == null || revData.length <= 0 || revData.getItemAt(0) == null)
+				{
+					return;
+				}
+				arrNoticeFiles=revData;
+				for each (var cdNoticeFiles:Object in revData)
+				{
+					for each (var txtItem:TextInput in txtItems)
+					{
+						if (txtItem.text == "")
+						{
+							txtItem.text=cdNoticeFiles.fileName;
+							break;
+						}
+					}
+				}
+
+			}
+
+			//上传附件
+			private function upLoadCompleteHandler(item:Object):void
+			{
+				upLoadSize+=item.filesize / 1024 / 1024;
+				this.txUploadInfo.text=upLoadSize.toFixed(2) + "M";
+
+				for each (var txtItem:TextInput in txtItems)
+				{
+					if (txtItem.text == "")
+					{
+						txtItem.text=item.filename;
+						break;
+					}
+				}
+			}
+
+			//保存事件
+			protected function btSave_clickHandler(event:MouseEvent):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, parentMenuNo, "04"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+
+				var strSave:String="add";
+				if (isOpenType == "1")
+				{
+					strSave="add";
+				}
+				else if (isOpenType == "2")
+				{
+					strSave="";
+				}
+				else
+				{
+					Alert.show("查看状态不能进行保存操作!", "提示");
+					return;
+				}
+
+				//保证数据合法性验证
+				if (!saveValidate())
+				{
+					return;
+				}
+				noticeInfo.noticeTitle=this.noticeTitle.text;
+				noticeInfo.noticeContent=this.noticeContent.htmlText;
+
+				//提交数据库
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, saveCallback);
+				remoteObj.saveCdNotice(noticeInfo, _upLoadRo._fileDataArray, strSave);
+			}
+
+			private function saveCallback(rev:Object):void
+			{
+				noticeInfo=rev.data[0];
+				isOpenType="2";
+				Alert.show("通知信息保存成功！", "提示信息");
+				//重新刷新当前页面
+				parentWin.gridNoticeList.refresh();
+				for each (var item:Object in _upLoadRo._fileDataArray)
+				{
+					item.hasSaved="1";
+				}
+			}
+
+			//保存验证
+			private function saveValidate():Boolean
+			{
+				if (this.noticeTitle.text == '')
+				{
+					Alert.show('主题不能为空!', '提示');
+					return false;
+				}
+				if (this.noticeContent.htmlText == '')
+				{
+					Alert.show('内容不能为空!', '提示');
+					return false;
+				}
+//				trace(this.noticeContent.htmlText);
+				if (this.noticeContent.htmlText.length > 4000)
+				{
+					Alert.show('内容字符超过系统最大值!', '提示');
+					return false;
+				}
+
+				if (this.txUpload1.text.length > 60 || this.txUpload2.text.length > 60 || this.txUpload3.text.length > 60)
+				{
+					Alert.show("附件文件名长度不能超过60字符", "提示")
+					return false;
+				}
+				return true;
+			}
+
+			//返回事件
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					ctrl.setFocus();
+				}
+			}
+
+			//上传事件
+			protected function btUpload_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				_upLoadRo.pickfile(destination, saveMethod, this, null, "*");
+			}
+
+			//删除事件
+			protected function btDelFile1_clickHandler(event:MouseEvent):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, parentMenuNo, "03"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+
+				//新增
+				if (arrNoticeFiles == null || arrNoticeFiles.length <= 0)
+				{
+					if (txUpload1.text != "")
+					{
+						txUpload1.text="";
+						_upLoadRo._fileDataArray.splice(0, 1);
+
+						_upLoadRo.currentFilesNum--;
+						if (_upLoadRo.currentFilesNum < 0)
+						{
+							_upLoadRo.currentFilesNum=0;
+						}
+					}
+				}
+				else
+				{
+					//修改
+					if (txUpload1.text == "" || txUpload1.text == null)
+					{
+						return;
+					}
+					_upLoadRo.currentFilesNum--;
+					if (_upLoadRo.currentFilesNum < 0)
+					{
+						_upLoadRo.currentFilesNum=0;
+					}
+
+					var cdNoticeFile:Object=arrNoticeFiles[0];
+					var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+							txUpload1.text="";
+							Alert.show("删除文件成功!", "提示");
+						});
+					remoteObj.delNoticeFile(noticeNo,cdNoticeFile.serialNo);
+				}
+			}
+
+			protected function btDelFile2_clickHandler(event:MouseEvent):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, parentMenuNo, "03"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+
+				//新增
+				if (arrNoticeFiles == null || arrNoticeFiles.length <= 0)
+				{
+					if (txUpload2.text != "")
+					{
+						txUpload2.text="";
+						_upLoadRo._fileDataArray.splice(1, 1);
+
+						_upLoadRo.currentFilesNum--;
+						if (_upLoadRo.currentFilesNum < 0)
+						{
+							_upLoadRo.currentFilesNum=0;
+						}
+					}
+				}
+				else
+				{
+					//修改
+					if (txUpload2.text == "" || txUpload2.text == null)
+					{
+						return;
+					}
+					if (arrNoticeFiles.length <= 1)
+					{
+						return;
+					}
+					_upLoadRo.currentFilesNum--;
+					if (_upLoadRo.currentFilesNum < 0)
+					{
+						_upLoadRo.currentFilesNum=0;
+					}
+
+					var cdNoticeFile:Object=arrNoticeFiles[1];
+
+					var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+							txUpload2.text="";
+							Alert.show("删除文件成功!", "提示");
+						});
+					remoteObj.delNoticeFile(cdNoticeFile);
+				}
+			}
+
+
+			protected function btDelFile3_clickHandler(event:MouseEvent):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, parentMenuNo, "03"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+
+				//新增
+				if (arrNoticeFiles == null || arrNoticeFiles.length <= 0)
+				{
+					if (txUpload3.text != "")
+					{
+						txUpload3.text="";
+						_upLoadRo._fileDataArray.splice(2, 1);
+
+						_upLoadRo.currentFilesNum--;
+						if (_upLoadRo.currentFilesNum < 0)
+						{
+							_upLoadRo.currentFilesNum=0;
+						}
+					}
+				}
+				else
+				{
+					//修改
+					if (txUpload3.text == "" || txUpload3.text == null)
+					{
+						return;
+					}
+					if (arrNoticeFiles.length <= 2)
+					{
+						return;
+					}
+					_upLoadRo.currentFilesNum--;
+					if (_upLoadRo.currentFilesNum < 0)
+					{
+						_upLoadRo.currentFilesNum=0;
+					}
+
+					var cdNoticeFile:CdNoticeFiles=arrNoticeFiles[2];
+					var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+							txUpload3.text="";
+							Alert.show("删除文件成功!", "提示");
+						});
+					remoteObj.delNoticeFile(cdNoticeFile);
+				}
+			}
+
+			protected function btDownload1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (txUpload1.text == "" || txUpload1.text == null)
+				{
+					return;
+				}
+				if (arrNoticeFiles == null || arrNoticeFiles.length <= 0)
+				{
+					return;
+				}
+
+				var cdNoticeFile:Object=arrNoticeFiles[0];
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+					{
+						//
+						var fileData:Object=rev.data[0];
+						var fileName:String=txUpload1.text;
+
+						Alert.show("下载完成，要保存到您的计算机中吗？", "提示", Alert.YES | Alert.NO, null, function(e:*):void
+							{
+								if (e.detail == Alert.YES)
+								{
+									var fileReference:FileReference=new FileReference();
+									fileReference.save(fileData, fileName);
+								}
+							});
+
+					});
+				remoteObj.downLoadFile(noticeNo,cdNoticeFile.serialNo);
+			}
+
+			protected function btDownload2_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (txUpload2.text == "" || txUpload2.text == null)
+				{
+					return;
+				}
+				if (arrNoticeFiles == null || arrNoticeFiles.length <= 1)
+				{
+					return;
+				}
+
+				var cdNoticeFile:CdNoticeFiles=arrNoticeFiles[1];
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+					{
+						//
+						var fileData:Object=rev.data[0];
+						var fileName:String=txUpload2.text;
+
+						Alert.show("下载完成，要保存到您的计算机中吗？", "提示", Alert.YES | Alert.NO, null, function(e:*):void
+							{
+								if (e.detail == Alert.YES)
+								{
+									var fileReference:FileReference=new FileReference();
+									fileReference.save(fileData, fileName);
+								}
+							});
+
+					});
+				remoteObj.downLoadFile(cdNoticeFile);
+			}
+
+
+			protected function btDownload3_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (txUpload3.text == "" || txUpload3.text == null)
+				{
+					return;
+				}
+				if (arrNoticeFiles == null || arrNoticeFiles.length <= 2)
+				{
+					return;
+				}
+				var cdNoticeFile:CdNoticeFiles=arrNoticeFiles[2];
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+					{
+						//
+						var fileData:Object=rev.data[0];
+						var fileName:String=txUpload3.text;
+
+						Alert.show("下载完成，要保存到您的计算机中吗？", "提示", Alert.YES | Alert.NO, null, function(e:*):void
+							{
+								if (e.detail == Alert.YES)
+								{
+									var fileReference:FileReference=new FileReference();
+									fileReference.save(fileData, fileName);
+								}
+							});
+
+					});
+				remoteObj.downLoadFile(cdNoticeFile);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup x="0"
+			  y="0"
+			  width="100%"
+			  height="100%"
+			  top="0">
+		<s:BorderContainer width="100%"
+						   height="100%"
+						   backgroundColor="#EEF2F3"
+						   borderColor="#6C91AC">
+			<s:VGroup width="100%"
+					  height="100%"
+					  left="2"
+					  right="5">
+				<mx:FormItem height="6">
+				</mx:FormItem>
+				<mx:FormItem width="100%"
+							 height="26"
+							 label="主题"
+							 indicatorGap="10"
+							 required="true">
+					<s:HGroup width="100%">
+						<mx:TextInput id="noticeTitle"
+									 width="100%"
+									 keyUp="keyUpCtrl(event,noticeContent)"
+									 imeMode="CHINESE"
+									 maxChars="80"/>
+						<mx:LinkButton id="btUpload"
+									   fontSize="12"
+									   label="添加附件"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btUpload_clickHandler(event)"/>
+						<mx:Spacer width="2"/>
+					</s:HGroup>
+				</mx:FormItem>
+				<mx:FormItem width="100%"
+							 height="100%"
+							 label="内容"
+							 indicatorGap="10"
+							 required="true">
+					<mx:RichTextEditor id="noticeContent"
+									   width="100%"
+									   height="100%"
+									   showToolTips="true"
+									   colorPickerToolTip="颜色"
+									   fontSizeToolTip="字号"
+									   fontFamilyToolTip="字体"
+									   boldToolTip="加粗"
+									   italicToolTip="倾斜"
+									   alignToolTip="对齐方式"
+									   bulletToolTip="编号"
+									   linkToolTip="链接"
+									   underlineToolTip="下划线"
+									   enabled="true"
+									   toolTip="编辑正文">
+					</mx:RichTextEditor>
+				</mx:FormItem>
+				<mx:FormItem width="100%"
+							 height="110"
+							 label="附件"
+							 indicatorGap="10">
+					<s:VGroup width="100%"
+							  height="100%">
+						<s:HGroup width="100%">
+							<mx:TextInput id="txUpload1"
+										 width="100%"
+										 editable="false"
+										 maxChars="60"/>
+							<mx:LinkButton id="btDelFile1"
+										   label="删除"
+										   skin="mx.skins.halo.ButtonSkin"
+										   click="btDelFile1_clickHandler(event)">
+							</mx:LinkButton>
+							<mx:LinkButton id="btDownload1"
+										   label="下载"
+										   skin="mx.skins.halo.ButtonSkin"
+										   click="btDownload1_clickHandler(event)">
+							</mx:LinkButton>
+							<mx:Spacer width="2"/>
+						</s:HGroup>
+						<s:HGroup width="100%">
+							<mx:TextInput id="txUpload2"
+										 width="100%"
+										 editable="false"
+										 maxChars="60"/>
+							<mx:LinkButton id="btDelFile2"
+										   label="删除"
+										   skin="mx.skins.halo.ButtonSkin"
+										   click="btDelFile2_clickHandler(event)">
+							</mx:LinkButton>
+							<mx:LinkButton id="btDownload2"
+										   label="下载"
+										   skin="mx.skins.halo.ButtonSkin"
+										   click="btDownload2_clickHandler(event)">
+							</mx:LinkButton>
+							<mx:Spacer width="2"/>
+						</s:HGroup>
+						<s:HGroup width="100%">
+							<mx:TextInput id="txUpload3"
+										 width="100%"
+										 editable="false"
+										 maxChars="60"/>
+							<mx:LinkButton id="btDelFile3"
+										   label="删除"
+										   skin="mx.skins.halo.ButtonSkin"
+										   click="btDelFile3_clickHandler(event)">
+							</mx:LinkButton>
+							<mx:LinkButton id="btDownload3"
+										   label="下载"
+										   skin="mx.skins.halo.ButtonSkin"
+										   click="btDownload3_clickHandler(event)">
+							</mx:LinkButton>
+							<mx:Spacer width="2"/>
+						</s:HGroup>
+						<s:HGroup width="100%">
+							<s:Label text="上传附件最大50M，已上传附件"/>
+							<s:Label id="txUploadInfo"
+									 text="{upLoadSize}M。"
+									 width="100%"/>
+						</s:HGroup>
+					</s:VGroup>
+				</mx:FormItem>
+			</s:VGroup>
+		</s:BorderContainer>
+		<!-- 操作按钮部分 -->
+		<s:HGroup height="31"
+				  paddingBottom="10"
+				  horizontalAlign="right"
+				  gap="5"
+				  width="100%">
+			<mx:LinkButton id="btSave"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 保 存"
+						   visible="{isEditable}"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/save20.png')"
+						   click="btSave_clickHandler(event)"/>
+			<mx:LinkButton id="btReturn"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 返 回"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/return20.png')"
+						   click="btReturn_clickHandler(event)"/>
+			<mx:Spacer width="5"/>
+		</s:HGroup>
+		<mx:Spacer height="1"/>
+	</s:VGroup>
+</s:TitleWindow>

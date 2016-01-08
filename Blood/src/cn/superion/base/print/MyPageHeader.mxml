@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PrintArea xmlns="com.flexicious.print.printareas.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" paddingBottom="0" paddingTop="0" verticalGap="0" backgroundColor="#CFCFCF">
+	<mx:Script>
+		<![CDATA[
+			import com.flexicious.utils.UIUtils;
+			/*
+				This is a custom page header. Shows up on every page of the print out
+				This control has access to the records printed on this page, as well
+				as all records. Customize as you wish
+			*/
+		]]>
+	</mx:Script>
+	<mx:ControlBar width="100%" horizontalAlign="right">
+		<mx:Label text="平均/最小/最大(本页) {UIUtils.formatCurrency(UIUtils.average(this.pageRecords,'annualSalary'))}/{UIUtils.formatCurrency(UIUtils.min(this.pageRecords,'annualSalary')as Number)}/{UIUtils.formatCurrency(UIUtils.max(this.pageRecords,'annualSalary')as Number)} "/>
+		<mx:Spacer width="100%"/>
+		<mx:Label text="第 {this.currentPage} 页，共 {this.totalPages}页"/>
+	</mx:ControlBar>
+</PrintArea>

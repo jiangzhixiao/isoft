@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+               xmlns:s="library://ns.adobe.com/flex/spark"
+               preloader="cn.superion.preloaders.BarPreloader"
+               minWidth="955" initialize="{System.useCodePage = true}"
+               minHeight="600" preinitialize="preinitializeHandler(event)"
+               applicationComplete="applicationCompleteHandler(event)"
+               backgroundColor="#3F9AD8"
+               frameRate="60" pageTitle="血库管理系统"
+               xmlns:main="cn.superion.main.*"
+               creationComplete="inita(event)" xmlns:progressDisplay="vamos.components.progressDisplay.*"
+               xmlns:spark="com.flexicious.grids.spark.*" xmlns:components="com.fusioncharts.components.*">
+    <fx:Style source="stockholm.css"/>
+    <fx:Script>
+		<![CDATA[
+        import cn.superion.base.AppInfo;
+        import cn.superion.base.RemoteUtil;
+        import cn.superion.base.filter.MyFilter;
+        import cn.superion.base.filter.MyFilterExpression;
+        import cn.superion.base.filter.MyFilterResult;
+        import cn.superion.base.filter.MyFilterSort;
+        import cn.superion.dataDict.DictWinShower;
+        import cn.superion.login.Login;
+        import cn.superion.main.AboutPane;
+        import cn.superion.main.view.TabPane;
+
+        import mx.core.FlexGlobals;
+        import mx.events.CloseEvent;
+        import mx.events.FlexEvent;
+        import mx.events.StyleEvent;
+        import mx.managers.PopUpManager;
+        import mx.managers.ToolTipManager;
+        import mx.rpc.remoting.RemoteObject;
+
+        import spark.components.Alert;
+
+        PopUpManager;//不能删除
+        MyFilter;//不能删除
+        MyFilterExpression;//不能删除
+        MyFilterSort;//不能删除
+        MyFilterResult;//不能删除
+        public var timer:Timer;
+
+        protected function inita(event:FlexEvent):void {
+            // TODO Auto-generated method stub
+
+            AppInfo.APP_CODE = "601";
+            AppInfo.APP_NAME = "血库管理系统";
+
+            var dictShower:DictWinShower = null;
+
+            this.pageTitle = AppInfo.APP_NAME;
+
+            var url:String = this.url;
+            trace(url);
+            var login:Login = Login(PopUpManager.createPopUp(this, Login, false))
+            PopUpManager.centerPopUp(login)
+        }
+
+        //获取初始值
+        private function initTimer():void {
+            timer = new Timer(1000 * 50);
+            timer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void {
+                //getNoticeFromServer();
+            });
+        }
+
+        protected function quit_clickHandler(event:MouseEvent):void {
+            // TODO Auto-generated method stub
+            //退出系统
+            // TODO Auto-generated method stub
+            Alert.show("您是否退出系统？", "提示", Alert.YES | Alert.NO, null, function (evt:CloseEvent):void {
+                if (evt.detail == Alert.YES) {
+                    var ro:RemoteObject = RemoteUtil.getRemoteObject("loginImpl", function (rev:Object):void {
+                        //退出清空数据
+                        AppInfo.sysUser = null;
+                        //返回登录页面
+                        navigateToURL(new URLRequest("SupBlood.html"), "_self");
+                    });
+                    ro.doLoginOut(AppInfo.sysUser.userCode);
+                }
+            });
+        }
+
+        protected function application1_addedToStageHandler(event:Event):void {
+            // TODO Auto-generated method stub
+            progressDisplay.label = "资源加载中...";
+            progressDisplay.delayBeforeFloat = 200;
+            progressDisplay.show(this, true, moduleFactory);
+        }
+
+        protected function preinitializeHandler(event:FlexEvent):void {
+            // TODO Auto-generated method stub
+            try {
+                Security.allowDomain("*");
+            }
+            catch (error:Error) {
+
+            }
+            styleLoader = styleManager.loadStyleDeclarations("stockholm.swf", true, false, ApplicationDomain.currentDomain);
+            styleLoader.addEventListener(StyleEvent.COMPLETE, initialStyleLoadHandler);
+            styleLoader.addEventListener(StyleEvent.ERROR, initialStyleLoadHandler);
+            progressDisplay.label = "资源加载中...";
+            progressDisplay.delayBeforeFloat = 200;
+            progressDisplay.show(this, true, moduleFactory);
+        }
+
+        protected var styleLoader:IEventDispatcher;
+
+        protected function applicationCompleteHandler(event:FlexEvent):void {
+            // TODO Auto-generated method stub
+
+            ToolTipManager.showDelay = 0;
+            ToolTipManager.hideDelay = Number.POSITIVE_INFINITY;
+
+        }
+
+
+        protected function initialStyleLoadHandler(event:StyleEvent):void {
+            styleLoader.removeEventListener(StyleEvent.COMPLETE, initialStyleLoadHandler);
+            styleLoader.removeEventListener(StyleEvent.ERROR, initialStyleLoadHandler);
+            progressDisplay.close();
+        }
+
+        protected function reloadButton_clickHandler(event:MouseEvent):void {
+            // TODO Auto-generated method stub
+            var selectedPane:TabPane = mainWin.mainTabHost.selectedChild as TabPane;
+            if (!selectedPane) return;
+            selectedPane.moduleLoader.unloadModule();
+            trace(selectedPane.menuNo);
+            if (selectedPane && selectedPane.menuNo == "") {
+                selectedPane.moduleLoader.loadModule("cn/superion/main/ModFirstPage.swf");
+            } else {
+                selectedPane.moduleLoader.loadModule(selectedPane.url);
+            }
+        }
+        ]]>
+	</fx:Script>
+
+    <fx:Declarations>
+        <!-- 将非可视元素（例如服务、值对象）放在此处 -->
+        <progressDisplay:ProgressDisplayIndeterminate id="progressDisplay" />
+    </fx:Declarations>
+    <!--- logo -->
+    <s:VGroup includeInLayout="false" visible="false">
+        <spark:ExtendedSparkDataGrid includeInLayout="false" visible="false"/>
+        <components:FusionCharts includeInLayout="false" visible="false"/>
+    </s:VGroup>
+    <s:HGroup top="4" left="10" id="logo"
+              width="119" height="25"
+              baselineShift="-1"
+              gap="0" visible="false"
+              buttonMode="true"
+              verticalAlign="justify">
+        <s:Group>
+            <s:Rect top="0" right="0" bottom="0" left="0">
+                <s:fill>
+                    <s:SolidColor color="#3F9AD8" />
+                </s:fill>
+            </s:Rect>
+            <s:Label text="江苏正融"
+                     fontSize="19"
+                     color="#FFFFFF"
+                     paddingTop="3" paddingLeft="4" paddingRight="3"
+                     trackingLeft="0" trackingRight="0" />
+        </s:Group>
+        <s:Group>
+            <s:Rect top="0" right="0" bottom="0" left="0">
+                <s:fill>
+                    <s:SolidColor color="#000000" />
+                </s:fill>
+            </s:Rect>
+            <s:Label text="血库管理"
+                     fontSize="19"
+                     color="#FFFFFF"
+                     paddingTop="3" paddingLeft="3" paddingRight="3"
+                     trackingLeft="0" trackingRight="0" />
+        </s:Group>
+    </s:HGroup>
+
+
+    <!--- top buttons -->
+    <s:HGroup id="headerButtonWrapper"
+              top="4" right="5" visible="false"
+              verticalAlign="middle"
+              gap="10">
+
+        <s:Button id="reloadButton"
+                  toolTip="刷新模块"
+                  click="reloadButton_clickHandler(event)"
+                  skinClass="cn.superion.main.skins.ReloadButtonSkin"
+                />
+
+        <s:Button id="quit"
+                  label="退出"
+                  toolTip="退出到登录界面"
+                  skinClass="cn.superion.main.skins.WhiteButtonSkin"
+                  click="quit_clickHandler(event)"/>
+
+        <s:Button id="aboutSelect"
+                  label="关于"
+                  click="new AboutPane().floatPane(DisplayObject(FlexGlobals.topLevelApplication), true, true, true, null, moduleFactory);"
+                  baselineShift="-1"
+                  skinClass="cn.superion.main.skins.WhiteButtonSkin"/>
+
+
+    </s:HGroup>
+    <main:MainWin id="mainWin"
+                  x="0" top="32"
+                  y="0"
+                  visible="false">
+    </main:MainWin>
+
+</s:Application>

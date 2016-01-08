@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.flex.blazeds:flex-messaging-proxy:4.7.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.flex.blazeds/flex-messaging-proxy/4.7.0/c2db4b801c69094b12ec3c0ce426607a3dc4503f/flex-messaging-proxy-4.7.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.flex.blazeds/flex-messaging-proxy/4.7.0/6c74df0689b57addfcedef537f5f45351bf78a99/flex-messaging-proxy-4.7.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

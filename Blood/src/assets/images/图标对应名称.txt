@@ -1,0 +1,258 @@
+bg文件夹图片汇总对照表\........................
+
+登陆背景图    center_login.jpg 
+
+头部图片      center_main_01.png
+              center_main_02.png
+              center_main_03.png
+欢迎图片      center_main51.png
+              center_main52.png
+
+分割条图片(样式1)    menu_mid_left.png
+                     menu_mid_right.png
+分割条图片(样式2)    menu_left.png 
+                     menu_right.png
+分割条图片(底图)     menu_mid_bg.jpg
+
+
+menu文件夹图片汇总对照表\........................
+ 
+一级菜单(第一栏) m_01.png
+二级菜单(第一栏) m_01_01.png
+二级菜单(第二栏) m_01_02.png
+
+一级菜单(第二栏) m_02.png
+二级菜单(第一栏) m_02_01.png
+
+...
+...
+
+title文件夹图片汇总对照表 28 * 25\........................
+
+退出系统  exit28.png
+          exit28_disabled.png
+
+帮    助  help28.png
+          help28_disabled.png
+
+系统通知  notice28.png
+          notice28_disabled.png
+
+密码修改  password28.png
+          password28_disabled.png
+
+系统管理  system28.png
+          system28_disabled.png
+
+读    卡  readIc28.png
+          readIc28_disabled.png
+
+短信管理  affiche28.png
+          affiche28_disabled.png
+
+标题背景图片  title01.png   
+              title01.png
+              title01.png
+
+模块内水晶图片bg01.png
+              bg02.png
+
+
+button文件夹图片汇总对照表\....................
+
+登录    btlogin64.png
+        btlogin64_disabled.png
+
+退出    btexit64.png
+        btexit64_disabled.png
+
+
+按钮上增加文字引用的图标：27 * 20   28 * 23
+
+收件箱  inbox.png
+        inbox_disabled.png
+
+增行    new27.png
+收缩    unfold.png
+展开    shrink.png
+生成组  group.png
+取消组  groupcel.png
+
+
+标题文字前小图标  title20.png
+                  title20_disabled.png
+
+
+按钮上增加文字引用的图标：20 * 16
+
+新建    new20.png
+        new20_disabled.png
+
+新增    add20.png
+        add20_disabled.png
+
+新开    newb20.png
+        newb20_disabled.png
+
+修改    change20.png
+        change20_disabled.png
+
+删除    delete20.png   
+        delete20_disabled.png
+
+        del_t.gif
+
+清屏    cls20.png
+        cls20_disabled.png
+
+清空    clear20.png
+        clear20_disabled.png
+
+恢复    restore20.png
+        restore20_disabled.png
+
+回收    reclaim20.png
+        reclaim20_disabled.png
+
+打印    print20.png
+        print20_disabled.png 
+
+输出    exp20.png
+        exp20_disabled.png
+
+输入    imp20.png
+        imp20_disabled.png
+
+引入    import20.png
+        import20_disabled.png
+
+导入    imp20_1.png
+        imp20_1_disabled.png
+
+导出    exp20_1.png
+        exp20_1_disabled.png
+
+提取    distill20.png
+        distill20_disabled.png
+
+撤消    check20.png
+        check20_disabled.png
+
+取消    cancel20.png 
+        cancel20_disabled.png
+
+确定    confirm20.png
+        confirm20_disabled.png
+
+详细    particular20.png
+        particular20_disabled.png
+
+计算    compute20.png
+        compute20_disabled.png
+
+查找    query20.png
+        query20_disabled.png
+
+放弃    abandon20.png
+        abandon20_disabled.png
+
+过滤    filtrate20.png
+        filtrate20_disabled.png
+ 
+保存    save20.png
+        save20_disabled.png
+
+暂存    intermit20.png
+        intermit20_disabled.png
+
+返回    return20.png
+        return20_disabled.png
+
+退出    exit20.png
+        exit20_disabled.png
+
+审核    auditing20.png
+        auditing20_disabled.png
+
+取消审核audit20.png
+        audit20_disabled.png
+
+结算    balance20.png
+        balance20_disabled.png
+
+取消结算bal20.png
+        bal20_disabled.png
+
+增行    addrow20.png
+        addrow20_disabled.png
+
+减行    decrow20.png
+        decrow20_disabled.png
+
+复制    copy20.png
+        copy20_disabled.png
+
+上传    upload20.png
+        upload20_disabled.png
+
+
+下载    download20.png
+        download20_disabled.png
+
+转发    transmit20.png
+        transmit20_disabled.png
+
+日历    calendar20.png
+        calendar20_disabled.png
+
+
+读卡    read20.png
+        read20_disabled.png 
+
+
+医保对照  CollateTop.png
+          CollateTop20_disabled.png
+          CollateDown20.png
+          CollateDown20_disabled.png
+
+生成病历  build20.png
+          build20_disabled.png
+
+
+就诊     vist20.png
+         vist20_disabled.png
+
+检验     check20.png
+         check20_disabled.png
+
+发邮件  send20.png
+        send20_disabled.png
+
+发消息 communication20.png
+       communication20_disabled.png
+
+写信息  write20.png
+        write20_disabled.png
+
+
+按钮上无文字引用的图标：16 * 16（一般分页上引用）
+
+背景图片      pagebg.png
+
+首条          page-first.gif
+              page-first-disabled.gif
+
+下一条        page-next.gif
+              page-next-disabled.gif
+
+上一条        page-prev.gif
+              page-prev-disabled.gif
+
+末条          page-last.gif
+              page-last-disabled.gif
+刷新          refresh.gif
+
+删除          delete_t.gif
+详细          particular_t.gif
+
+

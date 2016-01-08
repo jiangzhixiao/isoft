@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- http://blog.flexexamples.com/2008/05/29/displaying-checkbox-controls-using-the-repeater-in-flex/ -->
+<s:Application  xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				
+				xmlns:c="com.flexicious.controls.*"
+				xmlns:flxs="com.flexicious.nestedtreedatagrid.*"
+				
+				applicationComplete="init()"
+				>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			
+			[Bindable] public var dataList:ArrayCollection = new ArrayCollection();
+			
+			private function init():void{
+				
+				var o1:Object = new Object();
+				o1.name="Henry (Empty-Null))";
+				o1.zipCode="";
+				o1.state=null;
+				dataList.addItem(o1);
+				
+				var o2:Object = new Object();
+				o2.name="Mary (Null-Null)";
+				o2.zipCode=null;
+				o2.state=null;
+				dataList.addItem(o2);
+				
+				var o3:Object = new Object();
+				o3.name="Tina";
+				o3.zipCode="300";
+				o3.state='Today is <b><font color="#ff0000" size="10">Sunday.</font></b>';
+				dataList.addItem(o3);
+				
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<flxs:FlexDataGrid id="dg" width="100%" height="100%" dataProvider="{dataList}" enableFilters="true" >
+		<flxs:columnLevel>			
+			<flxs:FlexDataGridColumnLevel>
+				<flxs:columns>
+					<flxs:FlexDataGridCheckBoxColumn />
+					<flxs:FlexDataGridColumn dataField="name" filterControl="MultiSelectComboBox" filterComboBoxBuildFromGrid="true"/>
+					<flxs:FlexDataGridColumn dataField="zipCode" filterControl="MultiSelectComboBox" filterComboBoxBuildFromGrid="true" useLabelFunctionForFilterCompare="true"/>
+					<flxs:FlexDataGridColumn dataField="state" filterControl="MultiSelectComboBox" filterComboBoxBuildFromGrid="true" useLabelFunctionForFilterCompare="true"
+											 itemRenderer="cn.superion.HTMLLabel"/>
+				</flxs:columns>
+			</flxs:FlexDataGridColumnLevel>
+		</flxs:columnLevel>
+	</flxs:FlexDataGrid>  
+	
+</s:Application>

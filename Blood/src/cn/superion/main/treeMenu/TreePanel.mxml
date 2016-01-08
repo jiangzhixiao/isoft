@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" gap="0"
+		  width="206" height="300" creationComplete="doInit()">
+	
+	<fx:Script>
+		<![CDATA[
+			import vamos.components.paneNavigators.tabPaneNavigator.TabPaneNavigator;
+			
+			import mx.containers.TabNavigator;
+			import mx.controls.HRule;
+			import mx.effects.Zoom;
+			
+			import spark.components.Group;
+			import spark.effects.Move;
+			private var _isOpen:Boolean=false;
+			public var isRoot:Boolean=false;
+			public  var data:Object = null;
+			private var _conHeight:Number=131;
+			private var _totalHeight:Number = 0;
+			private var _buttonHeight:Number=29;
+			[Embed(source="/assets/images/menu/index_minus.png")]
+			private var minusIcon:Class;
+			[Embed(source="/assets/images/menu/index_plus.png")]
+			private var plusIcon:Class	
+			[Bindable]
+			private var _title:String;
+			private var _parentCon:Object;
+			private var _buttonBar:HGroup;
+			private var _mainTabHost:TabPaneNavigator;
+			private var _dataProvider:Array
+			private var _itemLen:Number=0;
+			
+			public function get parentCon():Object
+			{
+				return _parentCon;
+			}
+
+			public function set parentCon(value:Object):void
+			{
+				_parentCon = value;
+			}
+
+			protected function doInit():void
+			{
+				if(this.parentCon){
+					spacer.visible=true
+					spacer.includeInLayout=true
+				}else{
+					spacer.visible=false
+					spacer.includeInLayout=false
+				}
+				for each(var item:Object in _dataProvider){
+					if(item.children){
+						var treeMenuPanel:TreePanel=new TreePanel();
+						treeMenuPanel.parentCon=this
+						treeMenuPanel.height=25;
+						treeMenuPanel.data= item;
+						_itemLen++;
+						treeMenuPanel.width=this.width;//?????
+						treeMenuPanel.title=item.label;
+						treeMenuPanel.dataProvider=	item.children;
+						treeMenuPanel.buttonBar=_buttonBar;
+						treeMenuPanel.mainTabHost=_mainTabHost;
+						con.addElement(treeMenuPanel);
+						MainFrameUtil.gTreePanels.push(treeMenuPanel);
+						continue;
+					}					
+					if(item.label=='-'){
+						_itemLen+=0.02
+//						_itemLen+=0.01
+						var line:HRule=new HRule();
+						line.width=this.width
+						con.addElement(line);
+						continue;
+					}
+					_itemLen++;
+					var button:ToggleLinkButton=new ToggleLinkButton();
+					button.label=item.label
+					button.linkTitle=item.linkTitle
+					button.width=this.width
+					button.height=_buttonHeight
+					button.buttonIcon=item.icon;
+					button.linkTitle=item.linkTitle
+					button.linkUrl=item.linkUrl;
+					button.menuNo = item.menuNo;
+					button.userDefinedSign = item.userDefinedSign;
+					button.mainTabHost=_mainTabHost
+					button.buttonBar=_buttonBar
+					button.parentCon=this
+					con.addElement(button);
+//					MainFrameUtil.gToggleButtonMap[button.linkUrl]=button;
+					MainFrameUtil.gToggleButtonMap[button.menuNo]=button;
+				}
+			}
+			
+			//打开或关闭节点
+			public function image1_clickHandler(event:MouseEvent,fisClose:Boolean=false):void
+			{	
+				
+				_conHeight=(_buttonHeight+1)*_itemLen+5; //如果出现菜单位置错乱，修改_buttonHeigh+1为+2或+3
+				if(event){
+//					closeOtherTree(!_isOpen)
+				}else{
+					if(!_isOpen){
+						return;
+					}
+				}
+
+				_isOpen=!_isOpen;
+				treeIcon.source=_isOpen?minusIcon:plusIcon;
+				if(_isOpen){
+					this.height=this.height+_conHeight;
+					if(this.parentCon){
+						this.parentCon.height+=_conHeight;
+					}
+				}else{
+					
+					this.height=this.height-_conHeight;
+					if(this.parentCon){
+						this.parentCon.height-=_conHeight;
+					}
+					var level:int = getLevel(this);
+					if(level ==0){
+						for each(var da:Object in this.data.children){
+							for each(var trePanel:TreePanel in MainFrameUtil.gTreePanels){
+								if(da.menuNo == trePanel.data.menuNo){
+									trePanel.image1_clickHandler(null,true);
+								}
+							}
+						}
+					}
+				}					
+				con.visible=_isOpen;
+				con.includeInLayout=_isOpen
+				callLater(invalidateNav);
+			}
+			private function closeOtherTree(fisOpen:Boolean):void{
+//				if(!fisOpen){
+//					return;
+//				}
+				var currentLevel:int=getLevel(this);
+				for each(var trePanel:TreePanel in MainFrameUtil.gTreePanels){
+					if(trePanel==this||getLevel(trePanel)<currentLevel){
+						continue;
+					}
+					trePanel.image1_clickHandler(null,true);
+				}
+			}
+			private function getLevel(treePanel:TreePanel):int{
+				var level:int=0
+				if(treePanel.parentCon){
+					level=1
+					if(treePanel.parentCon.parentCon){
+						level=2
+					}
+				}
+				return level;
+			}
+			private function invalidateNav():void
+			{
+//				var move:Zoom=new Zoom(MainFrameUtil.gMenuCon);
+//				move.zoomHeightTo=0.8;
+//				move.play([MainFrameUtil.gMenuCon]);
+				this.invalidateDisplayList();
+			}
+			public function get dataProvider():Array
+			{
+				return _dataProvider;
+			}
+			
+			public function set dataProvider(value:Array):void
+			{
+				_dataProvider = value;
+			}
+			
+			public function get title():String
+			{
+				return _title;
+			}
+			
+			public function set title(value:String):void
+			{
+				_title = value;
+			}
+			
+			public function get mainTabHost():TabPaneNavigator
+			{
+				return _mainTabHost;
+			}
+			
+			public function set mainTabHost(value:TabPaneNavigator):void
+			{
+				_mainTabHost = value;
+			}
+			
+			public function get buttonBar():HGroup
+			{
+				return _buttonBar;
+			}
+			
+			public function set buttonBar(value:HGroup):void
+			{
+				_buttonBar = value;
+			}
+			
+			public function get isOpen():Boolean
+			{
+				return _isOpen;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:HGroup width="{this.width}" paddingLeft="20" verticalAlign="middle" height="25">
+		<s:Spacer id="spacer" width="0"/>
+		<s:Image id="treeIcon" click="image1_clickHandler(event)" buttonMode="true" 
+				 source="@Embed('/assets/images/menu/index_plus.png')"/>
+		<s:Label text="{_title}" fontSize="12"/>
+	</s:HGroup>
+	<s:BorderContainer id="con" visible="false" width="{this.width}" height="0" backgroundColor="0xFFFFFF"
+					   borderVisible="false" includeInLayout="false">
+		<s:layout>
+			<s:VerticalLayout gap="0"/>
+		</s:layout>
+	</s:BorderContainer>
+</s:VGroup>

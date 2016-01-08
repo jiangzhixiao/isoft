@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.flex.blazeds:flex-messaging-core:4.7.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.flex.blazeds/flex-messaging-core/4.7.0/24efbfa44369f90a17652ae84f9328b3590ec3cb/flex-messaging-core-4.7.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.flex.blazeds/flex-messaging-core/4.7.0/c13540c5640c100374f0e2fcec4e5a1a68c66de6/flex-messaging-core-4.7.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

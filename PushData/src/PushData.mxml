@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   preinitialize="loadXml()"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   frameRate="60" backgroundColor="#00CCFF" width="500" height="400"
+					   xmlns:mx="library://ns.adobe.com/flex/mx" showStatusBar="false"
+					   xmlns:progressDisplay="vamos.components.progressDisplay.*"
+					   creationComplete="init()"
+					   xmlns:view="view.*">
+	<fx:Style source="stockholm.css"/>
+	<fx:Declarations>
+		<progressDisplay:ProgressDisplayDeterminate id="progressDisplay" />
+	</fx:Declarations>
+	<fx:Script>
+			<![CDATA[
+		import cn.vamos.base.RemoteUtil;
+
+		import com.everythingflex.air.managers.IconManager;
+
+		import mx.collections.ArrayCollection;
+		import mx.controls.Alert;
+		import mx.events.CloseEvent;
+		import mx.managers.PopUpManager;
+		import mx.messaging.ChannelSet;
+		import mx.messaging.channels.AMFChannel;
+		import mx.messaging.config.ServerConfig;
+		import mx.messaging.events.MessageAckEvent;
+		import mx.messaging.events.MessageFaultEvent;
+		import mx.messaging.messages.AsyncMessage;
+		import mx.messaging.messages.IMessage;
+		import mx.rpc.events.FaultEvent;
+		import mx.rpc.events.ResultEvent;
+		import mx.rpc.remoting.mxml.RemoteObject;
+		import mx.utils.StringUtil;
+
+
+		//托盘图标
+		[Embed(source="assets/blue_lego.png")]
+		private var Icon_Dock:Class;
+		private var bitmapDock:Bitmap = new Icon_Dock();
+
+		[Embed(source="assets/mail.png")]
+		private var IconMail:Class;
+		private var bitmapMail:Bitmap = new IconMail();
+
+		[Embed(source="assets/mail_new.png")]
+		private var IconMailNew:Class;
+		public static const OPEN:String = "打开";
+		public static const CLOSE:String = "退出";
+		public static const TOOL_TIP:String = "网站提醒工具";
+		public static const DESTINATION_1:String = "loginController";
+		public static const DESTINATION_2:String = "loginController";
+
+		public static const YES_LABEL:String = "最小化";
+		public static const NO_LABEL:String = "退出";
+		public static const SHOW_MSG:String = "退出或者最小化到托盘";
+
+		//
+		public static var ALERTWIN_DELAY:String = null;
+		public static var CHANNEL_SET:String = null;
+		private var xmlPath:String = "config.xml";
+		public static var END_POINT:String = "";// "http://192.168.1.62:8088/WebPusher/messagebroker/amf";
+		private var bitmapMailNew:Bitmap = new IconMailNew();
+
+		private var _sysTray:SystemTrayIcon;
+		private var _notifyTimer:Timer; //监听图标闪动
+		private var _state:int=0; //闪动状态
+		private var _bitmapDataArray:Array = [];
+		private var defaultSysDockIconBitmaps:Array = [bitmapDock.bitmapData];
+		private var alteredSysDockIconBitmaps:Array = [bitmapMailNew.bitmapData];
+
+
+		private var i:IconManager = new IconManager(defaultSysDockIconBitmaps,alteredSysDockIconBitmaps);
+
+		private var stageheight:Number = flash.system.Capabilities.screenResolutionY;
+
+		private var stagewidth:Number = flash.system.Capabilities.screenResolutionX;
+		public var shareObj:SharedObject = SharedObject.getLocal("shareObj");
+
+		public var ro:RemoteObject = null;
+
+		public function generateURL(array:Array):String {
+			var url : String = "http://chart.apis.google.com/chart?cht=bvs&amp;chd=t:" + array[0] + "," + array[1] + "," + array[2] + "," + array[3] + "," + array[4] + "," + array[5] + "&amp;chs=210x300&amp;chtt=Generated%20Random%20Numbers&amp;chco=ff9900|00ccff&amp;chxt=x,y&amp;chxl=0"+array[0]+" | "+array[1]+" | "+array[2]+" | "+array[3]+" | "+array[4]+" | "+array[5]+" | 1 :  || 20 || 60 || 100 ";
+			return url;
+		}
+
+		private function handleFault(event:MessageFaultEvent):void {
+			Alert.show(event.faultString);
+		}
+
+		private function loadXml():void{
+			var loader:URLLoader=new URLLoader(new URLRequest(xmlPath));
+			loader.addEventListener(Event.COMPLETE,handleCompleted);
+		}
+
+		private function handleCompleted(event:Event):void
+		{
+			var configXML:XML=XML(event.target.data);
+			END_POINT = "http://"+configXML.ip+":"+configXML.port+"/"+configXML.context+"/messagebroker/amf";
+			CHANNEL_SET = "http://"+configXML.ip+":"+configXML.port+"/"+configXML.context+"/messagebroker/streamingamf";
+			ALERTWIN_DELAY = configXML.alertwin_delay;
+			RemoteUtil.ENDPOINT = END_POINT;
+
+		}
+		private function init():void{
+
+			//
+//				NativeApplication.nativeApplication.startAtLogin = true;
+			this.move(stagewidth/2-this.width/2,stageheight/2-this.height/2);
+			this.addEventListener(Event.CLOSING,closingApplication);
+			//通过Loader加载系统托盘图标
+			initSystray();
+		}
+
+		/** * *每隔500ms触发Timer状态栏闪动提醒事件 * * */
+		private function onNotify(evt:TimerEvent):void{
+			if (_state == 0)
+				_state = 1;
+			else
+				_state = 0;
+			NativeApplication.nativeApplication.icon.bitmaps = [_bitmapDataArray[_state]];
+		}
+		//关闭窗体的事件
+		public function closingApplication(event:Event):void
+		{
+			event.preventDefault();
+			Alert.yesLabel=YES_LABEL;
+			Alert.noLabel=NO_LABEL;
+			Alert.show(SHOW_MSG, "退出?", 3, this, alertCloseHandler);
+
+		}
+
+		private function alertCloseHandler(event:CloseEvent):void
+		{
+			if(event.detail==Alert.YES){
+				dock();
+			}else{
+				stage.nativeWindow.close();
+//					closeApp(event);
+			}
+		}
+
+		//生成托盘
+		public function initSystray():void
+		{
+//				bitmapDock.bitmapData=event.target.content.bitmapData;
+			if(NativeApplication.supportsSystemTrayIcon){
+				setSystemTrayProperties();//
+				SystemTrayIcon(NativeApplication.nativeApplication.icon).menu=createSystrayRootMenu();//生成托盘菜单
+			}
+		}
+
+		//创建托盘菜单
+		public function createSystrayRootMenu():NativeMenu{
+			var menu:NativeMenu = new NativeMenu();
+			var openNativeMenuItem:NativeMenuItem = new NativeMenuItem(OPEN);
+			var exitNativeMenuItem:NativeMenuItem = new NativeMenuItem(CLOSE);
+			openNativeMenuItem.addEventListener(Event.SELECT, undock);
+			exitNativeMenuItem.addEventListener(Event.SELECT, closeApp);
+			menu.addItem(openNativeMenuItem);menu
+			menu.addItem(new NativeMenuItem("",true));
+			menu.addItem(exitNativeMenuItem);
+			return menu;
+		}
+
+		//设置程序托盘图标
+		private function setSystemTrayProperties():void{
+			SystemTrayIcon(NativeApplication.nativeApplication .icon).tooltip = TOOL_TIP;
+			SystemTrayIcon(NativeApplication.nativeApplication .icon).addEventListener(MouseEvent.CLICK, undock);
+			this.nativeWindow.addEventListener(NativeWindowDisplayStateEvent.DISPLAY_STATE_CHANGING, nwMinimized);
+		}
+
+		//最小化窗体
+		private function nwMinimized(displayStateEvent:NativeWindowDisplayStateEvent):void {
+			if(displayStateEvent.afterDisplayState == NativeWindowDisplayState.MINIMIZED) {
+				displayStateEvent.preventDefault();//阻止系统默认的关闭窗体事件
+				dock();//将程序放入托盘
+			}
+		}
+
+		//激活程序窗体
+		public function undock(evt:Event):void {
+			stage.nativeWindow.visible = true;//
+			stage.nativeWindow.orderToFront();//设置窗体最前端
+			NativeApplication.nativeApplication .icon.bitmaps = [];// 将托盘图标清空
+		}
+
+		//关闭程序窗体
+		private function closeApp(evt:Event):void {
+			stage.nativeWindow.visible = true;//
+			stage.nativeWindow.orderToFront();
+			Alert.yesLabel="确定";
+			Alert.noLabel="取消";
+			Alert.show('您确定退出？','提示',Alert.YES|Alert.NO,null,function (event:CloseEvent):void{
+				if(event.detail == Alert.YES){
+					stage.nativeWindow.close();
+				}
+			});
+
+		}
+
+		//将本地应用程序放到托盘
+		public function dock():void {
+			stage.nativeWindow.visible = false; //设置本地程序窗体不可见
+			NativeApplication.nativeApplication.icon.bitmaps = [bitmapDock];//设置托盘的图标
+		}
+
+		]]>
+		</fx:Script>
+	<s:VGroup id="mainForm" width="100%" height="100%" horizontalAlign="center" paddingBottom="8" paddingTop="0" verticalAlign="middle" gap="10"
+			>
+		<view:Login id="loginPane"/>
+		<!--<view:MainPane visible="false"  width="100%" height="100%" includeInLayout="false" id="mainPane"/>-->
+	</s:VGroup>
+</s:WindowedApplication>

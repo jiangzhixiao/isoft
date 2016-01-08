@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				width="270"
+				creationComplete="itemrenderer1_creationCompleteHandler(event)"
+				autoDrawBackground="true">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			protected function itemrenderer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				content.htmlText = data.WARN_CONTENT;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:BorderContainer alpha=".9"
+					   backgroundColor="0xFFFF99" 
+					   borderColor="black"
+					   borderStyle="solid" 
+					   width="100%" height="100%" 
+					   >
+		<s:layout>
+			<s:VerticalLayout/>
+		</s:layout>
+		
+		<fx:Script>
+			<![CDATA[
+				import com.flexicious.nestedtreedatagrid.FlexDataGrid;
+				public var grid:FlexDataGrid;
+			]]>
+		</fx:Script>	
+		<s:Label text="{data.noticeTitle}" fontWeight="bold"/>
+		<mx:Text id="content" width="265" />
+		<s:HGroup horizontalAlign="right" width="100%" paddingBottom="8">
+			<mx:LinkButton id="btClose" label="关闭" textDecoration="underline" textAlign="center" click="grid.hideTooltip()" />
+			
+		</s:HGroup>	
+	</s:BorderContainer>
+</s:ItemRenderer>

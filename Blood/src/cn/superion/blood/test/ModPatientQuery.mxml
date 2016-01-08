@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:controls="cn.superion.base.components.controls.*"  creationComplete="inita()">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.base.util.StringUtils;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import cn.superion.dataDict.DictWinShower;
+			import cn.superion.report2.ReportViewer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.remoting.RemoteObject;
+			private const MENU_NO:String="0403";
+//			private var destination:String='patientQueryImpl';
+			
+			private function inita():void
+			{
+				//
+				gridPatientQuery.grid.sortableColumns=true;
+				inpNo.setFocus();
+				var paramInit:ParameterObject=new ParameterObject();
+				paramInit.conditions={};
+				gridPatientQuery.config(paramInit,"bloodCheckImpl",'findInPats',function(rev:Object):void
+				{
+					//2012.06.25 芮玉红
+					if(rev.data && rev.data.length>0)
+					{
+						gridPatientQuery.grid.dataProvider=rev.data;
+						return;
+					}
+					Alert.show('没有查询到相关信息','提示');
+					gridPatientQuery.grid.dataProvider=null;
+					
+				},null,false);
+				//2012.06.25 芮玉红 住院病人总数
+				var ro:RemoteObject=RemoteUtil.getRemoteObject('patientQueryImpl',function(rev:Object):void
+				{
+				
+					inPatsNum.text=rev.data[0].toString()+'人';
+					
+				});
+				ro.findInPatsNum();
+				
+			}
+
+			//查询
+			protected function btQuery_clickHandler():void
+			{
+				// TODO Auto-generated method stub
+				var params:Object=FormUtils.getFields(queryPanel,[]);
+//				if(chkWardCode.selected)
+//				{
+//					params["wardCode"]=wardCode.code;
+//				}
+//				else
+//				{
+//					params["wardCode"]=null;
+//				}
+//				if(chkDeptCode.selected)
+//				{
+//					params['deptCode']=deptCode.code;
+//				}
+//				else
+//				{
+//					params["deptCode"]=null;
+//				}
+				params["patientId"]=StringUtils.Trim(this.inpNo.text);
+				params["personName"]=StringUtils.Trim(this.personName.text);
+				params["bedNo"]=StringUtils.Trim(this.bedNo.text);
+//				 if(inpNo.text=='' && personName.text == '' && bedNo.text =='')
+//				 {
+//					 Alert.show('请输入查询条件','提示')
+//						 return;
+//				 }
+				var paramQuery:ParameterObject=new ParameterObject();
+				paramQuery.conditions=params;
+				gridPatientQuery.reQuery(paramQuery);
+			}
+			
+			//打印输出
+			/**
+			 * @param 参数说明
+			 * 		  lstrPurview 权限编号;
+			 * 		  isPrintSign 打印输出标示,预览：2，直接打印：1，输出：0	
+			 */ 
+			private function printExpHandler(lstrPurview:String,isPrintSign:String):void
+			{
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, lstrPurview))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				
+				var _dataList:ArrayCollection=gridPatientQuery.grid.dataProvider as ArrayCollection;
+				var dict:Dictionary = new Dictionary();
+				dict["单位名称"] = AppInfo.sysUser.unitsName;
+				dict["日期"] =DateField.dateToString(new Date(),'YYYY-MM-DD');
+				dict["主标题"] = "住院病人基本信息";
+				dict["制表人"] ="制表人："+AppInfo.sysUser.userName;
+				ReportViewer.Instance.Show("report/blood/test/patientQuery.xml", _dataList, dict);
+			}
+			
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					
+					ctrl.setFocus();
+				}
+			}
+			
+			private function keUpHandler(e:KeyboardEvent):void
+			{
+				if(!btQuery.enabled)
+					return
+				if (e.keyCode == Keyboard.ENTER)
+				{
+					btQuery_clickHandler();
+				}
+			}
+			
+			//返回主页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				MainFrameUtil.closeTab(this);
+			}
+
+
+//			protected function wardCode_creationCompleteHandler(event:FlexEvent):void
+//			{
+//				// TODO Auto-generated method stub
+//				wardCode.txtContent.restrict='^ ';
+//				wardCode.txtContent.editable=false;
+//			}
+//
+//
+//			protected function deptCode_creationCompleteHandler(event:FlexEvent):void
+//			{
+//				// TODO Auto-generated method stub
+//				deptCode.txtContent.restrict='^ ';
+//				deptCode.txtContent.editable=false;
+//			}
+
+
+//			protected function wardCode_queryIconClickHandler(event:Event):void
+//			{
+//				// TODO Auto-generated method stub
+//				DictWinShower.showDeptWardDict(function(rev:Object):void
+//				{
+//					wardCode.txtContent.text=rev.deptName;
+//					wardCode.code=rev.deptCode;
+//				})
+//			}
+
+
+//			protected function deptCode_queryIconClickHandler(event:Event):void
+//			{
+//				// TODO Auto-generated method stub
+//				DictWinShower.showDeptClinicDict(function(rev:Object):void
+//				{
+//					deptCode.txtContent.text=rev.deptName;
+//					deptCode.code=rev.deptCode;
+//				})	
+//			}
+			
+			protected function labelFun(item:Object, column:DataGridColumn):String
+			{
+				if (item.notdata)
+				{
+					return '';
+				}
+				if (column.dataField == 'bloodName')
+				{
+					if(item.bloodName)
+					{
+						var targetItem:Object=ArrayCollUtils.findItemInArrayByValue(BaseDict.bloodDict,'blood',item.bloodName);
+						if(targetItem){
+							item.bloodName=targetItem.bloodName;
+							return targetItem.bloodName;
+						}
+					}
+				}
+				if (column.headerText == '年龄')
+				{
+					if(item.age)
+					{
+						if(item.ageUnits)
+						{
+							item.ageName=item.age+item.ageUnits;
+							return item.age+item.ageUnits;	
+						}
+						else
+						{
+							item.ageName=item.age;
+							return item.age;
+						}
+						
+					}
+				}
+			
+				if (column.headerText == "Rh(D)")
+				{
+					if(item.rhType)
+					{
+						if(item.rhType=='1')
+						{
+							item.rhTypeName='阴性';
+							return '阴性';
+						}else
+						{
+							item.rhTypeName='阳性';
+							return '阳性';
+						}
+						
+					}
+				}
+				if(column.headerText=="病人所在病区")
+				{
+					if(item.wardCode)
+					{
+						item.wardName=ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict, 'dept',item.wardCode) == null ? item.wardCode : ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict, 'dept', item.wardCode).deptName;
+						return item.wardName;
+					}
+					else
+					{
+						return '';
+					}
+				}
+				return '';
+			}
+
+//			protected function chkDeptCode_changeHandler(event:Event):void
+//			{
+//				// TODO Auto-generated method stub
+//				if(chkDeptCode.selected==false)
+//				{
+//					deptCode.txtContent.text='';
+//				}
+//			}
+
+
+//			protected function chkWardCode_changeHandler(event:Event):void
+//			{
+//				// TODO Auto-generated method stub
+//				if(chkWardCode.selected==false)
+//				{
+//					wardCode.txtContent.text='';
+//				}
+//			}
+
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup width="100%"
+				  height="100%"
+				  gap="0">
+			<!-- 标题部分 -->
+
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%"
+						  paddingBottom="5"
+						  paddingLeft="5"
+						  paddingRight="5"
+						  paddingTop="5">
+					<!-- 查询条件区 -->
+					<s:HGroup id="queryPanel" 
+						 width="100%" height="31" paddingTop="3" 
+							  paddingLeft="5"
+							  paddingRight="5"
+							  verticalAlign="middle">
+						<!--<s:CheckBox id="chkWardCode" change="chkWardCode_changeHandler(event)"/>
+						<s:Label text="病区" fontSize="14" enabled="{chkWardCode.selected}"
+								 color="#0000FF"/>
+						<controls:TextInputIcon id="wardCode" color="black"
+												width="110"  maxChars="10" 
+												enabled="{chkWardCode.selected}"
+												creationComplete="wardCode_creationCompleteHandler(event)"
+												keyUp="keyUpCtrl(event,deptCode)" 
+												queryIconClick="wardCode_queryIconClickHandler(event)"/>
+						
+						<s:CheckBox id="chkDeptCode" change="chkDeptCode_changeHandler(event)"/>
+						<s:Label text="科室" fontSize="14" 
+								 enabled="{chkDeptCode.selected}"
+								 color="#0000FF"/>
+						<controls:TextInputIcon id="deptCode" color="black"
+												width="110" maxChars="10"
+												enabled="{chkDeptCode.selected}"
+												keyUp="keyUpCtrl(event,bedNo)"
+												creationComplete="deptCode_creationCompleteHandler(event)"
+												queryIconClick="deptCode_queryIconClickHandler(event)"/>-->	
+						
+						<mx:FormItem label="住院号"
+									 fontSize="14"
+									 color="#0000FF"
+									 horizontalAlign="center"
+									 width="180">
+							<s:TextInput id="inpNo" color="black"
+										  width="100%"
+										  maxChars="20"
+										  restrict="^ "
+										  keyUp="keyUpCtrl(event,bedNo)"/>
+						</mx:FormItem>
+						<mx:FormItem label="床号"
+									 fontSize="14"
+									 color="#0000FF"
+									 horizontalAlign="center"
+									 width="160">
+							<s:TextInput id="bedNo" color="black"
+										 width="100%"
+										 maxChars="3"
+										 restrict="^ "
+										 keyUp="keyUpCtrl(event,personName)"/>
+						</mx:FormItem>
+						<mx:FormItem label="姓名"
+									 fontSize="14"
+									 color="#0000FF"
+									 horizontalAlign="center"
+									 width="150">
+							<s:TextInput id="personName" color="black"
+										  width="100%" 
+										  maxChars="10"
+										  restrict="^ "
+										  keyUp="keyUpCtrl(event,btQuery)"/>
+						</mx:FormItem>
+						<mx:LinkButton id="btQuery"
+									   height="24"
+									   label=" 查 找"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="btQuery_clickHandler()" 
+									   keyUp="keUpHandler(event)"/>
+						<s:Label text="住院病人总数："/>
+						<s:Label id="inPatsNum"
+								 color="blue"/>
+					</s:HGroup>
+					<controls:PageGrid id="gridPatientQuery"
+									   styleName="dataGrid" 
+									   isShowBBar="true"
+									   hasRowNo="true" >
+						<controls:columns>
+							<mx:DataGridColumn headerText="序号"
+											   width="50"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="住院号"
+											   dataField="patientId"
+											   width="100"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="姓名"
+											   dataField="personName"
+											   width="100"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="出生日期"
+											   dataField="dateOfBirth"
+											   width="120"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="性别"
+											   dataField="sexName"
+											   width="80"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="年龄"
+											   dataField="age"
+											   width="80"
+											   textAlign="left"
+											   labelFunction="labelFun"/>
+							
+							<mx:DataGridColumn headerText="血型"
+											   dataField="bloodName"
+											   width="80"
+											   textAlign="left"
+											   labelFunction="labelFun"/>
+							<mx:DataGridColumn headerText="Rh(D)"
+											   dataField="rhType"
+											   width="80"
+											   textAlign="left"
+											   labelFunction="labelFun"/>
+							<mx:DataGridColumn headerText="身份证号"
+											   dataField="idNo"
+											   width="120"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="病人所在病区"
+											   dataField="wardCode"
+											   width="120"
+											   textAlign="left"
+											   labelFunction="labelFun"/>
+						</controls:columns>
+					</controls:PageGrid>
+
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31" verticalAlign="middle"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btPrint"
+									   label=" 打 印"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/print20.png')"
+									   click="printExpHandler('05','1')"/>
+
+						<!--<mx:LinkButton id="btExport"
+									   label=" 输 出"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/exp20.png')"
+									   click="printExpHandler('08','0')"/>-->
+
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+
+			</s:BorderContainer>
+
+		</s:VGroup>
+
+	</s:BorderContainer>
+
+</mx:Module>

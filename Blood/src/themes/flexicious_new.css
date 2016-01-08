@@ -1,0 +1,609 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+@namespace treegrid "com.flexicious.nestedtreedatagrid.*";
+@namespace printgrid "com.flexicious.nestedtreedatagrid.print.*";
+
+@namespace charts "com.flexicious.components.charts.*";
+@namespace axis "com.flexicious.components.charts.axis.*";
+@namespace visualiz "com.flexicious.components.visualization.*";
+@namespace tinycharts "com.flexicious.components.tinycharts.*";
+@namespace tinygauge "com.flexicious.components.tinycharts.tinygauge.*";
+
+@namespace dashboard "com.flexicious.components.dashboard.*";
+@namespace container "com.flexicious.components.container.*";
+@namespace controls "com.flexicious.controls.*";
+
+
+treegrid|FlexDataGrid {
+	sortArrowSkin : ClassReference("mx.skins.halo.DataGridSortArrow");	
+	disclosureOpenIcon: Embed(source="assets/assets.swf", symbol="TreeDisclosureOpen");
+	disclosureClosedIcon: Embed(source="assets/assets.swf", symbol="TreeDisclosureClosed");
+	stretchCursor : Embed("assets/cursorStretch.swf");
+	columnGroupClosedIcon : Embed(source="assets/assets.swf", symbol="TreeDisclosureClosed");
+	columnGroupOpenIcon : Embed(source="assets/assets.swf", symbol="TreeDisclosureOpen");
+	
+	
+	multiColumnSortNumberStyleName: "multiColumnSortNumberStyle";
+	multiColumnSortNumberHeight: 15;
+	columnGroupDrawTopBorder: false;
+	columnGroupVerticalGridLines: true;
+	columnGroupVerticalGridLineColor: #666666;
+	columnGroupRollOverColors: #298EBD, #298EBD;
+	columnGroupColors: #298EBD, #298EBD;
+	columnGroupVerticalGridLineThickness: 1;
+	
+	
+	columnGroupHorizontalGridLines:true;
+	columnGroupHorizontalGridLineColor:#666666;
+	columnGroupHorizontalGridLineThickness:1;
+/*	selectionDisabledTextColor: #DDDDDD;*/
+	
+	headerStyleName : dataGridStyles;
+	footerStyleName : dataGridStyles;
+	filterStyleName : dataGridHeaderStyles;
+	pagerStyleName : dataGridStyles;
+	columnGroupStyleName:dataGridStyles;
+
+	borderSides : "left,right,top,bottom";	
+	borderColor : 0;
+	backgroundColor : 16777215, 16777215;	
+	rendererColors : 16777215, 16777215;
+	
+	headerColors : #298EBD,#298EBD;
+	pagerColors : 16777215, 16777215;	
+	filterColors : 16777215, 16777215;
+	footerColors : #298EBD, #298EBD;
+	
+/*	selectionColor: #3e3e3e, #3e3e3e;*/
+	
+/*	contentBackgoundColor: #3e3e3e, #3e3e3e;*/
+	color:#000000;
+	selectionDisabledColor : "null";
+	lockedSeperatorColor : #6f6f6f;
+	textRollOverColor : 0;	
+	alternatingTextColors : 0, 0;
+	textSelectedColor : 0;	
+	selectionDisabledTextColor : 14540253;
+	activeCellColor:12049407;
+	errorBackgroundColor:#00FF00;
+	errorBorderColor:15875628;
+	
+	alternatingItemColors : #FFFFFF, #E7F3FF;
+	headerRollOverColors : #298EBD, #298EBD;	
+	rendererRollOverColors : 16777215, 16777215;
+	filterRollOverColors : 13619151, 13619151;
+	pagerRollOverColors : 15132390, 16777215;
+	footerRollOverColors : #298EBD, #298EBD;
+	fixedColumnFillColors : 12566463, 12566463;
+	
+	footerHorizontalGridLineColor : 6710886;
+	pagerHorizontalGridLineColor : 6710886;	
+	horizontalGridLineColor : 6908265;
+	footerVerticalGridLineColor : 6710886;
+	filterVerticalGridLineColor : 6710886;
+	verticalGridLineColor : 6908265;
+	rendererVerticalGridLineColor : 6710886;
+	pagerVerticalGridLineColor : 6710886;
+	headerHorizontalGridLineColor : 6710886;
+	headerVerticalGridLineColor : 6710886;
+	rendererHorizontalGridLineColor : 6710886;
+	filterHorizontalGridLineColor : 6710886;
+	
+	footerHorizontalGridLineThickness : 1;	
+	pagerHorizontalGridLineThickness : 1;
+	footerVerticalGridLineThickness : 1;
+	dropIndicatorThickness:2;	
+	borderThickness : 1;
+	filterVerticalGridLineThickness : 1;	
+	horizontalGridLineThickness : 1;
+	verticalGridLineThickness : 1;
+	pagerVerticalGridLineThickness : 1;
+	rendererVerticalGridLineThickness : 1;
+	headerHorizontalGridLineThickness : 1;
+	rendererHorizontalGridLineThickness : 1;
+	filterHorizontalGridLineThickness : 1;
+	headerVerticalGridLineThickness : 1;
+	lockedSeperatorThickness : 1;
+	
+	rendererPaddingBottom : 2;	
+	filterPaddingTop : 2;
+	filterPaddingLeft : 2;
+	rendererPaddingRight : 2;	
+	filterPaddingRight : 2;
+	footerPaddingBottom : 2;
+	filterPaddingBottom : 2;	
+	headerPaddingBottom : 2;	
+	pagerPaddingBottom : 2;	
+	pagerPaddingLeft : 2;	
+	rendererPaddingTop : 2;
+	pagerPaddingTop : 2;
+	paddingBottom : 2;	
+	headerPaddingRight : 2;
+	headerPaddingTop : 2;
+	pagerPaddingRight : 2;
+	footerPaddingLeft : 2;
+	paddingRight : 2;
+	headerPaddingLeft : 2;	
+	footerPaddingTop : 2;
+	footerPaddingRight : 2;
+	paddingTop : 2;
+	paddingLeft : 2;
+	rendererPaddingLeft : 2;
+	
+	horizontalGridLines : true;	
+	verticalGridLines : false;
+	headerHorizontalGridLines : true;
+	headerVerticalGridLines : true;
+	pagerVerticalGridLines : true;
+	pagerHorizontalGridLines : true;
+	filterVerticalGridLines : true;
+	filterHorizontalGridLines : true;	
+	footerVerticalGridLines : true;	
+	footerHorizontalGridLines : true;
+	rendererVerticalGridLines : true;
+	rendererHorizontalGridLines : true;
+	
+	headerDrawTopBorder : false;
+	pagerDrawTopBorder : false;
+	rendererDrawTopBorder : false;		
+	filterDrawTopBorder : false;	
+	footerDrawTopBorder : false;
+	
+	
+}
+
+.advancedDataGridStyles {
+	fontWeight : "bold";
+}
+.dataGridStyles {
+	fontWeight : "bold";
+	color:#ffffff;
+	textAlign:center;
+}
+
+.dataGridHeaderStyles {
+	/*headerBackgroundSkin : ClassReference("brownie.skins.DataGridHeaderSkin");*/
+	fontWeight : "bold";
+}
+
+.multiColumnSortNumberStyle {
+	fontSize:10;		
+	paddingTop:0;
+	paddingLeft:0;
+	paddingBottom:0;
+	paddingRight:0;
+}
+
+.columnGroupStyle {
+	fontWeight: "bold";
+	textAlign: "center";	
+}
+
+.msbButton {
+	paddingTop : 1;
+	textDecoration : "underline";
+	leading : 0;
+	color : #555555;
+	textRollOverColor : 0;
+	fontSize : 11;
+	paddingBottom : 1;
+	paddingLeft : 2;
+	paddingRight : 2;	
+}
+
+.msbButtonBox {
+	borderStyle : "solid";
+	borderColor : 0;
+	backgroundColor : #FFFFFF;
+	horizontalAlign : "right";
+	horizontalGap : 2;	
+}
+
+.watermark {
+	fontStyle : "italic";
+}
+
+.watermarkStyle {
+	color : #BBBBBB;
+	fontStyle : "italic";	
+}
+
+/*
+com.flexicious.controls.MultiSelectComboBox
+buttonBoxStyleName = "msbButtonBox";
+buttonStyleName = "msbButton";
+*/
+
+printgrid|PrintFlexDataGrid {
+	sortArrowSkin : ClassReference("mx.skins.halo.DataGridSortArrow");	
+	disclosureClosedIcon : Embed("assets/TreeDisclosureClosed.swf");
+	disclosureOpenIcon : Embed("assets/TreeDisclosureOpen.swf");
+	stretchCursor : Embed("assets/cursorStretch.swf");
+	columnGroupClosedIcon:Embed("assets/TreeDisclosureClosed.swf");
+	columnGroupOpenIcon:Embed("assets/TreeDisclosureClosed.swf");
+	
+	multiColumnSortNumberStyleName: "multiColumnSortNumberStyle";
+	columnGroupDrawTopBorder: false;
+	selectionDisabledTextColor: #DDDDDD;
+	pagerPaddingLeft: 2;
+	columnGroupHorizontalGridLineColor: #666666;
+	paddingTop: 2;
+	multiColumnSortNumberHeight: 15;
+	filterHorizontalGridLines: true;
+	columnGroupHorizontalGridLineThickness: 1;
+	columnGroupPaddingBottom: 2;
+	headerPaddingBottom: 2;
+	paddingLeft: 2;
+	footerStyleName: "dataGridStyles";
+	alternatingTextColors: 0, 0;
+	borderThickness: 1;
+	columnGroupVerticalGridLines: true;
+	footerColors: #BFBFBF, #BFBFBF;
+	columnGroupVerticalGridLineColor: #666666;
+	filterPaddingRight: 2;
+	borderColor: 0;
+	rendererVerticalGridLines: true;
+	columnGroupRollOverColors: 13556719, 13556719;
+	lockedSeperatorThickness: 2;
+	filterStyleName: "dataGridStyles";
+	headerDrawTopBorder: false;
+	pagerRollOverColors: #E6E6E6, #FFFFFF;
+	rendererPaddingTop: 2;
+	paddingBottom: 2;
+	pagerPaddingTop: 2;
+	rendererVerticalGridLineThickness: 1;
+	pagerVerticalGridLineColor: #666666;
+	columnGroupColors: #E6E6E6, #FFFFFF;
+	headerHorizontalGridLineThickness: 1;
+	headerHorizontalGridLineColor: #666666;
+	footerPaddingRight: 2;
+	rendererHorizontalGridLineColor: #666666;
+	verticalGridLines: true;
+	paddingRight: 2;
+	borderSides: "left,right,top,bottom";
+	headerPaddingRight: 2;
+	filterHorizontalGridLineThickness: 1;
+	filterHorizontalGridLineColor: #666666;
+	headerPaddingTop: 2;
+	alternatingItemColors: #FFFFFF, #FFFFFF;
+	headerVerticalGridLines: true;
+	rendererDrawTopBorder: false;
+	pagerHorizontalGridLineThickness: 1;
+	footerVerticalGridLineThickness: 1;
+	rendererPaddingBottom: 2;
+	footerDrawTopBorder: false;
+	footerHorizontalGridLineThickness: 1;
+	backgroundColor: #FFFFFF, #FFFFFF;
+	pagerPaddingBottom: 2;
+	footerHorizontalGridLineColor: #666666;
+	rendererColors: #FFFFFF, #FFFFFF;
+	pagerVerticalGridLineThickness: 1;
+	textRollOverColor: 0;
+	pagerHorizontalGridLineColor: #666666;
+	verticalGridLineThickness: 1;
+	columnGroupHorizontalGridLines: true;
+	horizontalGridLineThickness: 1;
+	columnGroupPaddingRight: 2;
+	pagerVerticalGridLines: true;
+	rendererPaddingLeft: 2;
+	columnGroupPaddingLeft: 2;
+	headerHorizontalGridLines: true;
+	selectionDisabledColor: "null";
+	headerStyleName: "dataGridStyles";
+	footerVerticalGridLineColor: #666666;
+	rendererRollOverColors: #FFFFFF, #FFFFFF;
+	filterPaddingBottom: 2;
+	footerPaddingBottom: 2;
+	multiColumnSortNumberWidth: 10;
+	filterRollOverColors: #CFCFCF, #CFCFCF;
+	pagerHorizontalGridLines: true;
+	filterVerticalGridLineThickness: 1;
+	rendererHorizontalGridLines: true;
+	columnGroupStyleName: "columnGroupStyle";
+	footerRollOverColors: #BFBFBF, #BFBFBF;
+	lockedSeperatorColor: 0;
+	filterColors: #CFCFCF, #CFCFCF;
+	headerVerticalGridLineThickness: 1;
+	horizontalGridLineColor: #696969;
+	columnGroupPaddingTop: 2;
+	filterPaddingTop: 2;
+	filterVerticalGridLineColor: #666666;
+	verticalGridLineColor: #696969;
+	filterPaddingLeft: 2;
+	footerHorizontalGridLines: true;
+	columnGroupVerticalGridLineThickness: 1;
+	rendererPaddingRight: 2;
+	pagerDrawTopBorder: false;
+	rendererVerticalGridLineColor: #666666;
+	headerColors: #E6E6E6, #FFFFFF;
+	filterVerticalGridLines: true;
+	textSelectedColor: 0;
+	horizontalGridLines: false;
+	footerPaddingTop: 2;
+	headerVerticalGridLineColor: #666666;
+	footerVerticalGridLines: true;
+	rendererHorizontalGridLineThickness: 1;
+	headerPaddingLeft: 2;
+	headerRollOverColors: 13556719, 13556719;
+	filterDrawTopBorder: false;
+	pagerStyleName: "dataGridStyles";
+	pagerColors: #E6E6E6, #FFFFFF;
+	pagerPaddingRight: 2;
+	footerPaddingLeft: 2;	
+	
+}
+
+
+mx|AdvancedDataGrid{
+	columnDropIndicatorSkin: ClassReference("mx.skins.halo.DataGridColumnDropIndicator");
+	columnResizeSkin: ClassReference("mx.skins.halo.DataGridColumnResizeSkin");
+	headerColors: #FFFFFF, #E6E6E6;
+	headerDragProxyStyleName: "headerDragProxyStyle";
+	headerBackgroundSkin: ClassReference("mx.skins.halo.DataGridHeaderBackgroundSkin");
+	headerSeparatorSkin: ClassReference("mx.skins.halo.DataGridHeaderSeparator");
+	headerHorizontalSeparatorSkin: ClassReference("mx.skins.halo.AdvancedDataGridHeaderHorizontalSeparator");
+	headerStyleName: "advancedDataGridStyles";
+	sortArrowSkin: ClassReference("mx.skins.halo.DataGridSortArrow");
+	stretchCursor : Embed("assets/cursorStretch.swf");
+}
+
+mx|AdvancedDataGridSortItemRenderer{
+	paddingTop: 0;
+	paddingBottom: 0;
+	paddingLeft: 0;
+	paddingRight: 0;
+	horizontalGap: 0;
+	color: #0B333C;
+	icon: ClassReference("mx.skins.halo.DataGridSortArrow");
+}
+
+mx|PrintAdvancedDataGrid{
+	alternatingItemColors: #FFFFFF, #FFFFFF;
+	borderColor: 0;
+/*	columnResizeSkin: ClassReference("mx.skins.halo.DataGridColumnResizeSkin");*/
+	headerColors: #FFFFFF, #FFFFFF;
+	headerSeparatorSkin: ClassReference("mx.skins.halo.DataGridHeaderSeparator");
+	headerStyleName: "advancedDataGridStyles";
+	horizontalGridLineColor: 0;
+	horizontalGridLines: true;
+	sortArrowSkin: ClassReference("mx.skins.halo.DataGridSortArrow");
+	stretchCursor : Embed("assets/cursorStretch.swf");
+	verticalGridLineColor: #000000;
+}
+
+
+axis|HorizontalAxis {
+	skinClass: ClassReference("com.flexicious.skins.charts.axis.HorizontalAxisSkin");	
+}
+
+axis|VerticalAxis {
+	skinClass: ClassReference("com.flexicious.skins.charts.axis.VerticalAxisSkin");
+}
+
+container|DashedBorderContainer {
+	borderColor: #FFFFFF;
+	backgroundColor: #999999;
+	borderThickness: 3;
+	backgroundAlpha: 0.5;	
+}
+
+container|ExtendedTitleWindow {
+	skinClass: ClassReference("com.flexicious.skins.container.ExtendedTitleWindowSkin");
+}
+
+container|FieldSet {
+	skinClass: ClassReference("com.flexicious.skins.container.FieldSetSkin");
+}
+
+charts|AreaChart {
+	itemSelectionFills: 15726591;
+	skinClass: ClassReference("com.flexicious.skins.charts.AreaChartSkin");
+	itemSelectionLineColors: 25054;
+	lineWidth:1;
+	itemLineColors: 25054;
+	itemFills: 15726591;
+	itemRollOverFills: 15726591;
+	itemRollOverLineColors: 25054;	
+}
+
+charts|BarChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.skins.charts.BarChartSkin");
+	itemSelectionLineColors: 25054;
+	itemLineColors: 25054;
+	itemFills: #000000, #9F9F9F, #CFCFCF;
+	itemRollOverFills: 25054;
+	itemRollOverLineColors: 25054;	
+}
+
+charts|BubbleChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.skins.charts.BubbleChartSkin");
+	itemLineColors: #FFFFFF;
+	itemFills: #000000, #9F9F9F, #CFCFCF;
+	itemRollOverFills: 25054;	
+}
+
+charts|CandlestickChart {
+	skinClass: ClassReference("com.flexicious.skins.charts.CandlestickChartSkin");
+}
+
+charts|ColumnChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.skins.charts.ColumnChartSkin");
+	itemLineColors: 0;
+	itemFills: #000000, #9F9F9F, #CFCFCF;
+	itemRollOverFills: 25054;	
+}
+
+charts|FunnelChart {
+	
+}
+
+charts|HLOCChart {
+	skinClass: ClassReference("com.flexicious.skins.charts.HLOCChartSkin");
+}
+
+charts|LineChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.skins.charts.LineChartSkin");
+	itemLineColors: #FFFFFF;
+	itemFills: #000000, #9F9F9F, #CFCFCF;
+	itemRollOverFills: 25054;	
+}
+
+charts|PlotChart {
+	skinClass: ClassReference("com.flexicious.skins.charts.PlotChartSkin");
+}
+
+charts|PieChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.skins.charts.PieChartSkin");
+	itemLineColors: 0;
+	itemFills: #000000, #9F9F9F, #CFCFCF;
+	itemRollOverFills: 25054;	
+}
+
+charts|PyramidChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.skins.charts.PyramidChartSkin");
+	itemLineColors: #FFFFFF;
+	itemFills: #CC0099, #660099, #330099, 13260, #999999, #CC0000, #99FF00;
+	itemRollOverFills: 25054;	
+}
+
+visualiz|Gauge {
+	skinClass: ClassReference("com.flexicious.skins.visualization.GaugeSkin");
+}
+
+visualiz|HorizontalLinearGauge {
+	skinClass: ClassReference("com.flexicious.skins.visualization.HorizontalLinearGaugeSkin");
+}
+
+visualiz|HorizontalSemiCircleGauge {
+	skinClass: ClassReference("com.flexicious.skins.visualization.HorizontalSemiCircleGaugeSkin");
+}
+
+visualiz|TrafficLight {
+	skinClass: ClassReference("com.flexicious.skins.visualization.TrafficLightSkin");
+}
+
+visualiz|VerticalLinearGauge {
+	skinClass: ClassReference("com.flexicious.skins.visualization.VerticalLinearGaugeSkin");
+}
+
+visualiz|VerticalSemiCircleGauge {
+	skinClass: ClassReference("com.flexicious.skins.visualization.VerticalSemiCircleGaugeSkin");
+}
+
+tinycharts|TinyAreaChart {
+	itemSelectionFills: 15726591;
+	skinClass: ClassReference("com.flexicious.components.tinycharts.skins.TinyAreaChartSkin");
+	itemSelectionLineColors: 25054;
+	lineWidth: 1;
+	itemLineColors: 25054;
+	itemFills: 15726591;
+	itemRollOverFills: 15726591;
+	itemRollOverLineColors: 25054;	
+}
+
+tinycharts|TinyBarChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.components.tinycharts.skins.TinyBarChartSkin");
+	itemSelectionLineColors: 25054;
+	itemLineColors: 25054;
+	itemFills: #9F9F9F;
+	itemRollOverFills: 25054;
+	itemRollOverLineColors: 25054;	
+}
+
+tinycharts|TinyColumnChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.components.tinycharts.skins.TinyColumnChartSkin");
+	itemSelectionLineColors: 25054;
+	itemLineColors: 25054;
+	itemFills: #9F9F9F;
+	itemRollOverFills: 25054;
+	itemRollOverLineColors: 25054;	
+}
+
+tinycharts|TinyDividedBarChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.components.tinycharts.skins.TinyDividedBarChartSkin");
+	itemLineColors: #FFFFFF;
+	itemFills: #000000, #9F9F9F, #CFCFCF;
+	itemRollOverFills: 25054;	
+}
+
+tinycharts|TinyDividedColumnChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.components.tinycharts.skins.TinyDividedColumnChartSkin");
+	itemLineColors: #FFFFFF;
+	itemFills: #000000, #9F9F9F, #CFCFCF;
+	itemRollOverFills: 25054;	
+}
+
+tinycharts|TinyLineChart {
+	itemSelectionFills: 15726591;
+	skinClass: ClassReference("com.flexicious.components.tinycharts.skins.TinyLineChartSkin");
+	lineWidth: 1;
+	itemSelectionLineColors: 25054;
+	itemLineColors: 25054;
+	itemFills: 15726591;
+	itemRollOverFills: 15726591;
+	itemRollOverLineColors: 25054;	
+}
+
+tinycharts|TinyPieChart {
+	itemSelectionFills: 25054;
+	skinClass: ClassReference("com.flexicious.components.tinycharts.skins.TinyPieChartSkin");
+	itemLineColors: #FFFFFF;
+	itemFills: #000000, #9F9F9F, #CFCFCF;
+	itemRollOverFills: 25054;	
+}
+
+tinygauge|TinyHorizontalBulletGauge {
+	skinClass: ClassReference("com.flexicious.components.tinycharts.skins.gauge.TinyHorizontalBulletGaugeSkin");
+}
+
+tinygauge|TinyVerticalBulletGauge {
+	skinClass: ClassReference("com.flexicious.components.tinycharts.skins.gauge.TinyVerticalBulletGaugeSkin");
+}
+
+dashboard|DashboardContainer {
+	backgroundColors: #FBFBFB, #CECECE;
+	borderColor: 0;
+	dragAlpha: 0.8;
+	skinClass: ClassReference("com.flexicious.skins.dashboard.DashboardSkin");
+	cornerRadius: 2;
+	dragRowBorderStyle: "dragRowBorder";
+	borderAlpha: 0.5;
+	borderWeight: 1;	
+}
+
+.dragRowBorder {
+	borderColor: #CCCCCC;
+	borderWeight: 2;	
+}
+
+dashboard|DashboardTaskbar {
+	
+}
+
+dashboard|Dashlet {
+	skinClass: ClassReference("com.flexicious.skins.dashboard.DashletSkin");
+	backgroundAlpha: 0.1;	
+}
+
+dashboard|DragDropZone {
+	
+}
+
+controls|TriStateCheckBox
+{
+	middleIcon:Embed("assets/images/checkBox_middle.png");
+}
+
+
+

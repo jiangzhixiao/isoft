@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	 工作量统计模块
+	 author:吴小娟   2011.06.23
+	 checked by：
+-->
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   backgroundColor="#E2E8E8"
+		   horizontalScrollPolicy="auto"
+		   xmlns:controls="cn.superion.base.components.controls.*"
+		   creationComplete="doInit()"
+		   xmlns:config="cn.superion.base.config.*">
+	
+	<fx:Script source="ModWorkLoadStatas.as"/>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<!--<s:BorderContainer width="100%"
+		 height="100%"
+		 backgroundColor="0xE2E8E8"
+		 borderVisible="false">-->
+	<s:Scroller id="scrol"
+				width="100%"
+				height="100%">
+		<s:VGroup width="100%"
+				  height="100%"
+				  gap="0">
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%"
+						  paddingLeft="5"
+						  paddingRight="5">
+					<!-- 查询条件区 -->
+					<s:HGroup width="100%"
+							  id="queryPanelTi"
+							  height="33"
+							  paddingLeft="5"
+							  paddingTop="5"
+							  verticalAlign="middle">
+						<s:Label text="出库日期"
+								 color="#0000FF"/>
+						<mx:DateField id="dfStartDate"
+									  keyUp="keyUpCtrl(event,dfEndDate)"
+									  width="150"
+									  formatString="YYYY-MM-DD"
+									  enterFrame="{dfStartDate.selectedDate==null?dfStartDate.selectedDate=new Date():dfStartDate.selectedDate}"
+									  selectableRange="{{rangeEnd:new Date()}}"
+									  showToday="true"/>
+						<s:Label text="-"
+								 width="8"/>
+						<mx:DateField id="dfEndDate"
+									  width="150"
+									  formatString="YYYY-MM-DD"
+									  enterFrame="{dfEndDate.selectedDate==null?dfEndDate.selectedDate=new Date():dfEndDate.selectedDate}"
+									  selectableRange="{{rangeStart:dfStartDate.selectedDate, rangeEnd:new Date()}}"
+									  showToday="true"
+									  keyUp="keyUpCtrl(event,btQuery)"/>
+						<s:Label text="病　区"/>
+						<controls:TextInputIcon id="wardCode"
+												queryIconClick="wardCode_queryIconClickHandler()"
+												width="139"/>
+						
+						<s:Label text="医　生"/>
+						<controls:TextInputIcon id="personId"
+												queryIconClick="personId_queryIconClickHandler()"
+												width="139"/>
+						
+						<mx:LinkButton id="btQuery"
+									   height="24"
+									   label=" 查 找"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="btQuery_clickHandler()"
+									   keyUp="keUpHandler(event)"/>
+					</s:HGroup>
+					<mx:TabNavigator id="tab"
+									 height="100%"
+									 width="100%"
+									 paddingBottom="5"
+									 paddingLeft="5"
+									 paddingRight="5"
+									 paddingTop="5"
+									 creationPolicy="all">
+						<s:NavigatorContent label="血液列表"
+											width="100%"
+											height="100%">
+							<controls:MultiHeaderGridPanel id="gridStockList"
+														   x="0"
+														   fontSize="15"
+														   headerFontSize="16"
+														   headerHeight="40"
+														   rowHeight="30"
+														   width="100%"
+														   height="100%"
+														   emptyLinesCount="9"
+														   sumLableField="spec"
+														   sumFields="assiAmount"
+														   groupField="typeName"
+														   headerBgColor="#F4F4F4">
+								<controls:columns>
+									<config:GridColumn headerText="血液类型"
+													   dataField="typeName"
+													   horizontalAlign="left"
+													   bgColor="#ffffff"
+													   width="200"/>
+									<config:GridColumn headerText="规格"
+													   dataField="spec"
+													   width="140"
+													   horizontalAlign="left"
+													   bgColor="#ffffff"/>
+									<config:GridColumn headerText="血量"
+													   dataField="assiAmount"
+													   width="120"
+													   horizontalAlign="right"
+													   bgColor="#ffffff"/>
+									<config:GridColumn headerText="单位"
+													   dataField="assiUnits"
+													   width="80"
+													   horizontalAlign="left"
+													   bgColor="#ffffff"/>
+								</controls:columns>
+							</controls:MultiHeaderGridPanel>
+						</s:NavigatorContent>
+						<s:NavigatorContent label="检验项目"
+											width="100%"
+											height="100%">
+							<controls:SuperDataGrid id="gdItemList"
+													width="100%"
+													height="100%"
+													hasRowNo="true"
+													styleName="dataGrid">
+								<controls:columns>
+									<mx:DataGridColumn headerText="序号"
+													   dataField="rowno"
+													   width="100"
+													   textAlign="left"/>
+									<mx:DataGridColumn headerText="项目名称"
+													   dataField="itemName"
+													   textAlign="left"/>
+									<mx:DataGridColumn headerText="人次"
+													   dataField="timeNumber"
+													   width="100"
+													   textAlign="left"/>
+								</controls:columns>
+							</controls:SuperDataGrid>
+						</s:NavigatorContent>
+					</mx:TabNavigator>
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btPrint"
+									   label=" 打 印"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btPreview_clickHandler('05','1')"
+									   icon="@Embed(source='/assets/images/button/print20.png')"/>
+						<mx:LinkButton id="btPreview"
+									   label=" 预 览"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="btPreview_clickHandler('05','2')"/>
+						<mx:LinkButton id="btExport"
+									   label=" 输 出"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btExport_clickHandler('08','0')"
+									   icon="@Embed(source='/assets/images/button/exp20.png')"/>
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+
+			</s:BorderContainer>
+
+		</s:VGroup>
+	</s:Scroller>
+	<!--</s:BorderContainer>-->
+
+</mx:Module>

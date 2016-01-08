@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:controls="cn.superion.base.components.controls.*"
+		   >
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.DateUtil;
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.blood.deliver.view.PriceListUtil;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import cn.superion.dataDict.DictWinShower;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import cn.superion.report2.ReportViewer;
+			import cn.superion.vo.blood.BloodCheckMaster;
+			import cn.superion.vo.blood.BloodInPatsVisit;
+			import cn.superion.vo.blood.BloodRdsDetail;
+			import cn.superion.vo.blood.VBloodRds;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
+			import mx.collections.ListCollectionView;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.controls.FormItemLabel;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.RemoteObject;
+			import mx.utils.ObjectUtil;
+			import mx.utils.StringUtil;
+			
+			import spark.components.supportClasses.ItemRenderer;
+			import spark.events.TextOperationEvent;
+
+			private const MENU_NO:String="0202";
+
+//			public var data:Object;
+			[Bindable]
+			private var destination:String="patientApplyImpl";
+			private var autoId:String='';
+			private var ro:RemoteObject;
+			private var arr:ArrayCollection=null;
+			private var master:BloodCheckMaster = new BloodCheckMaster();
+			private var _spec:String = "";
+			private var _typeCode:String = "";
+			private var bloodBillDetail:ArrayCollection = new ArrayCollection();
+			//返回
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				MainFrameUtil.closeTab(this);
+			}
+
+			//保存事件
+			protected function btSave_clickHandler(event:MouseEvent):void
+			{
+//				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "04"))
+//				{
+//					Alert.show("您无此按钮操作权限！", "提示");
+//					return;
+//				}
+				//
+				var items:ArrayCollection = gridBloodReturnDetail.dataProvider as ArrayCollection;
+				var autoIds:Array = [];
+				var detailIds:Array = [];
+				for each(var s:Object in items ){
+					if(s.hasPurview){
+						autoIds.push(s.autoId);
+						detailIds.push(s.detailAutoId);
+					}
+				}
+				if (detailIds.length==0)
+				{
+					Alert.show("请选择一条记录！", "提示");
+					return;
+				}
+				//校验是否已经退血，如果已退血detailCurrentStatus=5，则提示不能退血
+				for each(var item:Object in items){
+					if(item.detailCurrentStatus == '5'){
+						Alert.show("血袋编号为：" + item.bloodBagCode + "，成份为：" + item.typeCode + "的血已退，请重新选择！", "提示");
+						return;
+					}
+				}		
+				Alert.show("确定退血？","提示",Alert.YES|Alert.NO,null,function (e:CloseEvent):void{
+					if(e.detail == Alert.NO) return;
+					
+					var ro:RemoteObject=RemoteUtil.getRemoteObject('patientReturnImpl', function(rev:Object):void
+					{
+						if(rev.success){
+							Alert.show('退血成功', '提示');
+							prepayments.text = rev.data[1]
+							for each(var o:Object in gridBloodReturnDetail.dataProvider){
+								if(o.hasPurview){
+									o.currentStatus ="1";
+								}
+								ListCollectionView(gridBloodReturnDetail.dataProvider).itemUpdated(o, "currentStatus");
+							}
+							var ss :ArrayCollection = gridBloodReturnDetail.dataProvider;
+							gridBloodReturnDetail.dataProvider = ss;
+							inpNo_enterHandler();
+						}
+					});
+//					ro.save(noType.selectedValue.toString(),inpNo.text,detailIds);
+					ro.save("1",inpNo.text,detailIds); //改为默认门诊病人，后台不计费
+				});
+			}
+			
+			private function convertToBloodBillDetail(source:ArrayCollection,target:ArrayCollection):ArrayCollection{
+				return null
+			}
+			//打印
+			protected function btPrint_clickHandler(lstrPurview:String, isPrintSign:String):void
+			{
+				var laryWillPrintItems:ArrayCollection=null;
+				laryWillPrintItems=gridBloodReturnDetail.dataProvider as ArrayCollection;
+				for each (var item:Object in laryWillPrintItems)
+				{
+					item.rhSign=txtDisplay('rhSign', item.rhSign);
+				}
+				var dict:Dictionary=new Dictionary();
+				dict["主标题"]=AppInfo.sysUser.unitsName+"病人输血发放单";
+				dict["住院号"]=data.masterItem.inpNo;
+				dict["床号"]=data.masterItem.bedNo;
+				dict["姓名"]=data.masterItem.personName;
+				dict["性别"]=txtDisplay('sex', data.masterItem.sex);
+				dict["年龄"]=data.masterItem.age;
+				dict["血型"]=txtDisplay('bloodCode', data.masterItem.bloodCode);
+				dict["RH"]=data.masterItem.rhSign=='1'?'阴性':'阳性';
+				dict["费别"]=txtDisplay('chargeType', data.masterItem.chargeType);
+				dict["病区"]=txtDisplay('wardCode', data.masterItem.wardCode);
+				dict["科室"]=txtDisplay('deptCode', data.masterItem.deptCode);
+				dict["送检医生"]=txtDisplay('applyDoctor',data.masterItem.applyDoctor);
+				dict["单据编号"]=data.masterItem.billNo;
+				dict["检验日期"]=DateField.dateToString(data.masterItem.examDate,'YYYY-MM-DD');
+				dict["报告时间"]= DateUtil.dateToString(new Date(),'YYYY-MM-DD hh:mm:ss');
+				dict["检验者"]= txtDisplay('applyDoctor',data.masterItem.examDoctor);
+				dict["核对者"]= '';
+				dict["取血者"]= '';
+				dict["接收者"]= '';
+				dict["交接时间"]= '';
+				
+				ReportViewer.Instance.Show("report/blood/deliver/patientApply1.xml", laryWillPrintItems, dict);
+			}
+			
+			//textInput文本显示方式
+			private function txtDisplay(item:*, txt:String):*
+			{
+				var itemObject:*;
+				//血型
+				if (item == 'bloodCode')
+				{
+					itemObject=ArrayCollUtils.findItemInArrayByValue(BaseDict.bloodDict, 'blood', txt);
+					if (!itemObject)
+					{
+						return '';
+					}
+					return itemObject.bloodName;
+				}
+				//科室
+				if (item == 'deptCode')
+				{
+					itemObject=ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict, 'dept', txt);
+					if (!itemObject)
+					{
+						return '';
+					}
+					return itemObject.deptName;
+				}
+				//病区
+				if (item == 'wardCode')
+				{
+					itemObject=ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict, 'dept', txt);
+					if (!itemObject)
+					{
+						return '';
+					}
+					return itemObject.deptName;
+				}
+				//医生
+				if (item == 'applyDoctor')
+				{
+					itemObject=ArrayCollUtils.findItemInArrayByValue(BaseDict.personIdDict, 'personId', txt);
+					if (!itemObject)
+					{
+						return '';
+					}
+					return itemObject.personIdName;
+				}
+				//性别
+				if (item == 'sex')
+				{
+					itemObject=ArrayCollUtils.findItemInArrayByValue(BaseDict.sexDict, 'sex', txt);
+					if (!itemObject)
+					{
+						return '';
+					}
+					return itemObject.sexName;
+				}
+				//RH阴
+				if (item == 'rhSign')
+				{
+					if (txt == '' || txt == '0' || txt == null)
+					{
+						return '阳性';
+					}
+					else
+					{
+						return '阴性';
+					}
+				}
+				//费别
+				if (item == 'chargeType')
+				{
+					itemObject=ArrayCollUtils.findItemInArrayByValue(BaseDict.chargeTypeDict, 'chargeType', txt);
+					if (!itemObject)
+					{
+						return '';
+					}
+					return itemObject.chargeTypeName;
+				}
+				//产品码对应的血型
+				if (item == 'txtBloodCode')
+				{
+					itemObject=ArrayCollUtils.findItemInArrayByValue(BaseDict.bloodDict, 'blood', txt);
+					if (!itemObject)
+					{
+						return '';
+					}
+					return itemObject.bloodName;
+				}
+				//产品码对应的成份
+				if (item == 'txtTypeCode')
+				{
+					itemObject=ArrayCollUtils.findItemInArrayByValue(BaseDict.bloodTypeDict, 'bloodType', txt);
+					if (!itemObject)
+					{
+						return '';
+					}
+					return itemObject.bloodTypeName;
+				}
+			}
+
+			/**
+			 * LabelFunction :根据RH阴性：0，1，分别显示否，是
+			 * */
+			private function labFunRhSign(item:Object,column:DataGridColumn):String{
+				switch (item.rhSign) {
+					case "0":
+						return "阳性";
+						break;
+					case "1":
+						return "阴性";
+						break;
+					default:
+						return " ";
+						break;
+				}
+			}
+			/**
+			 * LabelFunction :根据成分编码显示成分名称
+			 * */
+			private function labFunTypeCode(item:Object,column:DataGridColumn):String{
+				var ary:ArrayCollection = BaseDict.bloodTypeDict;
+				if(ary.length  == 0){
+					return " ";
+				}
+				var name:String ="";
+				for each (var obj:Object  in ary){
+					if(obj.bloodType == item.typeCode){
+						name =  obj.bloodTypeName;
+						break;
+					}
+				}
+				return name;
+			}
+			
+			/**
+			 * LabelFunction :根据血型编码显示血型名
+			 * */
+			private function labFunBloodCode(item:Object,column:DataGridColumn):String{
+				
+				var ary:ArrayCollection = BaseDict.bloodDict;
+				if(ary.length  == 0){
+					return " ";
+				}
+				var name:String ="";
+				for each (var obj:Object  in ary){
+					if(obj.blood == item.bloodCode){
+						name =  obj.bloodName;
+						break;
+					}
+				}
+				return name;
+			}	
+
+			protected function rhSign_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+//				rhSign.dataProvider=new ArrayCollection([
+//					{rhSign:'0',rhSignName:'阳性'},{rhSign:'1',rhSignName:'阴性'}]);
+				
+			}
+
+
+			protected function inpNo_enterHandler():void
+			{
+				var ro:RemoteObject = RemoteUtil.getRemoteObject('patientReturnImpl',function(o:Object):void{
+					if(!o||o.data.length == 0) return;
+					//加载主记录
+					var m:BloodInPatsVisit = o.data[0] as BloodInPatsVisit;
+					if(o.data[1].length > 0){
+						var ss:VBloodRds = o.data[1][0] as VBloodRds;
+						chargeType.text = ss.chargeType;
+						wardCode.text = ss.deptCode;
+						deptCode.text = ss.visitDept;
+						applyDoctor.text = ss.visitDoctor;
+					}
+					bedNo.text = m.bedNo;
+					personName.text = m.personName;
+					age.text = m.age;
+					sex.text = m.sex == "1"?"男":m.sex == "2"?"女":"其他"
+					prepayments.text = m.prepayments;
+//					rhSign.selectedIndex = m.rhType =="1"?1:0
+					rhSign.text = m.rhType == "1"?"阴性":"阳性";
+					wardCode.text = ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict,'dept',m.wardCode)==null?
+					m.wardCode:ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict,'dept',m.wardCode).deptName;
+					deptCode.text = ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict,'dept',m.deptCode)==null?
+					m.deptCode:ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict,'dept',m.deptCode).deptName;
+					applyDoctor.text = m.chargeDoctor;
+					//加载列表
+					var lst:ArrayCollection = o.data[1] as ArrayCollection;
+					gridBloodReturnDetail.dataProvider = lst;
+				});
+				ro.findByPatientId(isOut.selected?true:false,noType.selectedValue.toString(),inpNo.text);
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:RadioButtonGroup id="phoFiveCode"/>
+		<s:RadioButtonGroup id="noType"/>
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderStyle="solid"
+					   borderVisible="true"
+					   borderColor="#3F9AD8"
+					   >
+		<s:VGroup x="0"
+				  y="0"
+				  width="100%"
+				  height="100%">
+	<s:HGroup width="100%"
+			  height="31"
+			  verticalAlign="bottom"
+			  paddingTop="10">
+		<mx:FormItem direction="horizontal" paddingLeft="0"
+					>
+			<s:RadioButton label="单据号" 
+						   value="9"
+						   groupName="noType"/>
+			<s:RadioButton label="门诊号" 
+						   value="1"
+						   groupName="noType"/>
+			<s:RadioButton  label="住院号" 
+							value="2"
+							selected="true" 
+							groupName="noType"/>
+			<s:CheckBox id="isOut" label="是否出院"/>
+			<s:TextInput id="inpNo"
+						 width="221"
+						 enter="inpNo_enterHandler()"
+						 maxChars="20"
+						/>
+			<mx:LinkButton id="btQuery"
+						   height="24"
+						   label=" 查 找"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/query20.png')"
+						   click="inpNo_enterHandler()"/>
+		</mx:FormItem>
+			</s:HGroup>
+			<s:HGroup paddingLeft="10">
+				<mx:FormItem label="姓名"
+							 >
+					<s:TextInput id="personName"
+								 width="122"
+								 maxChars="20"
+								 enabled="false"/>
+				</mx:FormItem>
+				<mx:FormItem label="性别"
+							 >
+					<s:TextInput id="sex"
+								 width="41"
+								 maxChars="1"
+								 enabled="false"/>
+				</mx:FormItem>
+				<mx:FormItem label="年龄"
+							 >
+					<s:TextInput id="age"
+								 width="48"
+								 maxChars="3"
+								 enabled="false"/>
+				</mx:FormItem>
+				<mx:FormItem label="血型"
+							 >
+					<s:TextInput id="bloodCode"
+								 width="54"
+								 enabled="false"
+								 text="{txtDisplay('bloodCode',bloodCode.text)}"/>
+				</mx:FormItem>
+				<mx:FormItem label="Rh(D)"
+							 direction="horizontal">
+					<s:TextInput id="rhSign" editable="false" width="97"/>
+					<!--<s:DropDownList id="rhSign"
+					labelField="rhSignName"
+					width="100"
+					color="{rhSign.selectedItem.rhSign == '0'?0xf60b0b:0x070707}"
+					selectedIndex="0"
+					creationComplete="rhSign_creationCompleteHandler(event)"
+					itemRenderer="cn.superion.blood.util.renderer.ItemRendererRhSign"
+					/>-->
+					
+				</mx:FormItem>
+
+			</s:HGroup>
+	<s:HGroup width="100%"
+			  height="31" paddingLeft="10"
+			  verticalAlign="middle">
+		<mx:FormItem label="科室"
+					 >
+			<s:TextInput id="deptCode"
+						 width="122"
+						 enabled="false"
+						 />
+		</mx:FormItem>
+		<mx:FormItem label="病区"
+					  >
+			<s:TextInput id="wardCode"
+						 width="133"
+						 enabled="false"
+						 />
+		</mx:FormItem>
+		
+		<mx:FormItem label="床号"
+					 >
+			<s:TextInput id="bedNo"
+						 width="54"
+						 maxChars="3"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="医 生"
+					>
+			<s:TextInput id="applyDoctor"
+						 enabled="false"
+						 width="97"/>
+		</mx:FormItem>
+	</s:HGroup>
+	<s:HGroup width="100%" paddingLeft="10">
+		<mx:FormItem label="费别" 
+					 >
+			<s:TextInput id="chargeType"
+						 width="122"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="余额" color="blue"
+					 >
+			<s:TextInput id="prepayments"
+						 width="133"
+						 enabled="false"
+						 />
+		</mx:FormItem>
+	</s:HGroup>
+
+	<!-- 表体部分 -->
+	<s:BorderContainer width="500%"
+					   height="500%"
+					   backgroundColor="0xE2E8E8"
+					   borderStyle="solid"
+					   borderVisible="false">
+		<s:VGroup width="100%"
+				  height="100%">
+			<controls:SuperDataGrid id="gridBloodReturnDetail"
+									hasRowNo="false"
+									width="100%"
+									height="100%"
+									styleName="dataGrid"
+									colorWhereField="rhSign"
+									colorWhereValue="1"
+									>
+				<controls:columns>
+					<mx:DataGridColumn headerText="选择"
+									   dataField="isSelected"
+									   width="50"
+									   textAlign="center">
+						<mx:itemRenderer>
+							<fx:Component>
+								<mx:CheckBox change="data.hasPurview=this.selected"
+											 selected="{data.hasPurview}"
+											 enabled="true"
+											 textAlign="center"/>
+							</fx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+					<mx:DataGridColumn headerText="血袋编号"
+									   dataField="productCode"  textAlign="left"
+									   width="160"/>
+					<mx:DataGridColumn headerText="血型"
+									   dataField="bloodCode"  textAlign="left"
+									   labelFunction="labFunBloodCode"
+									   width="60"/>
+					<mx:DataGridColumn headerText="血液成份"
+									   dataField="typeCode"  textAlign="left"
+									   labelFunction="labFunTypeCode"
+									   width="70"/>
+					<mx:DataGridColumn headerText="Rh(D)"
+									   dataField="rhSign"  textAlign="left"
+									   width="50"
+									   labelFunction="labFunRhSign"/>
+					<mx:DataGridColumn headerText="规格"
+									   dataField="spec"  textAlign="left"
+									   width="80"/>
+					<mx:DataGridColumn headerText="献血者编号"
+									   dataField="bloodDonorCode"  textAlign="left"
+									   width="90"
+									   visible="false"/>
+					<mx:DataGridColumn headerText="采血日期"
+									   dataField="collectDate"  textAlign="left"
+									   width="120"/>
+					<mx:DataGridColumn headerText="失效日期"
+									   dataField="availDate"  textAlign="left"
+									   width="120"/>
+				</controls:columns>
+			</controls:SuperDataGrid>
+			<!-- 操作按钮部分 -->
+			<s:HGroup height="31"
+					  paddingBottom="10"
+					  horizontalAlign="right"
+					  gap="5"
+					  width="100%">
+				<mx:LinkButton id="btSave"
+							   label=" 确 定"
+							   fontSize="12"
+							   width="86"
+							   height="26"
+							   enabled="{gridBloodReturnDetail.selectedItem.currentStatus=='5'?false:true}"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/confirm20.png')"
+							   click="btSave_clickHandler(event)"/>
+				<mx:LinkButton id="btReturn"
+							   label=" 返 回"
+							   fontSize="12"
+							   width="86"
+							   height="26"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/return20.png')"
+							   click="btReturn_clickHandler(event)"/>
+				<mx:Spacer width="5"/>
+			</s:HGroup>
+			<mx:Spacer height="5"/>
+		</s:VGroup>
+
+	</s:BorderContainer>
+		</s:VGroup>
+		
+	</s:BorderContainer>
+</mx:Module>

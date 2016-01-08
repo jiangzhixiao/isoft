@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="344"
+			   height="230"
+			   backgroundColor="0xE2E8E8"
+			   close="titlewindow1_closeHandler(event)"
+			   creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.base.util.StringUtils;
+			import cn.superion.blood.system.ModBloodReturnDict;
+			import cn.superion.vo.blood.system.CdBloodReturnReason;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.RemoteObject;
+			
+			import spark.events.TextOperationEvent;
+
+			[Bindable]
+			public var isOpenType:String="1";
+			[Bindable]
+			public var parentWin:ModBloodReturnDict;
+
+			[Bindable]
+			public var cdBloodReturnReason:CdBloodReturnReason;
+			[Bindable]
+			private var ro:RemoteObject;			
+
+			//窗口初始化
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				if (isOpenType == "1")
+				{
+					this.title="新建";
+					cdBloodReturnReason=new CdBloodReturnReason();
+					txtReturnCode.setFocus();
+				}
+				else
+				{
+					this.title="修改";
+
+					cdBloodReturnReason=parentWin.gridReturnList.selectedItem as CdBloodReturnReason;
+					txtReturnCode.editable=false;
+					txtReturnCode.enabled=false;
+					txtReturnName.setFocus();
+				}
+			}
+
+			//关闭窗口
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+
+			//保存事件
+			protected function btSave_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//保证数据合法性验证
+				if (!saveValidate())
+				{
+					return;
+				}
+				if(!txtReturnCode_check())
+				{
+					return;
+				}
+				ro=RemoteUtil.getRemoteObject("bloodReturnReasonDictImpl", saveReturnDict);
+				ro.save(cdBloodReturnReason);
+			}
+
+			private function saveReturnDict(rev:Object):void
+			{
+				txtReturnCode.setFocus();
+				Alert.show("退还原因保存成功！", "提示信息");
+				//重新加载当前数据
+				parentWin.init();
+				
+				//
+				if(isOpenType=='1')
+				{
+					txtReturnCode.text="";
+					txtReturnName.text="";
+					txtPhoInputCode.text="";
+					txtFiveInputCode.text="";
+				}
+				return;
+			}
+
+			//保存验证
+			private function saveValidate():Boolean
+			{
+				if (StringUtils.Trim(this.txtReturnCode.text) == '')
+				{
+					this.txtReturnCode.setFocus();
+					Alert.show("请输入退还原因编号！", "提示信息");
+					return false;
+				}
+				if (StringUtils.Trim(this.txtReturnName.text) == '')
+				{
+					this.txtReturnName.setFocus();
+					Alert.show("请输入退还原因名称！", "提示信息");
+					return false;
+				}
+				return true;
+			}
+
+
+			//返回
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					ctrl.setFocus();
+				}
+			}
+
+			//生成五笔码、拼音码
+			protected function txtReturnName_changeHandler(event:TextOperationEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (txtReturnName.text == "")
+				{
+					txtPhoInputCode.text="";
+					txtFiveInputCode.text="";
+					return;
+				}
+				ro=RemoteUtil.getRemoteObject('baseCommonDictImpl', function(rev:Object):void
+					{
+						if (rev.data && rev.data.length > 0)
+						{
+							txtPhoInputCode.text=rev.data[0];
+							txtFiveInputCode.text=rev.data[1];
+						}
+					})
+				ro.findInputCode(txtReturnName.text);
+			}
+
+			//唯一性验证
+			protected function txtReturnCode_check():Boolean
+			{
+				// TODO Auto-generated method stub
+				var arrData:ArrayCollection=parentWin.gridReturnList.dataProvider as ArrayCollection;
+				if(arrData!=null||arrData.length > 0 || arrData.getItemAt(0) != null)
+				{
+					for(var i:int=0;i<arrData.length;i++)
+					{
+						if(txtReturnCode.text==arrData[i].returnCode)
+						{
+							txtReturnCode.setFocus();
+							Alert.show("该项目编码已存在，请重新输入！","提示信息");
+							return false;
+						}
+					}
+				}
+				return true;
+			}
+
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup x="0"
+			  y="0"
+			  width="100%"
+			  height="100%"
+			  top="0">
+		<s:BorderContainer width="100%"
+						   height="100%"
+						   left="5"
+						   backgroundColor="0xE2E8E8"
+						   borderColor="#9ABBE6">
+			<s:VGroup width="100%"
+					  height="100%"
+					  left="5"
+					  right="5">
+				<mx:FormItem height="6">
+				</mx:FormItem>
+				<mx:FormItem label="原因编号"
+							 color="#0000FF">
+					<s:TextInput id="txtReturnCode"
+								 width="250"
+								 restrict="0-9"
+								 maxChars="2"
+								 text="@{cdBloodReturnReason.returnCode}"
+								 keyUp="keyUpCtrl(event,txtReturnName)"/>
+				</mx:FormItem>
+				<mx:FormItem label="原因名称"
+							 color="#0000FF">
+					<s:TextArea id="txtReturnName"
+								 width="250"
+								 height="40"
+								 maxChars="40"
+								 text="@{cdBloodReturnReason.returnName}"
+								 keyUp="keyUpCtrl(event,btSave)"
+								 change="txtReturnName_changeHandler(event)"/>
+				</mx:FormItem>
+				<mx:FormItem label="  五笔码">
+					<s:TextInput id="txtFiveInputCode"
+								 width="250"
+								 maxChars="10"
+								 editable="false"
+								 text="@{cdBloodReturnReason.fiveInputCode}"/>
+				</mx:FormItem>
+				<mx:FormItem label="  拼音码">
+					<s:TextInput id="txtPhoInputCode"
+								 width="250"
+								 maxChars="10"
+								 editable="false"
+								 text="@{cdBloodReturnReason.phoInputCode}"/>
+				</mx:FormItem>
+			</s:VGroup>
+
+		</s:BorderContainer>
+		<s:HGroup height="31"
+				  paddingBottom="10"
+				  horizontalAlign="right"
+				  gap="5"
+				  width="100%">
+			<mx:LinkButton id="btSave"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 保 存"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/save20.png')"
+						   click="btSave_clickHandler(event)"/>
+			<mx:LinkButton id="btReturn"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 返 回"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/return20.png')"
+						   click="btReturn_clickHandler(event)"/>
+			<mx:Spacer width="5"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:TitleWindow>

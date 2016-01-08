@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   close="titlewindow1_closeHandler(event)"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   backgroundColor="0xE2E8E8"
+			   width="990"
+			   height="494"
+			   xmlns:controls="cn.superion.base.components.controls.*"
+			   creationComplete="titlewindow1_creationCompleteHandler(event)">
+	<s:layout>
+		<s:VerticalLayout paddingLeft="5"
+						  paddingRight="5"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+
+			public var data:Object;
+
+			/**
+			 * 新建病人输血申请
+			 * 
+			 * @author 吴小娟
+			 * 
+			 */
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				this.title=this.data.winTitle;
+			}
+
+
+			protected function btNew_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+
+			protected function btDelete_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+
+			protected function btCheck_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+
+			protected function btSave_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+
+			protected function btPrint_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:RadioButtonGroup id="phoFiveCode"/>
+	</fx:Declarations>
+
+	<s:HGroup width="100%"
+			  height="31"
+			  verticalAlign="bottom"
+			  paddingTop="10">
+		<mx:FormItem label="住  院  号"
+					 width="220">
+			<s:TextInput id="io"
+						 width="100%"/>
+		</mx:FormItem>
+		<mx:Spacer width="600"/>
+		<mx:FormItem width="100%"
+					 direction="horizontal">
+			<s:CheckBox id="i"/>
+			<s:Label text="生成医嘱"/>
+		</mx:FormItem>
+	</s:HGroup>
+
+	<!-- 基本信息 -->
+	<s:HGroup width="100%">
+		<mx:HRule width="100%"/>
+	</s:HGroup>
+
+	<s:HGroup width="100%"
+			  height="31"
+			  verticalAlign="bottom">
+		<mx:FormItem label="姓    名"
+					 width="182">
+			<s:TextInput id="personName"
+						 enabled="false"
+						 width="100%"/>
+		</mx:FormItem>
+		<mx:FormItem label="性    别"
+					 width="131">
+			<s:TextInput id="sexName"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="年    龄"
+					 width="120">
+			<s:TextInput id="age"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="住院号"
+					 width="196">
+			<s:TextInput id="inpNo"
+						 enabled="false"
+						 width="100%"/>
+		</mx:FormItem>
+		<mx:FormItem label="床    号"
+					 width="100%">
+			<s:TextInput id="bedNo"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+	</s:HGroup>
+	<s:HGroup width="100%"
+			  height="31"
+			  verticalAlign="bottom">
+		<mx:FormItem label="科    室"
+					 width="320">
+			<s:TextInput id="deptName"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="病    区"
+					 width="320">
+			<s:TextInput id="wardCode"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="血    型"
+					 width="200">
+			<s:TextInput id="bloodName"
+						 width="100%"
+						 enabled="false"/>
+		</mx:FormItem>
+		<mx:FormItem width="100%"
+					 direction="horizontal">
+			<s:Label text="RH阴"/>
+			<s:CheckBox id="rhSign"
+						width="100%"
+						enabled="false"/>
+		</mx:FormItem>
+	</s:HGroup>
+	<s:HGroup width="100%"
+			  height="31"
+			  verticalAlign="middle">
+		<mx:FormItem label="临床诊断"
+					 width="100%">
+			<s:TextInput id="clinicDiag"
+						 width="100%"/>
+		</mx:FormItem>
+	</s:HGroup>
+	<s:HGroup width="100%"
+			  height="31"
+			  verticalAlign="middle">
+		<mx:FormItem label="输血目的"
+					 width="100%">
+			<s:TextInput id="transfUseAim"
+						 width="100%"/>
+		</mx:FormItem>
+	</s:HGroup>
+	<s:HGroup width="100%"
+			  height="31"
+			  verticalAlign="middle">
+		<mx:FormItem label="申请时间"
+					 width="320">
+			<s:TextInput id="applyDate"
+						 width="100%"/>
+		</mx:FormItem>
+		<mx:FormItem label="申请医生"
+					 width="320">
+			<s:TextInput id="applyDoctor"
+						 width="100%"/>
+		</mx:FormItem>
+		<mx:FormItem label="用血时间"
+					 width="100%">
+			<s:TextInput id="useBloodDate"
+						 width="100%"/>
+		</mx:FormItem>
+	</s:HGroup>
+
+	<!-- 输血相关项目明细 -->
+	<controls:SuperDataGrid id="gridBloodCheckDetail"
+							hasRowNo="false"
+							width="100%"
+							height="100%"
+							styleName="dataGrid">
+		<controls:columns>
+			<mx:DataGridColumn headerText="成份"
+							   dataField="bloodTypeName"
+							   width="3"/>
+			<mx:DataGridColumn headerText="规格"
+							   dataField="spec"
+							   width="3"/>
+			<mx:DataGridColumn headerText="单位"
+							   dataField="units"
+							   width="3"/>
+		</controls:columns>
+	</controls:SuperDataGrid>
+	<s:HGroup width="100%"
+			  height="31"
+			  paddingBottom="10"
+			  horizontalAlign="right">
+		<mx:LinkButton id="btNew"
+					   label=" 新 建"
+					   fontSize="12"
+					   width="86"
+					   height="26"
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/new20.png')"
+					   click="btNew_clickHandler(event)"/>
+		<mx:LinkButton id="btDelete"
+					   label=" 删 除"
+					   fontSize="12"
+					   width="86"
+					   height="26"
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/delete20.png')"
+					   click="btDelete_clickHandler(event)"/>
+		<mx:LinkButton id="btCheck"
+					   label=" 审 核"
+					   fontSize="12"
+					   width="0"
+					   height="26"
+					   visible="false"
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/check20.png')"
+					   click="btCheck_clickHandler(event)"/>
+		<mx:LinkButton id="btSave"
+					   label=" 保 存"
+					   fontSize="12"
+					   width="86"
+					   height="26"
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/save20.png')"
+					   click="btSave_clickHandler(event)"/>
+		<mx:LinkButton id="btPrint"
+					   label=" 打 印"
+					   fontSize="12"
+					   width="86"
+					   height="26"
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/print20.png')"
+					   click="btPrint_clickHandler(event)"/>
+		<mx:LinkButton id="btReturn"
+					   label=" 返 回"
+					   fontSize="12"
+					   width="86"
+					   height="26"
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/return20.png')"
+					   click="btReturn_clickHandler(event)"/>
+		<mx:Spacer width="5"/>
+	</s:HGroup>
+	<mx:Spacer height="5"/>
+</s:TitleWindow>

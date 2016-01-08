@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.flex.blazeds:flex-messaging-remoting:4.7.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.flex.blazeds/flex-messaging-remoting/4.7.0/2b8195a800ea5a42680164ac5aae9158a8ac7525/flex-messaging-remoting-4.7.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.flex.blazeds/flex-messaging-remoting/4.7.0/f96be6d2dcfc8deee69905ca32b5692362ad5edc/flex-messaging-remoting-4.7.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

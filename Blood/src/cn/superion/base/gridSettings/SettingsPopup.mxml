@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:controls="com.flexicious.controls.*"
+	title="设置">
+<mx:Script>
+	<![CDATA[
+		import com.flexicious.export.exporters.TxtExporter;
+		import com.flexicious.grids.dependencies.IAdvancedExtendedDataGrid;
+		import com.flexicious.grids.dependencies.IExtendedDataGrid;
+		import com.flexicious.utils.UIUtils;
+		
+		import mx.collections.ArrayCollection;
+		import mx.controls.AdvancedDataGrid;
+		import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+		import mx.controls.advancedDataGridClasses.AdvancedDataGridColumnGroup;
+		import mx.managers.PopUpManager;
+		[Bindable()]
+		public var _grid:IExtendedDataGrid;
+		[Bindable()]
+		private var _filterVisible:Boolean;
+		[Bindable()]
+		private var _pageSize:int;
+		[Bindable()]
+		private var _enablePaging:Boolean;
+		[Bindable()]
+		private var _enableFooters:Boolean;
+		[Bindable()]
+		private var _enableFilters:Boolean;
+		
+		[Bindable()]
+		private var _footerVisible:Boolean;
+		public function get grid():IExtendedDataGrid
+		{
+			return _grid;
+		}
+		public function set grid(val:IExtendedDataGrid):void
+		{
+			_grid=val;
+			var visibleCols:ArrayCollection=new ArrayCollection();
+			for each(var col:Object in _grid.settingsColumns)
+			{
+				if(col.visible)
+					visibleCols.addItem(col);
+			}
+			cbxColumns.dataProvider = new ArrayCollection(_grid.settingsColumns); 
+			cbxColumns.validateNow();
+			if(_grid.settingsColumns.length!= visibleCols.length)
+				cbxColumns.selectedItems=visibleCols.source;//other wise let it pick ALL by default
+			_filterVisible=grid.filterVisible;
+			_footerVisible=grid.footerVisible;
+			_pageSize=grid.pageSize;
+			_enablePaging=grid.enablePaging;
+			_enableFilters=grid.enableFilters;
+			_enableFooters=grid.enableFooters;
+		}
+		private function onOk():void
+		{
+			var collection:ArrayCollection = new ArrayCollection(cbxColumns.selectedItems);
+			for each(var col:Object in _grid.settingsColumns)
+			{
+				col.visible=collection.contains(col) || cbxColumns.isAllSelected;
+			}
+			grid.refreshLayout();
+			grid.filterVisible=cbFilters.selected;
+			grid.footerVisible=cbFooter.selected;
+			grid.pageSize= parseInt(txtPageSize.text);
+			UIUtils.removePopUp(this);
+		}
+		private function getHeaderText(col:Object):String{
+			if(grid is AdvancedDataGrid && col is AdvancedDataGridColumn)
+			{
+				var adg:AdvancedDataGrid = grid as AdvancedDataGrid;
+				for each(var grp:Object in adg.groupedColumns){
+					if(grp is AdvancedDataGridColumnGroup){
+						var adgGp:AdvancedDataGridColumnGroup=grp as AdvancedDataGridColumnGroup;
+						if(adgGp.children.indexOf(col)>=0){
+							return adgGp.headerText + " - " + col.headerText;
+						}
+					}
+				}
+			}
+			return col.headerText;
+		}
+	]]>
+</mx:Script>
+<mx:HBox>
+	<mx:VBox>
+		<mx:Label text="显示的列:"/>
+		<controls:CheckBoxList id="cbxColumns" allowMultipleSelection="true" width="200" height="175" 
+			addAllItem="true" labelFunction="getHeaderText"  
+			labelField="headerText" dataField="headerText" />
+	</mx:VBox>
+	<mx:VBox>
+		<mx:CheckBox id="cbFooter" label="显示页脚" selected="{_footerVisible}" visible="{_enableFooters}"/>
+		<mx:CheckBox id="cbFilters" label="显示过滤器" selected="{_filterVisible}" visible="{_enableFilters}"/>	
+		<mx:HBox visible="{_enablePaging}">
+			<mx:Label text="每页条数:"/>
+			<mx:TextInput id="txtPageSize" text="{_pageSize}" width="40"/>
+		</mx:HBox>
+			
+	</mx:VBox>
+</mx:HBox>
+	
+	<mx:ControlBar horizontalAlign="right">
+		<mx:Button label="确定" click="onOk()"/>
+		<mx:Button label="取消" click="PopUpManager.removePopUp(this);"/>
+	</mx:ControlBar>
+
+</mx:TitleWindow>

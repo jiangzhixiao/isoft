@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="350"
+			   height="265"
+			   backgroundColor="0xE2E8E8"
+			   xmlns:controls="cn.superion.base.components.controls.*"
+			   close="titlewindow1_closeHandler(event)"
+			   creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.components.controls.SimpleDictWin;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.SimpleDictWinConfig;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.base.util.StringUtils;
+			import cn.superion.vo.blood.system.BloodTypeChargeItem;
+
+			import com.adobe.utils.ArrayUtil;
+
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.RemoteObject;
+
+			import spark.events.TextOperationEvent;
+
+			[Bindable]
+			public var isOpenType:String="1";
+			[Bindable]
+			public var parentWin:*;
+			[Bindable]
+			public var mustDictInfo:BloodTypeChargeItem;
+			[Bindable]
+			private var ro:RemoteObject;
+			private var _itemClass:String=null;
+
+			//窗口初始化
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				if (isOpenType == "1")
+				{
+					this.title="新建";
+					mustDictInfo=new BloodTypeChargeItem();
+					itemCode.setFocus();
+				}
+				else
+				{
+					this.title="修改";
+					mustDictInfo=parentWin.gridMustDictList.selectedItem as BloodTypeChargeItem;
+					_itemClass=mustDictInfo.itemClass;
+					itemCode.editable=false;
+					itemName.enabled=true;
+				}
+				typeCode.selectedIndex=ArrayCollUtils.findItemIndexInArray(BaseDict.bloodTypeDict, 'bloodType', mustDictInfo.typeCode);
+			}
+
+			//保存
+			protected function btSave_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (!saveValidate())
+				{
+					return;
+				}
+				/* if(!txtItemCode_check())
+				   {
+				   return;
+				 } */
+				ro=RemoteUtil.getRemoteObject("bloodTypeChargeItemImpl", saveCallBack);
+				mustDictInfo.bloodPrintSign=bloodPrintSign.selected ? "1" : "0";
+				mustDictInfo.bloodTestSign=bloodTestSign.selected ? "1" : "0";
+				mustDictInfo.bloodChargeSign = bloodChargeSign.selected ? "1" : "0";
+				mustDictInfo.typeCode=typeCode.selectedItem.bloodType;
+				mustDictInfo.itemName=itemName.txtContent.text;
+				mustDictInfo.itemClass=_itemClass;
+				ro.save(mustDictInfo);
+			}
+
+			//回调函数
+			private function saveCallBack(rev:Object):void
+			{
+				itemCode.setFocus();
+				Alert.show("保存成功", "提示");
+				//重新加载数据
+				parentWin.init();
+
+				//保存后，清空界面，可继续新建
+				if (isOpenType == '1')
+				{
+					itemCode.text="";
+					itemName.text="";
+					itemSpec.text="";
+					units.text="";
+					bloodPrintSign.selected=false;
+					bloodTestSign.selected=false;
+				}
+				return;
+			}
+
+			//
+			private function saveValidate():Boolean
+			{
+				if (StringUtils.Trim(this.itemCode.text) == '')
+				{
+					this.itemCode.setFocus();
+					Alert.show("请输入项目编码！", "提示信息");
+					return false;
+				}
+				return true;
+			}
+
+			//关闭窗口
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+			//返回事件
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					ctrl.setFocus();
+				}
+			}
+
+			//验证项目编码唯一性
+			protected function txtItemCode_check():Boolean
+			{
+				// TODO Auto-generated method stub
+				//只在“新建“时验证
+				if (isOpenType == '1')
+				{
+					var arrData:ArrayCollection=parentWin.gridMustDictList.dataProvider as ArrayCollection;
+					if (arrData != null || arrData.length > 0 || arrData.getItemAt(0) != null)
+					{
+						for (var i:int=0; i < arrData.length; i++)
+						{
+							if (itemCode.text == arrData[i].itemCode)
+							{
+								itemCode.setFocus();
+								Alert.show("该项目编码已存在，请重新输入！", "提示信息");
+								return false;
+							}
+						}
+					}
+				}
+				return true;
+			}
+
+			//
+
+			protected function hisCode_queryIconClickHandler(callback:Function):void
+			{
+				var x:int=0;
+				var y:int=this.parentApplication.screen.height - 345;
+				var config:SimpleDictWinConfig=new SimpleDictWinConfig();
+				config.destination='hisBaseDictImpl';
+				config.method="findBaseData";
+				config.entityClassName="cn.superion.blood.tianjian.entity.CurrentPriceList";
+				config.serverOrderField="itemCode";
+				config.gridDataFields=['itemCode', 'itemName', 'itemSpec', 'units', 'price'];
+				config.gridHeadTexts=["编码", "名称", "规格", "单位", "价格"];
+				config.gridDataQueryOption=[{label: '规格', field: 'itemSpec'}, {label: '名称', field: 'itemName'},];
+				config.typeName="当前价表";
+				config.widths=[1, 2, 1, 1, 1];
+				config.callback=callback;
+				var win:SimpleDictWin=SimpleDictWin(PopUpManager.createPopUp(DisplayObject(FlexGlobals.topLevelApplication), SimpleDictWin));
+				win.height=340;
+				win.width=726;
+				win.dictWinConfig=config;
+				if (x == -1)
+				{
+					PopUpManager.centerPopUp(win);
+				}
+				else
+				{
+					win.x=x;
+					win.y=y;
+				}
+			}
+
+			private function getHisCode(rev:Object):void
+			{
+				itemCode.text=rev.itemCode;
+				itemName.txtContent.text=rev.itemName;
+				units.text=rev.units;
+				itemSpec.text=rev.itemSpec;
+				_itemClass=rev.itemClass;
+			}
+
+			protected function cboxBloodType_creationCompleteHandler(event:FlexEvent):void
+			{
+				typeCode.dataProvider=BaseDict.bloodTypeDict;
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup x="0"
+			  width="100%"
+			  height="239"
+			  top="0">
+		<s:BorderContainer width="100%"
+						   height="195"
+						   backgroundColor="0xE2E8E8"
+						   borderColor="#9ABBE6">
+			<s:VGroup height="185"
+					  left="2"
+					  right="5">
+				<mx:FormItem height="6">
+				</mx:FormItem>
+				<mx:FormItem width="100%"
+							 height="26"
+							 label="输血品种"
+							 color="#0000FF">
+					<s:DropDownList id="typeCode"
+									color="#000000"
+									enabled="{isOpenType=='1'}"
+									requireSelection="true"
+									labelField="bloodTypeName"
+									creationComplete="cboxBloodType_creationCompleteHandler(event)"
+									width="100%"/>
+				</mx:FormItem>
+				<mx:FormItem width="100%"
+							 height="26"
+							 label="计价名称"
+							 color="#0000FF">
+					<controls:TextInputIcon width="100%"
+											id="itemName"
+											text="{mustDictInfo.itemName}"
+											queryIconClick="hisCode_queryIconClickHandler(getHisCode);"/>
+				</mx:FormItem>
+				<mx:FormItem width="100%"
+							 height="26"
+							 label="计价编码"
+							 color="#0000FF">
+					<s:TextInput id="itemCode"
+								 width="100%"
+								 editable="false"
+								 maxChars="20"
+								 text="@{mustDictInfo.itemCode}"
+								 restrict="0-9"/>
+				</mx:FormItem>
+				<mx:FormItem width="100%"
+							 height="26"
+							 label="规　　格"
+							 textAlign="center">
+					<s:TextInput id="itemSpec"
+								 width="100%"
+								 editable="false"
+								 text="@{mustDictInfo.itemSpec}"
+								 maxChars="20"/>
+				</mx:FormItem>
+				<mx:FormItem width="100%"
+							 height="26"
+							 label="单　　位">
+					<s:TextInput id="units"
+								 width="100%"
+								 editable="false"
+								 text="@{mustDictInfo.units}"
+								 maxChars="10"/>
+				</mx:FormItem>
+				<s:HGroup width="100%"
+						  verticalAlign="middle"
+						  horizontalAlign="center">
+					<s:CheckBox label="打印标志"
+								id="bloodPrintSign"
+								width="25%"
+								selected="{mustDictInfo.bloodPrintSign=='1'?true:false}"/>
+					<s:CheckBox id="bloodTestSign"
+								label="血型检测标志"
+								width="35%"
+								selected="{mustDictInfo.bloodTestSign=='1'?true:false}"/>
+					<s:CheckBox id="bloodChargeSign"
+								label="是否单次计费"
+								width="35%"
+								selected="{mustDictInfo.bloodChargeSign=='1'?true:false}"/>
+				</s:HGroup>
+			</s:VGroup>
+		</s:BorderContainer>
+		<!-- 操作按钮部分 -->
+		<s:HGroup height="31"
+				  paddingBottom="10"
+				  horizontalAlign="right"
+				  gap="5"
+				  width="100%">
+			<mx:LinkButton id="btSave"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 保 存"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/save20.png')"
+						   click="btSave_clickHandler(event)"
+						   keyUp="keyUpCtrl(event,btReturn)"/>
+			<mx:LinkButton id="btReturn"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 返 回"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/return20.png')"
+						   click="btReturn_clickHandler(event)"/>
+			<mx:Spacer width="5"/>
+		</s:HGroup>
+		<mx:Spacer height="1"/>
+	</s:VGroup>
+</s:TitleWindow>

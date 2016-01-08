@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:controls="cn.superion.base.components.controls.*"
+		   creationComplete="inita()">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.blood.other.view.BloodScrappedAdd;
+			import cn.superion.blood.util.MainToolBar;
+			import cn.superion.blood.util.renderer.ColumnItemRendererRhSign;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import cn.superion.report2.ReportPrinter;
+			import cn.superion.report2.ReportViewer;
+			import cn.superion.vo.blood.BloodRdsMaster;
+			import cn.superion.vo.notice.CdNotice;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.StringUtil;
+			private const MENU_NO:String="0204";
+			private var destination:String='bloodDiscardImpl';
+			private var _this:*=this;
+			//系统参数
+			private const PARA_CODE:String="0102";//是否自动审核
+			
+			private function inita():void
+			{
+				bloodCode.setFocus();
+				var params:ParameterObject=new ParameterObject();
+				params.conditions={};
+				//若选择已退，则查收发存
+					gridDiscard.config(params,destination,'findListByCondition2',function(rev:Object):void
+					{
+						gridDiscard.grid.dataProvider=rev.data;
+						gridDiscard.grid.colorWhereField="currentStatus";
+						gridDiscard.grid.colorWhereValue="0";
+						gridDiscard.grid.colorWhereColor=0x0000FF;
+					},null,false);
+				//isAutoCheckHandler();
+			}
+			
+			//自动审核
+			private function isAutoCheckHandler():void
+			{
+				var ro:RemoteObject=RemoteUtil.getRemoteObject('centerSysParamImpl',function(rev:Object):void
+				{
+					if(rev==null||rev.data==null||rev.data.length < 1||rev.data[0]==1)
+					{
+						btCheck.enabled=false;
+						btDelete.enabled=false;
+						btChange.enabled=false;
+					}
+				});
+				ro.findSysParamByParaCode(PARA_CODE);
+			}
+			
+			//查询
+			public function btQuery_clickHandler():void
+			{
+					//连服务端
+					var params:Object=FormUtils.getFields(queryPanel,[]);
+					
+					if(endBillDate.selectedDate)
+					{
+						params['beginBillDate']=beginBillDate.selectedDate;
+						params['endBillDate']=MainToolBar.addOneDay(endBillDate.selectedDate);	
+					}
+					if(bloodCode.selectedItem)
+					{
+						params['bloodCode']=bloodCode.selectedItem.blood;
+					}
+					if(typeCode.selectedItem)
+					{
+						params['typeCode']=typeCode.selectedItem.bloodType;
+					}
+					if(StringUtil.trim(productCode.text).length > 0)
+					{
+						params['productCode']=productCode.text;
+					}
+					
+					var paramQuery:ParameterObject=new ParameterObject();
+					paramQuery.conditions=params;
+					gridDiscard.reQuery(paramQuery);
+			}
+			
+			//审核
+			protected function btCheck_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "06"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				
+				var selItem:Object=gridDiscard.grid.selectedItem;
+				if (!selItem)
+				{
+					Alert.show('请先选择一条记录', '提示');
+					return;
+				}
+//				if(gridDiscard.grid.selectedItem.currentStatus=='1')
+//				{
+//					Alert.show('已经审核，不能再审核','提示');
+//					return;
+//				}
+				var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+				var bloodTestWin:BloodScrappedAdd=PopUpManager.createPopUp(topApp, BloodScrappedAdd, true) as BloodScrappedAdd;
+				bloodTestWin.data={masterItem: gridDiscard.grid.selectedItem, parentWin: this,isAdd:'checkDo'};
+				FormUtils.fullScreenWindow(bloodTestWin);
+			}
+
+			//返回主页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				MainFrameUtil.closeTab(this);
+			}
+			
+			//修改
+			protected function btChange_clickHandler(event:MouseEvent):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "02"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				if (!gridDiscard.grid.selectedItem)
+				{
+					Alert.show('请先选择一条记录', '提示');
+					return
+				}
+//				if(gridDiscard.grid.selectedItem.currentStatus=='1')
+//				{
+//					Alert.show('已经审核，不能修改','提示');
+//					return;
+//				}
+				var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+				var bloodTestWin:BloodScrappedAdd=PopUpManager.createPopUp(topApp, BloodScrappedAdd, true) as BloodScrappedAdd;
+				bloodTestWin.data={masterItem: gridDiscard.grid.selectedItem, parentWin: this,isAdd:'changeDo'};
+				FormUtils.fullScreenWindow(bloodTestWin);
+			}
+
+			//删除
+			protected function btDelete_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "03"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				if(gridDiscard.grid.selectedItem.currentStatus=='1')
+				{
+					Alert.show('已经审核，不能删除','提示');
+					return;
+				}
+				
+				var selItem:Object=gridDiscard.grid.selectedItem;
+				if (!selItem)
+				{
+					Alert.show('请先选择要删除的记录', '提示');
+					return;
+				}
+				
+				Alert.show('您是否要删除单据编号为' + selItem.billNo + '检验报告?', '提示', Alert.YES | Alert.NO, null, function(e:CloseEvent):void
+				{
+					if (e.detail == Alert.YES)
+					{
+						var ro:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+//							Alert.show("删除：单据编号为" + selItem.billNo + "检验报告成功，请确定！", "提示");
+							gridDiscard.refresh();
+						});
+						ro.deleteById(selItem.autoId)
+					}
+				});
+			}
+			
+			//新建
+			protected function btAdd_clickHandler(event:MouseEvent):void
+			{		
+//					if(!PurviewUtil.getPurview(AppInfo.APP_CODE,MENU_NO,"01"))
+//					{
+//						Alert.show("您无此按钮操作权限！", "提示");
+//						return;
+//					}
+					var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+					var bloodDiscardWin:BloodScrappedAdd=PopUpManager.createPopUp(topApp,BloodScrappedAdd,true) as BloodScrappedAdd;
+					bloodDiscardWin.data={masterItem:null,parentWin:this,isAdd:'addDo'};
+					FormUtils.fullScreenWindow(bloodDiscardWin);
+			}
+
+			protected function cboxBlood_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				var bloodArc:ArrayCollection=BaseDict.bloodDict;
+				for each(var item:Object in bloodArc)
+				{
+					if(item.bloodName=='')
+					{
+						bloodArc.removeItemAt(bloodArc.getItemIndex(item))						
+					}
+				}
+				bloodArc.addItemAt({blood:null,bloodName:''},0);
+				bloodCode.dataProvider=bloodArc;
+				bloodCode.selectedIndex=0;
+			}
+
+			protected function cboxBloodType_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				var typeArc:ArrayCollection=BaseDict.bloodTypeDict;
+				for each(var item:Object in typeArc)
+				{
+					if(item.bloodTypeName=='')
+					{
+						typeArc.removeItemAt(typeArc.getItemIndex(item))						
+					}
+				}
+				typeArc.addItemAt({bloodType:null,bloodTypeName:''},0);
+				typeCode.dataProvider=typeArc;
+				typeCode.selectedIndex=0;
+			}
+			
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// 获得下一个焦点
+				if (event.keyCode == 13)
+				{
+					ctrl.setFocus();
+				}
+			}
+			
+			private function keUpHandler(e:KeyboardEvent):void
+			{
+				if(!btQuery.enabled)
+					return
+				if (e.keyCode == Keyboard.ENTER)
+				{
+					btQuery_clickHandler();
+				}
+			}
+			
+			//打印
+			private function printExpHandler(lstrPurview:String,isPrintSign:String):void
+			{
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, lstrPurview))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				
+				var _dataList:ArrayCollection=gridDiscard.grid.dataProvider as ArrayCollection;
+				var dict:Dictionary = new Dictionary();
+				dict["单位名称"] = AppInfo.sysUser.unitsName;
+				dict["日期"] =DateField.dateToString(new Date(),'YYYY-MM-DD');
+				dict["主标题"] = "未退费血液报废";
+				dict["制表人"] =AppInfo.sysUser.userName;
+				var strXml:String = "report/blood/deliver/bloodDiscard.xml";
+				loadReportXml(strXml,_dataList,dict,"0");
+//				ReportViewer.Instance.Show("report/blood/deliver/bloodDiscard.xml", _dataList, dict);
+			}
+			private function loadReportXml(reportUrl:String,faryDetails:ArrayCollection, fdict:Dictionary,fprintSign:String):void{
+				var loader:URLStream=new URLStream();
+				loader.addEventListener(Event.COMPLETE, function(event:Event):void{
+					var stream:URLStream = event.currentTarget as URLStream;
+					var xml:XML=XML(stream.readMultiByte(stream.bytesAvailable,"utf-8"));
+					if (fprintSign == "1")
+					{
+						ReportPrinter.Print(xml, faryDetails, fdict);
+					}
+					else
+					{
+						ReportViewer.Instance.Show(xml, faryDetails, fdict);
+					}
+				});
+				var url:URLRequest = new URLRequest(reportUrl);
+				loader.load(url);
+			}
+			private function labelFun(item:Object,column:DataGridColumn):String
+			{
+				if(item.notData)
+				{
+					return '';
+				}
+				if(column.headerText=='Rh(D)')
+				{
+					if(item.rhSign==null || item.rhSign=='')
+					{
+						item.rhSignName='';
+						return '';
+					}
+					if(item.rhSign=='1')
+					{
+						item.rhSignName='阴性';
+						return '阴性';
+					}
+					if(item.rhSign=='0')
+					{
+						item.rhSignName='阳性';
+						return '阳性';
+					}
+				}
+				if(column.headerText=='血液成份')
+				{
+					var typeItem:Object=ArrayCollUtils.findItemInArrayByValue(BaseDict.bloodTypeDict,'bloodType',item.typeCode);
+					if(typeItem)
+					{
+						item.typeName=typeItem.bloodTypeName;
+						return typeItem.bloodTypeName;					
+					}
+				}
+				if(column.headerText=='状态')
+				{
+					if(item.currentStatus=='0')
+					{
+						return '新建';
+					}
+					if(item.currentStatus=='1')
+					{
+						return '审核';
+					}
+				}
+				return '';
+			}
+
+			
+			
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup x="0"
+				  y="0"
+				  width="100%"
+				  height="100%">
+			<!-- 标题部分 -->
+
+			<!-- 查询条件区 -->
+			<s:HGroup id="queryPanel"
+					  width="100%"
+					  paddingLeft="5"
+					  paddingTop="5">
+				<mx:FormItem label="日期"
+							 fontSize="14"
+							 color="#0000FF">
+					<mx:DateField id="beginBillDate" monthNames="['1','2','3','4','5','6','7','8','9','10','11','12']" dayNames="['日','一','二','三','四','五','六']" color="black"
+								  width="120" 
+								  formatString="YYYY-MM-DD"
+								  showToday="true"
+								  enterFrame="{beginBillDate.selectedDate==null?beginBillDate.selectedDate=new Date():beginBillDate.selectedDate}"
+								  disabledRanges="{[{rangeStart:endBillDate.selectedDate}]}"
+								  keyUp="keyUpCtrl(event,endBillDate)"
+								  />
+				</mx:FormItem>
+				<mx:FormItem label="-"
+							 fontSize="14"
+							 color="#0000FF">
+					<mx:DateField id="endBillDate" monthNames="['1','2','3','4','5','6','7','8','9','10','11','12']" dayNames="['日','一','二','三','四','五','六']" color="black"
+								  width="120"
+								  formatString="YYYY-MM-DD"
+								  showToday="true"
+								  enterFrame="{endBillDate.selectedDate==null?endBillDate.selectedDate=new Date():endBillDate.selectedDate}"
+								  disabledRanges="{[{rangeEnd:beginBillDate.selectedDate}]}"
+								  keyUp="keyUpCtrl(event,bloodCode)"
+								  />
+				</mx:FormItem>
+				<mx:FormItem label="血型"
+							 fontSize="14"
+							 color="#0000FF">
+					<s:DropDownList id="bloodCode" labelField="bloodName" color="black"
+								width="120"
+								creationComplete="cboxBlood_creationCompleteHandler(event)"
+								keyUp="keyUpCtrl(event,typeCode)"
+								/>
+				</mx:FormItem>
+				<mx:FormItem label="成份"
+							 fontSize="14"
+							 color="#0000FF">
+					<s:DropDownList id="typeCode" labelField="bloodTypeName" color="black"
+								width="120" creationComplete="cboxBloodType_creationCompleteHandler(event)"
+								keyUp="keyUpCtrl(event,btQuery)"
+								/>
+				</mx:FormItem>
+				<mx:FormItem label="血袋编码"
+							 fontSize="14"
+							 color="#0000FF">
+					<s:TextInput id="productCode"
+								 width="100%"/>
+				</mx:FormItem>
+				<mx:LinkButton id="btQuery"
+							   height="24"
+							   label=" 查 找"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/query20.png')"
+							   click="btQuery_clickHandler()"
+							   keyUp="keUpHandler(event)"/>
+			</s:HGroup>
+
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%">
+					<controls:PageGrid id="gridDiscard"
+									   styleName="dataGrid"
+									   hasRowNo="false"
+									   textAlign="left"
+									  >
+						<controls:columns>
+							<mx:DataGridColumn headerText="单据编号"
+											   dataField="billNo"
+											   width="100"/>
+							<mx:DataGridColumn headerText="报废日期"
+											   dataField="scrappedDate"
+											   width="90"/>
+							<mx:DataGridColumn headerText="报废原因"
+											   width="120"
+											   dataField="remark"/>
+							<!--<mx:DataGridColumn headerText="血袋编号"
+											   dataField="productCode"
+											   width="120"/>-->
+							<mx:DataGridColumn headerText="血袋编号"
+											   dataField="bloodBagCode"
+											   width="120"/>
+							<mx:DataGridColumn headerText="血型"
+											   dataField="bloodName"
+											   width="40"/>
+							<mx:DataGridColumn headerText="血液成份"
+											   dataField="typeCode"
+											   width="90"
+											   labelFunction="labelFun"/>
+							<mx:DataGridColumn headerText="Rh(D)"
+											   dataField="rhSign"
+											   width="40"
+											   labelFunction="labelFun"
+											   itemRenderer="cn.superion.blood.util.renderer.ColumnItemRendererRhSign"/>
+							<mx:DataGridColumn headerText="规格"
+											   dataField="spec"
+											   width="70"/>
+							<mx:DataGridColumn headerText="采血日期"
+											   dataField="collectDate"
+											   width="90"/>
+							<mx:DataGridColumn headerText="失效日期"
+											   dataField="availDate"
+											   width="90"/>
+							<mx:DataGridColumn headerText="状态"
+											   dataField="currentStatus"
+											   width="50"
+											   labelFunction="labelFun"/>
+						</controls:columns>
+					</controls:PageGrid>
+
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btAdd"
+									   label=" 新 建"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/new20.png')"
+									   click="btAdd_clickHandler(event)"/>
+						<mx:LinkButton id="btChange"
+									   label=" 修 改"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/change20.png')"
+									   click="btChange_clickHandler(event)"/>
+						<mx:LinkButton id="btDelete"
+									   label=" 删 除"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/delete20.png')"
+									   click="btDelete_clickHandler(event)"/>
+						<mx:LinkButton id="btCheck"
+									   label=" 审 核"
+									   fontSize="12"
+									   width="0"
+									   visible="false"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/check20.png')"
+									   click="btCheck_clickHandler(event)"/>
+						<mx:LinkButton id="btPrint"
+									   label=" 打 印"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="printExpHandler('05','1')"
+									   icon="@Embed(source='/assets/images/button/print20.png')"
+									   />
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+
+			</s:BorderContainer>
+
+		</s:VGroup>
+
+	</s:BorderContainer>
+
+</mx:Module>

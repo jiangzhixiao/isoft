@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:view="cn.superion.blood.user.user.view.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.SysUser;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.blood.user.user.view.UserAdd;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+
+			private const MENU_NO:String="0101";
+
+			//删除事件
+			protected function btDel_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "03"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+
+				userContent.delUser();
+			}
+
+			//返回页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				MainFrameUtil.closeTab(this);
+			}
+
+			//冻结事件
+			protected function btFreeze_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "02"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+
+				userContent.freezeUser();
+			}
+
+			//取消冻结事件
+			protected function btRestore_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "02"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+
+				userContent.cancelFreezeUser();
+			}
+
+			//新增事件
+			protected function btNew_clickHandler(event:MouseEvent):void
+			{
+//				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "01"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				
+				var win:UserAdd=PopUpManager.createPopUp(this, UserAdd, true) as UserAdd;
+
+				win.isAdd=true;
+				win.parentWin=this;
+				PopUpManager.centerPopUp(win);
+			}
+
+			//修改事件
+			protected function btChange_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "02"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+
+				var selectedItem:SysUser=userContent.dgUser.selectedItem as SysUser;
+				if (!selectedItem)
+				{
+					Alert.show("请选择需要修改的用户，然后再点击修改!", "提示信息");
+					return;
+				}
+
+				var win:UserAdd=PopUpManager.createPopUp(this, UserAdd, true) as UserAdd;
+				win.isAdd=false;
+				win.userInfo=selectedItem;
+				win.parentWin=this;
+
+				PopUpManager.centerPopUp(win);
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup x="0"
+				  y="0"
+				  width="100%"
+				  height="100%">
+			<!-- 标题部分 -->
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%">
+					<view:UserContent id="userContent"
+									  x="0"
+									  y="0"
+									  width="100%"
+									  height="100%">
+					</view:UserContent>
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btNew"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   label=" 新 建"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/new20.png')"
+									   click="btNew_clickHandler(event)"/>
+						<mx:LinkButton id="btChange"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   label=" 修 改"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/change20.png')"
+									   click="btChange_clickHandler(event)"/>
+						<mx:LinkButton id="btFreeze"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   label=" 冻 结"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/reclaim20.png')"
+									   click="btFreeze_clickHandler(event)"/>
+						<mx:LinkButton id="btRestore"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   label=" 恢 复"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/restore20.png')"
+									   click="btRestore_clickHandler(event)"/>
+						<mx:LinkButton id="btDel"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   label=" 删 除"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/delete20.png')"
+									   click="btDel_clickHandler(event)"/>
+						<mx:LinkButton id="btReturn"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   label=" 返 回"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:BorderContainer>
+		</s:VGroup>
+	</s:BorderContainer>
+</mx:Module>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Label xmlns:fx="http://ns.adobe.com/mxml/2009" top="0"
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx"  color="{data.rhSign == '0'?0xf60b0b:0x070797}" textAlign="left"
+						  focusEnabled="true">
+</mx:Label>

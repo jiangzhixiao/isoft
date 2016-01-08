@@ -1,0 +1,220 @@
+
+@namespace grids "com.flexicious.grids.*";
+@namespace flexiciousControls "com.flexicious.controls.*";
+@namespace sampleControls "com.sample.examples.support.controls.*";
+@namespace mx "library://ns.adobe.com/flex/mx";
+@namespace spark "com.flexicious.grids.spark.*";
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace printareas "com.flexicious.print.printareas.*";
+@namespace calendar "vamos.scheduling.calendar.*";
+
+
+grids|ExtendedDataGrid
+{
+	footerBackgroundColor: #CFCFCF;
+	filterBackgroundColor: #AFAFAF;
+	pagerBackgroundColor: #EFF1F2;
+	headerStyleName: 			"mydataGridHeaderStyle";
+	font-family:				宋体;
+	font-weight:				normal;
+	font-size:					11;
+	color:						#000000;
+	text-roll-over-color:		#000000;
+	text-selected-color:		#000000;
+	roll-over-color:			#e4e4e4;
+	selection-color:			#cdcdcd;
+	alternating-item-colors:	#f8f8f8, #ffffff;
+	
+}
+/*mx|VRule{
+	strokeColor:#000000;
+	strokeWidth:2;
+	
+}*/
+mx|Label{
+	fontFamily:宋体;
+}
+mx|TextInput{
+	fontFamily:宋体;
+}
+flexiciousControls|Spinner{
+	fontFamily:宋体;
+}
+spark|ExtendedSparkDataGrid{
+	footerBackgroundColor: #CFCFCF;
+	filterBackgroundColor: #AFAFAF;
+	pagerBackgroundColor: #EFF1F2;
+	font-family:				宋体;
+	font-weight:				normal;
+	font-size:					11;
+	color:						#000000;
+	alternating-item-colors:	#f8f8f8, #ffffff;
+	alternatingRowColors:  #EFF3FA, #FFFFFF;
+}
+s|DefaultGridHeaderRenderer{
+	font-size: 11;
+	
+}
+grids|ExtendedAdvancedDataGrid
+{
+	
+	footerBackgroundColor: #CFCFCF;
+	filterBackgroundColor: #AFAFAF;
+	pagerBackgroundColor: #EFF1F2;
+	headerStyleName: 			"mydataGridHeaderStyle";
+	font-family:				宋体;
+	font-weight:				normal;
+	font-size:					11;
+	color:						#000000;
+	text-roll-over-color:		#000000;
+	text-selected-color:		#000000;
+	roll-over-color:			#e4e4e4;
+	selection-color:			#cdcdcd;
+	alternating-item-colors:	#f8f8f8, #ffffff;
+}
+
+flexiciousControls|MultiSelectComboBox
+{
+	font-family: 			宋体;
+	font-weight:			normal;
+}
+sampleControls|ImageButton
+{
+	overBorderColor:	#6F6F6F;
+}
+
+
+flexiciousControls|MultiSelectComboBox{
+	buttonBoxStyleName:"msbButtonBox";
+	buttonStyleName:"msbButton";
+}
+.msbButtonBox{
+	backgroundColor:#FFFFFF;
+	borderStyle:"solid";
+	borderColor:#000000;
+	horizontalAlign:"right";
+	horizontalGap:2;
+}
+.msbButton{
+	color: #555555;
+	fontSize: 11;  
+	textDecoration: underline;  
+	textRollOverColor: #000000;  
+	leading: 0;  
+	paddingLeft: 2;  
+	paddingRight: 2;  
+	paddingBottom: 1;  
+	paddingTop: 1;  
+	skin: ClassReference(null);  
+}
+.watermarkStyle{
+	color:#bbbbbb;
+	fontStyle:italic;
+}
+
+mx|Application
+{
+	font-family: 				宋体;
+	font-size: 					11;
+	color: 						#000000;
+	background-color: 			#FFFFFF;
+	font-weight:				normal;
+	
+}
+mx|Button
+{
+	font-family:				宋体;
+	font-weight:				normal;
+	font-size:				11;
+}
+.mydataGridHeaderStyle {
+	textAlign: 				left;
+	color:					#000000;
+	font-family:				宋体;
+	font-weight:				normal;
+	font-size:				11;
+}
+mx|ComboBox
+{
+	font-family: 			宋体;
+	font-weight:			normal;
+}
+mx|PopUpButton
+{
+	font-family: 			宋体;
+	font-weight:			normal;
+}
+mx|TitleWindow
+{
+	font-family:			宋体;
+	font-size:				11;
+	font-weight:			normal;
+	color:					#000000;
+	title-style-name:		"titleStyle";
+	borderAlpha:0.9;
+}
+mx|Panel
+{
+	font-family:			宋体;
+	font-size:				11;
+	font-weight:			normal;
+	color:					#000000;
+	title-style-name:		"titleStyle";
+	borderAlpha:0.9;
+}
+.titleStyle
+{
+	font-family:		宋体;
+	font-size:			12;
+	font-weight:		normal;
+	color:				#000000;
+}
+
+mx|Accordion
+{
+	border-color:			#cfcfcf;
+	background-color:		#f3f3f3;
+}
+
+
+mx|AccordionHeader
+{
+	header-height:			22;
+	border-style:			solid;
+	font-family:			宋体;
+	color:					#3F3F3F;
+	font-size:				11;	
+	font-weight:		bold;
+}
+/*mx|TabNavigator
+{
+	font-family:					宋体;
+	font-size:						11;
+	font-weight:					normal;
+	border-color:					#cbcbcb;
+	color:							#333333;
+	tab-style-name:					"tabNavigatorTab";
+	selected-tab-text-style-name:	"tabNavigatorSelectedText";
+	horizontalGap:	1
+		
+}
+
+
+.tabNavigatorTab
+{
+	font-weight: 		normal;
+	font-family:		宋体;
+	font-size:			11;
+	color:				#333333;
+	border-color: 		#c0c0c0;
+}*/
+
+
+.tabNavigatorSelectedText
+{
+	roll-over-color:	#333333;
+	font-weight: 		normal;
+	font-family:		宋体;
+	font-size:			11;
+	color:				#000000;
+}	

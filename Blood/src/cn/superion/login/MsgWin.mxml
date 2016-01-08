@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="468"
+			   height="148"
+			   borderVisible="true"
+			   close="closeHandler(event)"
+			   includeInLayout="false"
+			   visible="false"
+			   alpha="0"
+			   hideEffect="{fadeOut}"
+			   showEffect="{fadeIn}"
+			   mouseOver="titlewindow1_mouseOverHandler(event)"
+			   mouseOut="titlewindow1_mouseOutHandler(event)"
+			   creationComplete="titlewindow1_creationCompleteHandler(event)"
+			   dropShadowVisible="true"
+			   enabled="true"
+			   kerning="auto"
+			   title="消息">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.GridColumn;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.config.SysUser;
+			import cn.superion.base.util.LoadModuleUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.vo.blood.system.SysUserNotice;
+			import cn.superion.vo.notice.CdNotice;
+			import mx.containers.Grid;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.formatters.DateFormatter;
+			import mx.managers.PopUpManager;
+			import mx.modules.ModuleLoader;
+			import mx.rpc.remoting.RemoteObject;
+			
+			private var msges:int=0;
+			private var _this:*=this;
+
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var parameter:ParameterObject=new ParameterObject();
+				parameter.conditions={NoticeType: "",queryAll:"1"};
+				parameter.itemsPerPage=1000;
+				parameter.page=1;
+				var ro:RemoteObject=RemoteUtil.getRemoteObject("noticeImpl", function(rev:Object):void
+					{
+						gridNotice.dataProvider=rev.data;
+						gridNotice.selectedIndex=0;
+						msges=rev.data.length;
+						if(msges == 0){
+							_this.visible=false;
+						}else{
+							_this.visible=true;
+						}
+						var timer:Timer=new Timer(1000 * 20, 1);
+						timer.repeatCount=0;
+						timer.addEventListener(TimerEvent.TIMER, function(e:Event):void
+							{
+								var ro:RemoteObject=RemoteUtil.getRemoteObject("noticeImpl", function(rev:Object):void
+									{
+										if (rev.data.length > 0)
+										{
+											gridNotice.dataProvider=rev.data;
+											gridNotice.selectedIndex=0;
+											content.htmlText=rev.data[0].noticeContent;
+											if (rev.data.length - msges > 0)
+											{
+												_this.visible=true;
+											}
+											msges=rev.data.length;
+										}
+										else{
+											_this.visible=false;
+										}
+									});
+								ro.findCdNoticeListByCondtion(parameter);
+							});
+						timer.start();
+					});
+				ro.findCdNoticeListByCondtion(parameter);
+			}
+
+			protected function gridNotice_gridClickHandler(event:ListEvent):void
+			{
+				content.htmlText=gridNotice.selectedItem.noticeContent;
+				
+			}
+
+			protected function closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function labFun(item:Object, column:DataGridColumn):String
+			{
+				var dateFormatter:DateFormatter=new DateFormatter;
+				dateFormatter.formatString='YY-M-D HH:NN';
+				return dateFormatter.format(item.noticeDate);
+			}
+
+			protected function titlewindow1_mouseOverHandler(event:MouseEvent):void
+			{
+				this.visible=true;
+
+			}
+
+			protected function titlewindow1_mouseOutHandler(event:MouseEvent):void
+			{
+				var timer:Timer=new Timer(8000, 1);
+				timer.addEventListener(TimerEvent.TIMER, function(e:Event):void
+					{
+						//逐渐消失
+						_this.visible=false
+						_this.includeInLayout=false;
+					});
+				timer.start();
+			}
+			
+			protected function gridNotice_doubleClickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var win:NoticeAdd2=PopUpManager.createPopUp(this, NoticeAdd2, true) as NoticeAdd2;
+				win.x = 200;
+				win.y = 400;
+				win.isOpenType="3";
+				win.noticeInfo=gridNotice.selectedItem as CdNotice;
+//				PopUpManager.centerPopUp(win);
+				
+				//写入表sys_user_notice中
+				var notice : SysUserNotice  = new SysUserNotice;
+				notice.noticeNo = gridNotice.selectedItem.noticeNo;
+				notice.readPerson = AppInfo.sysUser.userCode;
+				var ro:RemoteObject = RemoteUtil.getRemoteObject('bloodImpl',function(rev:Object):void{
+					
+				});
+				ro.saveSysUserNotice(notice);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:Fade id="fadeOut"
+				duration="2000"
+				alphaFrom="1.0"
+				alphaTo="0.0"/>
+		<s:Fade id="fadeIn"
+				duration="2000"
+				alphaFrom="0.0"
+				alphaTo="1.0"/>
+	</fx:Declarations>
+	<!--<s:controlBarContent/>-->
+	<s:HGroup width="100%"
+			  height="100%"
+			  gap="0">
+		<mx:DataGrid width="70%"
+					 showDataTips="false"
+					 height="100%"
+					 doubleClickEnabled="true"
+					 id="gridNotice"
+					 doubleClick="gridNotice_doubleClickHandler(event)"
+					 itemClick="gridNotice_gridClickHandler(event)">
+			<mx:columns>
+				<mx:DataGridColumn width="120"
+								   id="clm_NoticeDate"
+								   dataField="noticeDate"
+								   headerText="日期"
+								   labelFunction="labFun"/>
+				<mx:DataGridColumn dataField="noticeTitle"
+								   headerText="标题"/>
+				<mx:DataGridColumn dataField="noticeContent"
+								   visible="false"/>
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:TextArea id="content"
+					 width="30%"
+					 height="100%"/>
+	</s:HGroup>
+</s:TitleWindow>

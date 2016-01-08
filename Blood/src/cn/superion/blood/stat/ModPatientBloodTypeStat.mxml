@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:controls="cn.superion.base.components.controls.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.DateUtil;
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.blood.util.DefaultPage;
+			import cn.superion.blood.util.renderer.ColumnItemRendererRhSign;
+			import cn.superion.dataDict.DictWinShower;
+			import cn.superion.report.hlib.UrlLoader;
+			import cn.superion.report2.ReportPrinter;
+			import cn.superion.report2.ReportViewer;
+			import cn.superion.vo.blood.BloodTestRecord;
+			
+			import com.adobe.utils.StringUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.events.ListEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			private var destination:String='patientBloodTypeStatImpl';
+			private const MENU_NO:String="0515";
+			//条件对象
+			private var _condition:Object={};
+			
+			
+			/**
+			 * 回车获取焦点
+			 */
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				
+				FormUtils.toNextControl(event,ctrl);;
+			}
+			
+			/**
+			 * 放大镜输入框键盘处理方法
+			 * */
+			protected function textInputIcon_keyUpHandler(event:KeyboardEvent, fctrNext:Object):void
+			{
+				FormUtils.textInputIconKeyUpHandler(event, _condition, fctrNext);
+			}
+			
+			//查找功能
+			protected function btQuery_clickHandler(event:Event):void
+			{
+				if(patientName.text == "" && cboxInpNo.text == "" && wardCode.txtContent.text == ""){
+					Alert.show('请输入姓名或住院号或病区','提示');
+					return;
+				}
+				var paramQuery:ParameterObject=new ParameterObject();
+				
+				if(examDate.selected)
+				{
+					//开始日期
+					_condition['beginExamDate']=dfStartDate.text;
+					//结束日期
+					var endCallbackDate:Date=new Date();
+					//					endCallbackDate.setTime(dfEndDate.selectedDate.getTime() + 24 * 60 * 60 * 1000);
+					_condition['endExamDate']=dfEndDate.text;
+				}		
+				else{
+					_condition['beginExamDate']=null;
+					_condition['endExamDate']=null;
+				}
+				
+				// 病人姓名
+				_condition["patientName"]=patientName.text;
+				// 住院号
+				_condition["patientId"]=cboxInpNo.text;
+				
+				paramQuery.conditions=_condition;
+				var ro:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+				{					
+					if (rev.data && rev.data.length > 0)
+					{
+						var arry:ArrayCollection=rev.data as ArrayCollection;
+						for each (var item:Object in arry)
+						{
+							item.patientType=item.patientType=="1"?"门诊":"住院";
+							item.sex=item.sex== "1" ? "男" : item.sex== "2" ? "女" : "未知";
+						}
+						gdPatientTestList.dataProvider=arry;
+						return;
+					}
+					//					if(rev.data[1]){
+					//						fistApplyDate.text =DateUtil.dateToString(rev.data[1].applyDate,'YYYY-MM-DD');
+					//					}
+					gdPatientTestList.dataProvider=[];
+				});
+				ro.findPatientBloodByCon(paramQuery);
+			}
+			
+			//回车实现查找功能
+			protected function btQuery_keyUpHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER)
+				{
+					btQuery_clickHandler(event);
+				}
+			}
+			
+			
+			/**
+			 * 打印、预览处理事件
+			 * @param 参数说明
+			 * 	lstrPurview 权限编号;
+			 *  isPrintSign 打印预览输出标示,预览：2，直接打印：1，输出：0
+			 */
+			protected function btPreview_clickHandler(lstrPurview:String, isPrintSign:String):void
+			{
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, lstrPurview))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				var patientUseBloodPrintItems:ArrayCollection=gdPatientTestList.dataProvider as ArrayCollection;
+				var dict:Dictionary=new Dictionary();
+				dict["单位名称"]=AppInfo.sysUser.unitsName;
+				dict["日期"]=DateField.dateToString(new Date(), 'YYYY-MM-DD');
+				//				dict["dfStartDate"]=DateField.dateToString(dfStartDate.selectedDate, 'YYYY-MM-DD');
+				//				dict["dfEndDate"]=DateField.dateToString(dfEndDate.selectedDate, 'YYYY-MM-DD');
+				//				dict["住院号"]=cboxInpNO.text;
+				
+				dict["主标题"]="病人检验记录查询";
+				dict["制表人"]=AppInfo.sysUser.userName;
+				
+				if (isPrintSign == '1')
+				{
+					ReportPrinter.LoadAndPrint("report/blood/stat/patientTestStat.xml", patientUseBloodPrintItems, dict);
+				}
+				else
+				{
+					ReportViewer.Instance.Show("report/blood/stat/patientTestStat.xml", patientUseBloodPrintItems, dict);
+				}
+			}
+			
+			/**
+			 * 返回主页面
+			 */
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				DefaultPage.gotoDefaultPage();
+			}
+			
+			
+			/**
+			 * LabelFunction :根据血型编码显示血型名
+			 * */
+			private function labFunBloodCode(item:Object, column:DataGridColumn):String
+			{
+				var ary:ArrayCollection=BaseDict.bloodDict;
+				if (ary.length == 0)
+				{
+					return " ";
+				}
+				var name:String="";
+				for each (var obj:Object in ary)
+				{
+					if (obj.blood == item.bloodCode)
+					{
+						name=obj.bloodName;
+						item.bloodName=obj.bloodName;
+					}
+				}
+				return name;
+			}
+			
+			
+			protected function wardCode_queryIconClickHandler():void
+			{
+				var x:int=0;
+				var y:int=this.parentApplication.screen.height - 345;
+				DictWinShower.showDeptWardDict((function(item:Object):void
+				{
+					wardCode.txtContent.text=item.deptName;
+					_condition.wardCode=item.deptCode;
+					//						_wardCode=item.deptCode;
+				}));
+			}
+			
+			
+			/**
+			 * 病区、RH阴的Label显示方式
+			 */ 
+			private function labelFun(item:Object, column:DataGridColumn):*
+			{
+				if (column.headerText == '病区')
+				{
+					var wardCodeItem:Object=ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict, 'dept', item.wardCode);
+					if (!wardCodeItem)
+					{
+						item.wardName="";
+					}
+					else
+					{
+						item.wardName=wardCodeItem.deptName;
+					}
+					return item.wardName;
+				}
+				
+				if (column.headerText == 'Rh(D)')
+				{
+					if (item.notData)
+					{
+						return '';
+					}
+					if (item.rhSign == '' || item.rhSign == '0' || item.rhSign == null)
+					{
+						item.rhSignName='阳性';
+						return item.rhSignName;
+					}
+					else
+					{
+						item.rhSignName='阴性';
+						return item.rhSignName;
+					}
+				}
+				
+				if (column.headerText == '检验医生')
+				{
+					var personIdItem:Object=ArrayCollUtils.findItemInArrayByValue(BaseDict.personIdDict, 'personId', item.testDoctor);
+					if (!personIdItem)
+					{
+						item.testDoctorName='';
+					}
+					else
+					{
+						item.testDoctorName=personIdItem.personIdName;
+					}
+					return item.testDoctorName;
+				}
+			}
+			
+			protected function initPrintObject(printFlag:String):void
+			{
+				var bloodTest:BloodTestRecord = gdPatientTestList.selectedItem as BloodTestRecord; 
+				if(!bloodTest) return;
+				
+				var dict:Dictionary = new Dictionary();
+				dict["日期"] =DateField.dateToString( new Date(),'YYYY-MM-DD');
+				dict["主标题"] = AppInfo.sysUser.unitsName+"血型检测单【输血科】";
+				dict["单据编号"]=bloodTest.billNo;
+				var testDoctor:Object;
+				testDoctor= ArrayCollUtils.findItemInArrayByValue(BaseDict.personIdDict,'personId',bloodTest.confirmDoctor);
+				
+				dict["制表人"]=AppInfo.sysUser.userName;
+				
+				dict["姓名"] =bloodTest.personName;
+				dict["性别"] = bloodTest.sex;
+				trace(bloodTest.sex);
+				dict["年龄"] =bloodTest.age==0?"":bloodTest.age;
+				dict["病员号"] =bloodTest.patientType=="门诊" ? "门诊号： "+bloodTest.patientId : "住院号： "+bloodTest.patientId;
+				
+				var dept:Object;
+				dept= ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict,'dept',bloodTest.deptCode);
+				dict["科室"] =dept == null?"":dept.deptName;
+				dict["床号"] =bloodTest.bedNo;
+				dict["送检医生"] =bloodTest.applyDoctor;
+				dict["临床诊断"] =bloodTest.clinicDiagName;
+				dict["送检日期"] =bloodTest.applyDate?DateUtil.dateToString(bloodTest.applyDate,'YYYY-MM-DD hh:mm'):"";
+				dict["报告时间"]=bloodTest.printDate==null || '' ? DateUtil.dateToString(new Date(),'YYYY-MM-DD hh:mm') : DateUtil.dateToString(bloodTest.printDate,'YYYY-MM-DD hh:mm');
+				var confirmDoctor:Object;
+				confirmDoctor= ArrayCollUtils.findItemInArrayByValue(BaseDict.personIdDict,'personId',bloodTest.testDoctor);
+				
+				dict["核对者"]=confirmDoctor.personIdName;
+				dict["检验者"]=testDoctor.personIdName;
+				dict["正定型"]=bloodTest.positiveType ==null?""
+					:bloodTest.positiveType =="0"?"A型"
+					:bloodTest.positiveType =="1"?"B型"
+					:bloodTest.positiveType =="2"?"O型"
+					:bloodTest.positiveType =="3"?"AB型"
+					:bloodTest.positiveType =="4"?"未定":"";
+				
+				dict["反定型"]=bloodTest.reverseType ==null?""
+					:bloodTest.reverseType =="0"?"A型"
+					:bloodTest.reverseType =="1"?"B型"
+					:bloodTest.reverseType =="2"?"O型"
+					:bloodTest.reverseType =="3"?"AB型"
+					:bloodTest.reverseType =="4"?"未定"
+					:bloodTest.reverseType =="5"?"婴幼儿反定型未定":"";
+				
+				dict["Rh(D)"] =bloodTest.rhSign =="1"?"阴性":"阳性";
+				dict["备注"]=bloodTest.remark?bloodTest.remark:"";
+				
+				//
+				var strXml:String = "report/blood/test/bloodAppraise.xml"
+				loadReportXml(strXml, new ArrayCollection, dict,printFlag)
+			}
+			
+			private function loadReportXml(reportUrl:String,faryDetails:ArrayCollection, fdict:Dictionary,fprintSign:String):void{
+				var loader:URLStream=new URLStream();
+				loader.addEventListener(Event.COMPLETE, function(event:Event):void{
+					var stream:URLStream = event.currentTarget as URLStream;
+					var xml:XML=XML(stream.readMultiByte(stream.bytesAvailable,"utf-8"));
+					if (fprintSign == "1")
+					{
+						ReportPrinter.Print(xml, faryDetails, fdict);
+					}
+					else
+					{
+						ReportViewer.Instance.Show(xml, faryDetails, fdict);
+					}
+				});
+				var url:URLRequest = new URLRequest(reportUrl);
+				loader.load(url);
+			}
+			
+			protected function gdPatientTestList_itemDoubleClickHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				initPrintObject('0');//预览
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RadioButtonGroup id="lookType"/>
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup width="100%"
+				  height="100%"
+				  gap="0">
+			<!-- 标题部分 -->
+			<s:HGroup width="100%"
+					  height="31"
+					  gap="0">
+				<s:BorderContainer x="0"
+								   y="0"
+								   width="227"
+								   height="100%"
+								   borderVisible="false"
+								   backgroundImage="@Embed(source='/assets/images/title/title01.png')">
+					<mx:Text x="19"
+							 y="2"
+							 width="188"
+							 fontWeight="bold"
+							 fontSize="14"
+							 height="28"
+							 text="病人血型查询"/>
+				</s:BorderContainer>
+				<s:BorderContainer width="100%"
+								   height="100%"
+								   borderVisible="false"
+								   backgroundImage="@Embed(source='/assets/images/title/title02.png')">
+					<s:HGroup width="100%"
+							  height="31"
+							  verticalAlign="middle">
+						<mx:Spacer width="100%"/>
+						<mx:Spacer width="10"/>
+					</s:HGroup>
+				</s:BorderContainer>
+			</s:HGroup>
+			
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%"
+						  paddingLeft="5"
+						  paddingRight="5">
+					<!-- 查询条件区 -->
+					<s:HGroup width="100%"
+							  paddingLeft="5"
+							  paddingTop="5">
+						<s:CheckBox id="examDate" selected="true"/>
+						<mx:FormItem label="检验日期"
+									 fontSize="14"
+									 color="#0000FF"
+									 direction="horizontal"
+									 width="320">
+							<mx:DateField id="dfStartDate"
+										  keyUp="keyUpCtrl(event,dfEndDate)"
+										  width="50%"
+										  enabled="{examDate.selected}"
+										  formatString="YYYY-MM-DD"
+										  enterFrame="{dfStartDate.selectedDate==null?dfStartDate.selectedDate=new Date():dfStartDate.selectedDate}"
+										  disabledRanges="{[{rangeStart:dfEndDate.selectedDate}]}"/>
+							<mx:FormItem label="-"
+										 fontSize="14"
+										 color="#0000FF"
+										 labelWidth="10"
+										 width="50%"
+										 horizontalGap="0">
+								<mx:DateField id="dfEndDate"
+											  keyUp="keyUpCtrl(event,patientName)"
+											  width="100%"
+											  enabled="{examDate.selected}"
+											  formatString="YYYY-MM-DD"
+											  enterFrame="{dfEndDate.selectedDate==null?dfEndDate.selectedDate=new Date():dfEndDate.selectedDate}"
+											  selectableRange="{{rangeStart:dfStartDate.selectedDate, rangeEnd:new Date()}}"/>
+							</mx:FormItem>
+						</mx:FormItem>
+						<s:HGroup verticalAlign="middle"
+								  width="100%">
+							<s:Label text="病　　区"/>
+							<controls:TextInputIcon id="wardCode"
+													queryIconClick="wardCode_queryIconClickHandler()"
+													width="139"/>
+							<s:Label text="姓    名"/>
+							<s:TextInput id="patientName"
+										 width="100"/>
+							<s:Label text="住 院 号"/>
+							<s:TextInput id="cboxInpNo"
+										 width="110"
+										 keyUp="keyUpCtrl(event,btQuery)"/>
+							<mx:LinkButton id="btQuery"
+										   height="24"
+										   label=" 查 找"
+										   skin="mx.skins.halo.ButtonSkin"
+										   icon="@Embed(source='/assets/images/button/query20.png')"
+										   click="btQuery_clickHandler(event)"
+										   keyUp="btQuery_keyUpHandler(event)"/>
+							<s:Label text="首次检验日期" visible="false"/>
+							<s:TextInput id="fistApplyDate" editable="false"  visible="false"/>
+						</s:HGroup>
+					</s:HGroup>
+					<controls:SuperDataGrid id="gdPatientTestList"
+											hasRowNo="true"
+											width="100%"
+											isAutoFetchDictData="false"
+											height="100%"
+											styleName="dataGrid"
+											textAlign="left"
+											horizontalScrollPolicy="auto"
+											format="{[,,,,,,,,,,,,'0.00']}"
+											doubleClickEnabled="true"
+											itemDoubleClick="gdPatientTestList_itemDoubleClickHandler(event)">
+						<controls:columns>
+							<mx:DataGridColumn headerText="序号"
+											   dataField="rowNo"
+											   width="50"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="检验日期"
+											   dataField="testDate"
+											   width="140"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="病人类别"
+											   dataField="patientType"
+											   width="80"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="病员号"
+											   dataField="patientId"
+											   width="140"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="病人姓名"
+											   dataField="personName"
+											   width="100"
+											   textAlign="left"/>	
+							<mx:DataGridColumn headerText="性别"
+											   dataField="sex"
+											   width="70"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="病区"
+											   dataField="wardName"
+											   width="120"
+											   textAlign="left"
+											   labelFunction="labelFun"/>
+							<mx:DataGridColumn headerText="床号"
+											   dataField="bedNo"
+											   width="100"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="送检医生"
+											   dataField="applyDoctor"
+											   width="100"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="ABO血型"
+											   textAlign="left"
+											   width="100"
+											   labelFunction="labFunBloodCode"
+											   dataField="bloodCode"/>
+							<mx:DataGridColumn headerText="Rh(D)"
+											   dataField="rhSign"
+											   textAlign="left"
+											   width="100"
+											   labelFunction="labelFun"
+											   itemRenderer="cn.superion.blood.util.renderer.ColumnItemRendererRhSign"/>
+							<mx:DataGridColumn headerText="检验医生"
+											   dataField="testDoctor"
+											   width="100"
+											   textAlign="left"
+											   labelFunction="labelFun"/>
+						</controls:columns>
+					</controls:SuperDataGrid>
+					
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="center"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton
+							id="btPrtRpt"
+							icon="@Embed(source='/assets/images/button/print20.png')"
+							click="initPrintObject('1')"
+							label="打印检验报告"
+							/>
+						<mx:LinkButton id="btPrint"
+									   label=" 打 印"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   includeInLayout="false"
+									   visible="false"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btPreview_clickHandler('05','1')"
+									   icon="@Embed(source='/assets/images/button/print20.png')"/>
+						<mx:LinkButton id="btPreview"
+									   label=" 预 览"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   includeInLayout="false"
+									   visible="false"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="btPreview_clickHandler('05','2')"/>
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+				
+			</s:BorderContainer>
+			
+		</s:VGroup>
+		
+	</s:BorderContainer>
+	
+</mx:Module>

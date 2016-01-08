@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:controls="cn.superion.base.components.controls.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.DateUtil;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import cn.superion.blood.util.renderer.ColumnItemRendererRhSign;
+			import cn.superion.report2.ReportPrinter;
+			import cn.superion.report2.ReportViewer;
+			
+			import com.adobe.utils.StringUtil;
+			
+			import flexlib.scheduling.util.DateUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+
+			private var destination:String='bloodRdsImpl';
+			private const MENU_NO:String="0504";
+			[Bindable]
+			private var outRdsType:ArrayCollection=new ArrayCollection([{rdsType: '201', rdsTypeName: '病人输血出库'}, {rdsType: '202', rdsTypeName: '院内调剂出库'}, {rdsType: '203', rdsTypeName: '报损出库'}, {rdsType: '204', rdsTypeName: '退回血站出库 '}, {rdsType: '209', rdsTypeName: '其他出库'}]);
+
+			/**
+			 * 血液出库统计
+			 *
+			 * @author lcj
+			 *
+			 */
+			//回车获取焦点
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				if (event.keyCode == 13)
+				{
+					if (ctrl.className == "DateField")
+					{
+						ctrl.open();
+					}
+					if (event.currentTarget.className == "TextInput")
+					{
+						if (StringUtil.trim(event.currentTarget.text).length == 0)
+						{
+							return;
+						}
+					}
+					ctrl.setFocus();
+				}
+			}
+
+			//查找功能
+			protected function btQuery_clickHandler(event:Event):void
+			{
+				
+				if(ddlBloodtype.selectedIndex ==-1){
+					Alert.show('请选择成分','提示');
+					return;
+				}
+				var lstartDate:Date=dfStartDate.selectedDate;
+				var endCallbackDate:Date=new Date();
+				endCallbackDate.setTime(dfEndDate.selectedDate.getTime() + 24 * 60 * 60 * 1000);
+				var param:Object={};
+				if (ddlBlood.selectedItem != null)
+				{
+					param['bloodCode']=ddlBlood.selectedItem.blood;
+				}
+				if (ddlBloodtype.selectedItem != null)
+				{
+					param['typeCode']=ddlBloodtype.selectedItem.bloodType;
+				}
+				if (rdType.selectedItem != null)
+				{
+					param['rdType']=rdType.selectedItem.rdsType;
+				}
+				param['beginBillDate']=lstartDate;
+				param['endBillDate']=endCallbackDate;
+				param['rdFlag']='2';
+				var params:ParameterObject=new ParameterObject();
+				params.conditions=param;
+				var ro:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+					{
+						if (rev.data && rev.data.length > 0)
+						{
+							ArrayCollUtils.addCopyFieldToArray(rev.data[0][0], 'typeCode', 'bloodType');
+							ArrayCollUtils.addCopyFieldToArray(rev.data[0][0], 'bloodCode', 'blood');
+							gdPatientUseBloodList.dataProvider=rev.data[0][0];
+							return;
+						}
+						gdPatientUseBloodList.dataProvider=[];
+//						Alert.show("没有检索到相关数据！", "提示信息");
+					});
+				ro.findBloodRds(params);
+			}
+
+			//显示血型字典
+			protected function ddlBlood_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				ddlBlood.dataProvider=BaseDict.bloodDict;
+			}
+
+			//显示成份字典
+			protected function ddlBloodtype_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				ddlBloodtype.dataProvider=BaseDict.bloodTypeDict;
+			}
+
+			//回车实现查找功能
+			protected function btQuery_keyUpHandler(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == Keyboard.ENTER)
+				{
+					btQuery_clickHandler(event);
+				}
+			}
+
+			//病区、RH阴的Label显示方式
+			private function labelFun(item:Object, column:DataGridColumn):*
+			{
+				if (column.headerText == 'Rh(D)')
+				{
+					if (item.notData)
+					{
+						return '';
+					}
+					if (item.rhSign == '' || item.rhSign == '0' || item.rhSign == null)
+					{
+						item.rhSignName='阳性';
+						return '阳性';
+					}
+					else
+					{
+						item.rhSignName='阴性';
+						return '阴性';
+					}
+				}
+			}
+
+			/**
+			 * 打印、预览处理事件
+			 * @param 参数说明
+			 * 		  lstrPurview 权限编号;
+			 * 		  isPrintSign 打印预览输出标示,预览：2，直接打印：1，输出：0
+			 */
+			protected function btPreview_clickHandler(lstrPurview:String, isPrintSign:String):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, lstrPurview))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				var patientUseBloodPrintItems:ArrayCollection=gdPatientUseBloodList.dataProvider as ArrayCollection;
+				var dict:Dictionary=new Dictionary();
+				var condition:String = "";
+				dict["单位名称"]=AppInfo.sysUser.unitsName;
+				dict["日期"]=DateField.dateToString(new Date(), 'YYYY-MM-DD');
+				condition="日期："+DateField.dateToString(dfStartDate.selectedDate, 'YYYY-MM-DD')+" - "+
+					DateField.dateToString(dfEndDate.selectedDate, 'YYYY-MM-DD');
+				if (ddlBlood.selectedItem != null)
+				{
+					condition +="	"+ "成份:"+ddlBlood.selectedItem.bloodName;
+				}
+				if (ddlBloodtype.selectedItem != null)
+				{
+					condition +="	"+ "血型:"+ ddlBloodtype.selectedItem.bloodTypeName;
+				}
+				if (rdType.selectedItem != null)
+				{
+					condition +="	"+ "出库类别:"+ rdType.selectedItem.rdsTypeName;
+				}
+				dict["condition"]=condition;
+				dict["主标题"]="血液出库统计";
+				dict["制表人"]=AppInfo.sysUser.userName;
+				var strXml:String = "report/blood/stat/bloodOutStat.xml";
+				loadReportXml(strXml,patientUseBloodPrintItems,dict,isPrintSign);
+//				if (isPrintSign == '1')
+//				{
+//					ReportPrinter.LoadAndPrint("report/blood/stat/bloodOutStat.xml", patientUseBloodPrintItems, dict);
+//				}
+//				else
+//				{
+//					ReportViewer.Instance.Show("report/blood/stat/bloodOutStat.xml", patientUseBloodPrintItems, dict);
+//				}
+			}
+			private function loadReportXml(reportUrl:String,faryDetails:ArrayCollection, fdict:Dictionary,fprintSign:String):void{
+				var loader:URLStream=new URLStream();
+				loader.addEventListener(Event.COMPLETE, function(event:Event):void{
+					var stream:URLStream = event.currentTarget as URLStream;
+					var xml:XML=XML(stream.readMultiByte(stream.bytesAvailable,"utf-8"));
+					if (fprintSign == "1")
+					{
+						ReportPrinter.Print(xml, faryDetails, fdict);
+					}
+					else
+					{
+						ReportViewer.Instance.Show(xml, faryDetails, fdict);
+					}
+				});
+				var url:URLRequest = new URLRequest(reportUrl);
+				loader.load(url);
+			}
+			//输出
+			protected function btExport_clickHandler(lstrPurview:String, isPrintSign:String):void
+			{
+				// TODO Auto-generated method stub
+			}
+
+			//返回主页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				MainFrameUtil.closeTab(this);
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup width="100%"
+				  height="100%"
+				  gap="0">
+
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%"
+						  paddingLeft="5"
+						  paddingRight="5">
+					<!-- 查询条件区 -->
+					<s:HGroup width="100%"
+							  paddingLeft="5"
+							  paddingTop="5">
+
+						<mx:FormItem label="日期"
+									 fontSize="14"
+									 color="#0000FF"
+									 direction="horizontal"
+									 labelWidth="40"
+									 width="100%">
+							<mx:DateField id="dfStartDate"
+										  keyUp="keyUpCtrl(event,dfEndDate)"
+										  width="40%"
+										  formatString="YYYY-MM-DD"
+										  enterFrame="{dfStartDate.selectedDate==null?dfStartDate.selectedDate=new Date():dfStartDate.selectedDate}"
+										  disabledRanges="{[{rangeStart:dfEndDate.selectedDate}]}"/>
+							<mx:FormItem label="-"
+										 fontSize="14"
+										 color="#0000FF"
+										 labelWidth="10"
+										 width="40%"
+										 horizontalGap="0">
+								<mx:DateField id="dfEndDate"
+											  keyUp="keyUpCtrl(event,rdType)"
+											  width="100%"
+											  formatString="YYYY-MM-DD"
+											  enterFrame="{dfEndDate.selectedDate==null?dfEndDate.selectedDate=new Date():dfEndDate.selectedDate}"
+											  selectableRange="{{rangeStart:dfStartDate.selectedDate, rangeEnd:new Date()}}"/>
+							</mx:FormItem>
+						</mx:FormItem>
+						<mx:FormItem height="23"
+									 label="出库类别"
+									 fontSize="14"
+									 color="#0000FF"
+									 width="100%">
+							<s:DropDownList id="rdType"
+											width="100%"
+											labelField="rdsTypeName"
+											keyUp="keyUpCtrl(event,ddlBlood)"
+											dataProvider="{outRdsType}">
+							</s:DropDownList>
+						</mx:FormItem>
+						<mx:FormItem height="23"
+									 label="血型"
+									 fontSize="14"
+									 color="#0000FF"
+									 width="110">
+							<s:DropDownList id="ddlBlood"
+											width="100%"
+											labelField="bloodName"
+											keyUp="keyUpCtrl(event,ddlBloodtype)"
+											creationComplete="ddlBlood_creationCompleteHandler(event)">
+							</s:DropDownList>
+						</mx:FormItem>
+						<mx:FormItem height="23"
+									 label="成份"
+									 fontSize="14"
+									 color="#0000FF"
+									 width="100%">
+							<s:DropDownList id="ddlBloodtype"
+											width="100%"
+											labelField="bloodTypeName"
+											keyUp="keyUpCtrl(event,btQuery)"
+											creationComplete="ddlBloodtype_creationCompleteHandler(event)">
+							</s:DropDownList>
+						</mx:FormItem>
+						<mx:LinkButton id="btQuery"
+									   height="24"
+									   label=" 查 找"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="btQuery_clickHandler(event)"
+									   keyUp="btQuery_keyUpHandler(event)"/>
+					</s:HGroup>
+					<!--groupField="inpno"
+						 sumLableField="小计"
+						 sumFields="bloodNum"-->
+
+					<controls:SuperDataGrid id="gdPatientUseBloodList"
+											hasRowNo="true"
+											width="100%"
+											height="100%"
+											styleName="dataGrid"
+											sumField="['assiAmount','tradePrice']"
+											textAlign="left"
+											horizontalScrollPolicy="auto">
+						<controls:columns>
+							<mx:DataGridColumn headerText="序号"
+											   dataField="rowNo"
+											   width="50"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="血袋编号"
+											   dataField="bloodBagCode"
+											   width="110"
+											   textAlign="left"/>
+
+							<mx:DataGridColumn headerText="血液成份"
+											   width="160"
+											   textAlign="left"
+											   dataField="bloodTypeName"/>
+
+							<mx:DataGridColumn headerText="血型"
+											   dataField="bloodName"
+											   width="80"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="Rh(D)"
+											   dataField="rhSign"
+											   textAlign="left"
+											   width="80"
+											   labelFunction="labelFun"
+											   itemRenderer="cn.superion.blood.util.renderer.ColumnItemRendererRhSign"/>
+							<mx:DataGridColumn headerText="规格"
+											   dataField="spec"
+											   textAlign="left"
+											   width="100"/>
+							<mx:DataGridColumn headerText="血量"
+											   dataField="assiAmount"
+											   textAlign="right"
+											   width="80"/>
+							<mx:DataGridColumn headerText="单位"
+											   dataField="assiUnits"
+											   textAlign="left"
+											   width="90"/>
+							<mx:DataGridColumn headerText="进价"
+											   dataField="tradePrice"
+											   textAlign="right"
+											   width="90"/>
+							<mx:DataGridColumn headerText="金额"
+											   dataField="retailPrice"
+											   textAlign="right"
+											   width="100"/>
+							<!--<mx:DataGridColumn headerText="献血者编号"
+								 dataField="bloodDonorName"
+								 textAlign="left"
+								 width="100"/>-->
+
+						</controls:columns>
+					</controls:SuperDataGrid>
+
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btPrint"
+									   label=" 打 印"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btPreview_clickHandler('05','1')"
+									   icon="@Embed(source='/assets/images/button/print20.png')"/>
+						<mx:LinkButton id="btPreview"
+									   label=" 预 览"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="btPreview_clickHandler('05','2')"/>
+						<mx:LinkButton id="btExport"
+									   label=" 输 出"
+									   fontSize="12"
+									   width="0"
+									   visible="false"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btExport_clickHandler('08','0')"
+									   icon="@Embed(source='/assets/images/button/exp20.png')"/>
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+
+			</s:BorderContainer>
+
+		</s:VGroup>
+
+	</s:BorderContainer>
+
+</mx:Module>

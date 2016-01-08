@@ -1,0 +1,580 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+////////////////////////////////////////////////////////////////////////////////
+//	
+//	Copyright 2014 vamos Labs LLC. All Rights Reserved.
+//
+//	This file is licensed under the vamos Component Library License. 
+//
+//	Only license holders are entitled to use this file subject to the  
+//	conditions of the license. All other uses are expressly forbidden. Visit 
+//	http://www.vamoslabs.com to view and purchase a license.
+//
+//	Apache Flex's source code notices are reproduced below.
+//
+// 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//  Licensed to the Apache Software Foundation (ASF) under one or more
+//  contributor license agreements.  See the NOTICE file distributed with
+//  this work for additional information regarding copyright ownership.
+//  The ASF licenses this file to You under the Apache License, Version 2.0
+//  (the "License"); you may not use this file except in compliance with
+//  the License.  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+-->
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		xmlns:compassContainer="vamos.components.compassContainer.*"
+		clipAndEnableScrolling="true"
+		minWidth="50" minHeight="50"
+		alpha.disabled="0.5">
+	
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("vamos.components.compassContainer.CompassContainer")]
+	</fx:Metadata>
+	
+	<!-- declarations -->
+	<fx:Declarations>
+		
+		<!-- DividerSkin -->
+		<fx:Component className="DividerSkin">
+			<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+					minWidth="21" minHeight="28"
+					alpha.disabled="0.5">
+				
+				<!-- host component -->
+				<fx:Metadata>
+					<![CDATA[ [HostComponent("spark.components.Button")] ]]>
+				</fx:Metadata>
+				
+				<!-- states -->
+				<s:states>
+					<s:State name="up" />
+					<s:State name="over" />
+					<s:State name="down" />
+					<s:State name="disabled" />
+				</s:states>
+				
+				<!--- border & fill -->
+				<s:Rect id="border" 
+						left="0" right="0" top="0" bottom="0">
+					<s:fill>
+						<s:SolidColor color="#000000"
+									  alpha="0" />
+					</s:fill>
+				</s:Rect>
+				
+			</s:Skin>
+		</fx:Component>
+		
+		<!-- CompassMinimizedRegionSkin -->
+		<fx:Component className="CompassMinimizedRegionSkin">
+			<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					alpha.disabled="0.5"
+					minWidth="29" minHeight="29"
+					clipAndEnableScrolling="true">
+				
+				<!-- host component -->
+				<fx:Metadata>
+					[HostComponent("vamos.components.compassContainer.CompassMinimizedRegion")]
+				</fx:Metadata>
+				
+				<!-- scripts -->
+				<fx:Script>
+					<![CDATA[
+						
+						//----------------------------------
+						//  variables
+						//----------------------------------
+						
+						protected var stylesChanged:Boolean;
+						
+						protected var _borderVisible:Boolean;
+						
+						protected var _borderColor:uint= 0;
+						
+						protected var _borderAlpha:Number = 1;
+						
+						//----------------------------------
+						//  overridden methods
+						//----------------------------------
+						
+						override protected function updateDisplayList(unscaledWidth:Number, 
+																	  unscaledHeight:Number):void
+						{
+							if (_borderVisible)
+							{
+								border.visible = true;
+								stroke.alpha = _borderAlpha;
+								stroke.color =_borderColor;
+							}
+							else
+							{
+								border.visible = false;
+							}
+							
+							super.updateDisplayList(unscaledWidth, unscaledHeight);
+						}
+						
+						override protected function commitProperties():void
+						{
+							super.commitProperties();
+							
+							if (stylesChanged)
+							{
+								stylesChanged = false;
+								
+								_borderVisible = getStyle("borderVisible");
+								_borderColor = getStyle("borderColor");
+								_borderAlpha = getStyle("borderAlpha");
+								
+								invalidateDisplayList();
+							}
+						}
+						
+						override public function styleChanged(styleProp:String):void
+						{
+							super.styleChanged(styleProp);
+							
+							stylesChanged = true;
+							invalidateProperties();
+						}
+						
+					]]>
+				</fx:Script>
+				
+				<!-- states -->
+				<s:states>
+					<s:State name="east" stateGroups="horizontalGroup"/>
+					<s:State name="west" stateGroups="horizontalGroup"/>
+					<s:State name="north" stateGroups="verticalGroup"/>
+					<s:State name="south" stateGroups="verticalGroup"/>
+					<s:State name="disabled" />
+				</s:states>
+				
+				<!--- border & background -->
+				<s:Rect top="0" right="0" bottom="0" left="0">
+					<s:fill>
+						<s:SolidColor color="#3F9AD8"/>
+					</s:fill>
+				</s:Rect>
+				
+				<s:Rect id="border" 
+						top="0" right="0" bottom="0" left="0">
+					<s:stroke>
+						<s:SolidColorStroke id="stroke"
+											pixelHinting="true"
+											caps="square"
+											joints="miter"/>
+					</s:stroke>
+				</s:Rect>
+				
+				<!--- inner border -->
+				<!-- skin part -->
+				<!--- @optional -->
+				<s:Button id="restoreButtonPart" 
+						  width="19" height="19" 
+						  top.horizontalGroup="6" right.verticalGroup="5" 
+						  horizontalCenter.west="0" horizontalCenter.east="0"
+						  verticalCenter.verticalGroup="0"
+						  rotation.east="90" rotation.west="-90" rotation.south="180" rotation.north="0"
+						  skinClass="{Class(RegionMinimizeButtonSkin)}"/>
+				
+				<!-- skin part -->
+				<!--- @点击往左缩放时，竖排文字 -->
+				<s:Label id="titleLabelPart" 
+						 right.verticalGroup="35" fontSize="14"
+						 top.horizontalGroup="35" left.verticalGroup="9"
+						 horizontalCenter.west="0" horizontalCenter.east="-2" verticalCenter.verticalGroup="1"
+						 rotation.east="90" rotation.west="-90"
+						 fontWeight="bold"
+						 maxDisplayedLines="1"/>
+				
+			</s:Skin>
+		</fx:Component>
+		
+		<!-- RegionContainerSkin -->
+		<fx:Component className="RegionContainerSkin">
+			<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:fb="http://ns.adobe.com/flashbuilder/2009" 
+					alpha.disabledGroup="0.5">
+				
+				<!-- host component -->
+				<fx:Metadata>
+					[HostComponent("vamos.components.compassContainer.CompassRegionContainer")]
+				</fx:Metadata>
+				
+				<!-- scripts -->
+				<fx:Script>
+					<![CDATA[
+						
+						//----------------------------------
+						//  variables
+						//----------------------------------
+						
+						protected var stylesChanged:Boolean;
+						
+						protected var _backgroundColor:Number = 0;
+						
+						protected var _borderVisible:Boolean;
+						
+						protected var _borderColor:uint= 0;
+						
+						protected var _borderAlpha:Number = 1;
+						
+						//----------------------------------
+						//  overridden methods
+						//----------------------------------
+						
+						override protected function updateDisplayList(unscaledWidth:Number, 
+																	  unscaledHeight:Number):void
+						{
+							if (background && fill)
+							{
+								fill.color = _backgroundColor;
+							}
+							
+							if (_borderVisible)
+							{
+								border.visible = true;
+								stroke.alpha = _borderAlpha;
+								stroke.color =_borderColor;
+								
+								if (background)
+									background.top = background.right = background.bottom = background.left = 1;
+								if (draggingRegionPart)
+									draggingRegionPart.top = draggingRegionPart.right = draggingRegionPart.left = 1;
+							}
+							else
+							{
+								border.visible = false;
+								
+								if (background)
+									background.top = background.right = background.bottom = background.left = 0;
+								if (draggingRegionPart)
+									draggingRegionPart.top = draggingRegionPart.right = draggingRegionPart.left = 0;
+							}
+							
+							super.updateDisplayList(unscaledWidth, unscaledHeight);
+							
+							if (_borderVisible)
+							{
+								contentGroup.setLayoutBoundsSize(contentGroup.getLayoutBoundsWidth() - 2, 
+									contentGroup.getLayoutBoundsHeight() - 2);
+								contentGroup.setLayoutBoundsPosition(contentGroup.getLayoutBoundsX() + 1, 
+									contentGroup.getLayoutBoundsY() + 1);
+							}
+						}
+						
+						override protected function commitProperties():void
+						{
+							super.commitProperties();
+							
+							if (stylesChanged)
+							{
+								stylesChanged = false;
+								
+								_backgroundColor = getStyle("backgroundColor");
+								_borderVisible = getStyle("borderVisible");
+								_borderColor = getStyle("borderColor");
+								_borderAlpha = getStyle("borderAlpha");
+								
+								invalidateDisplayList();
+							}
+						}
+						
+						override public function styleChanged(styleProp:String):void
+						{
+							super.styleChanged(styleProp);
+							
+							stylesChanged = true;
+							invalidateProperties();
+						}
+						
+					]]>
+				</fx:Script>
+				
+				<!-- states -->
+				<s:states>
+					<s:State name="normal" stateGroups="chromeGroup"/>
+					<s:State name="floating" stateGroups="chromeGroup"/>
+					<s:State name="close" stateGroups="chromeGroup,noChromeGroup"/>
+					<s:State name="normalAndNoChrome" stateGroups="noChromeGroup"/>
+					<s:State name="disabled" stateGroups="chromeGroup,disabledGroup"/>
+					<s:State name="disabledAndNoChrome" stateGroups="noChromeGroup,disabledGroup"/>
+				</s:states>
+	
+				<!-- transitions -->
+				<s:transitions>
+					<s:Transition fromState="*" toState="close" >
+						<!--- Fade always throws error -->
+						<s:Animate target="{this}" duration="250">
+							<s:SimpleMotionPath property="alpha" 
+												valueFrom="1" valueTo="0"/>
+						</s:Animate>
+					</s:Transition>
+				</s:transitions>
+				
+				<!--- background -->
+				<s:Rect id="background" 
+						left="0" right="0" top="0" bottom="0">
+					<s:fill>
+						<s:SolidColor id="fill" 
+									  color="#FFFFFF" />
+					</s:fill>
+				</s:Rect>
+				
+				<!-- skin part -->
+				<!--- 可缩放部分，就是标题所在的部分 -->
+				<s:Group id="draggingRegionPart"
+						 includeIn="chromeGroup" 
+						 left="0" top="0" right="0"
+						 height="29"
+						 minWidth="0" minHeight="0">
+					
+					<s:Rect top="0" right="0" bottom="0" left="0">
+						<s:fill>
+							<s:SolidColor color="#3F9AD8"/>
+						</s:fill>
+					</s:Rect>
+					
+					<!-- skin part -->
+					<!--- @optional -->
+					<s:Label id="titleLabelPart"
+							 verticalCenter="1"
+							 left="15" right="10"
+							 fontSize="14" 
+							 fontWeight="bold"
+							 maxDisplayedLines="1"/>
+					
+					<s:HGroup visible.floating="false"
+							  gap="2"
+							  right="5"
+							  verticalCenter="0" 
+							  verticalAlign="middle">
+						
+						<!-- skin part -->
+						<!--- @optional -->
+						<s:Button id="minimizeButtonPart" 
+								  width="19" height="19" 
+								  skinClass="{Class(RegionMinimizeButtonSkin)}"/>
+						
+						<!-- skin part -->
+						<!--- @optional -->
+						<s:Button id="closeButtonPart"  
+								  width="19" height="19"  
+								  skinClass="{Class(RegionCloseButtonSkin)}"/>
+					</s:HGroup>
+					
+					<!--- bottom chrome border -->
+					<s:Line right="0" bottom="0" left="0">
+						<s:stroke>
+							<s:SolidColorStroke color="#9B9B9B"
+												pixelHinting="true"
+												caps="square"/>
+						</s:stroke>
+					</s:Line>
+					
+				</s:Group>
+				
+				<!-- skin part -->
+				<!--- @required -->
+				<!--- clip so content will be hidden if overflows out of container on user drag resize -->
+				<s:Group id="contentGroup" 
+						 minWidth="0" minHeight="0"
+						 top="0" right="0" top.chromeGroup="29" bottom="0" left="0"
+						 top.normalAndNoChrome="0" top.disabledAndNoChrome="0" 
+						 right.normalAndNoChrome="0" right.disabledAndNoChrome="0"
+						 bottom.normalAndNoChrome="0" bottom.disabledAndNoChrome="0"
+						 left.normalAndNoChrome="0" left.disabledAndNoChrome="0"
+						 clipAndEnableScrolling="true"/>
+				
+				<!--- ensures there is a border for flyout -->
+				<s:Rect includeIn="floating" 
+						left="0" right="0" top="0" bottom="0">
+					<s:stroke>
+						<s:SolidColorStroke color="#9B9B9B"
+											pixelHinting="true"
+											joints="miter" />
+					</s:stroke>
+				</s:Rect>
+				
+				<s:Rect id="border"
+						left="0" right="0" top="0" bottom="0">
+					<s:stroke>
+						<s:SolidColorStroke id="stroke" 
+											pixelHinting="true"
+											joints="miter" />
+					</s:stroke>
+				</s:Rect>
+				
+			</s:Skin>
+		</fx:Component>
+		
+		<!-- RegionCloseButtonSkin -->
+		<fx:Component className="RegionCloseButtonSkin">
+			<s:SparkButtonSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							   xmlns:s="library://ns.adobe.com/flex/spark"
+							   xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+							   alpha.disabled="0.5"
+							   minWidth="16" minHeight="16">
+				
+				<!-- host component -->
+				<fx:Metadata>
+					<![CDATA[ [HostComponent("spark.components.Button")] ]]>
+				</fx:Metadata>
+				
+				<!-- states -->
+				<s:states>
+					<s:State name="up" />
+					<s:State name="over" />
+					<s:State name="down" />
+					<s:State name="disabled" />
+				</s:states>
+				
+				<!-- transitions -->
+				<s:transitions>
+					<s:Transition fromState="*" toState="*">
+						<s:AnimateColor targets="{[stroke, fill]}" 
+										duration="100"/>
+					</s:Transition>
+				</s:transitions>
+				
+				<!--- border and fill -->
+				<s:Rect top="0" right="0" bottom="0" left="0">
+					<s:stroke>
+						<s:SolidColorStroke id="stroke" 
+											color="#9B9B9B" color.over="#00A5F4" color.down="#006B9F"
+											pixelHinting="true"
+											joints="miter"/>
+					</s:stroke>
+					<s:fill>
+						<s:SolidColor id="fill"
+									  color="#E6E6E6" color.over="#BFE8FC" color.down="#ACD6EA"/>
+					</s:fill>
+				</s:Rect>
+				
+				<!--- arrow -->
+				<s:Path horizontalCenter="0" verticalCenter="0"
+						data="M 0 0 L 5 5 M 0 5 L 5 0">
+					<s:stroke>
+						<s:SolidColorStroke weight="2" 
+											color="#525252" color.over="#000000" color.down="#000000"
+											pixelHinting="false"
+											caps="square"
+											joints="round"/>
+					</s:stroke>
+				</s:Path>
+				
+			</s:SparkButtonSkin>
+		</fx:Component>
+		
+		<!-- RegionMinimizeButtonSkin -->
+		<fx:Component className="RegionMinimizeButtonSkin">
+			<s:SparkButtonSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							   xmlns:s="library://ns.adobe.com/flex/spark"
+							   xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+							   alpha.disabled="0.5"
+							   minWidth="16" minHeight="16">
+				
+				<!-- host component -->
+				<fx:Metadata>
+					<![CDATA[ [HostComponent("spark.components.Button")] ]]>
+				</fx:Metadata>
+				
+				<!-- states -->
+				<s:states>
+					<s:State name="up" />
+					<s:State name="over" />
+					<s:State name="down" />
+					<s:State name="disabled" />
+				</s:states>
+				
+				<!-- transitions -->
+				<s:transitions>
+					<s:Transition fromState="*" toState="*">
+						<s:AnimateColor targets="{[stroke, fill]}" 
+										duration="100"/>
+					</s:Transition>
+				</s:transitions>
+				
+				<!--- border and fill -->
+				<s:Rect top="0" right="0" bottom="0" left="0">
+					<s:stroke>
+						<s:SolidColorStroke id="stroke" 
+											color="#9B9B9B" color.over="#00A5F4" color.down="#006B9F"
+											pixelHinting="true"
+											joints="miter"/>
+					</s:stroke>
+					<s:fill>
+						<s:SolidColor id="fill"
+									  color="#E6E6E6" color.over="#BFE8FC" color.down="#ACD6EA"/>
+					</s:fill>
+				</s:Rect>
+				
+				<!--- arrow -->
+				<s:Path horizontalCenter="0" verticalCenter="0"
+						data="M 0 0 L 2.5 2.5 L 5 0
+						M 0 5 L 2.5 7.5 L 5 5">
+					<s:stroke>
+						<s:SolidColorStroke weight="2" 
+											color="#525252" color.over="#000000" color.down="#000000"
+											pixelHinting="false"
+											caps="square"
+											joints="round"/>
+					</s:stroke>
+				</s:Path>
+				
+			</s:SparkButtonSkin>
+		</fx:Component>
+		
+		<!-- skin part -->
+		<!--- @required -->
+		<fx:Component id="HDividerFactoryPart">
+			<s:Button skinClass="{Class(DividerSkin)}"/>
+		</fx:Component>
+		
+		<!-- skin part -->
+		<!--- @required -->
+		<fx:Component id="VDividerFactoryPart">
+			<s:Button skinClass="{Class(DividerSkin)}"/>
+		</fx:Component>
+		
+		<!-- skin part -->
+		<!--- @required -->
+		<fx:Component id="regionContainerFactoryPart">
+			<compassContainer:CompassRegionContainer skinClass="{Class(RegionContainerSkin)}"/>
+		</fx:Component>
+		
+		<!-- skin part -->
+		<!--- @required -->
+		<fx:Component id="minimizedRegionFactoryPart">
+			<compassContainer:CompassMinimizedRegion skinClass="{Class(CompassMinimizedRegionSkin)}"/>
+		</fx:Component>
+		
+	</fx:Declarations>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="disabled" />
+	</s:states>
+	
+</s:Skin>

@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="910"
+			   height="516"
+			   backgroundColor="0xE2E8E8"
+			   close="titlewindow1_closeHandler(event)"
+			   creationComplete="init()"
+			   xmlns:view="cn.superion.blood.user.user.view.*">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.SysUser;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.blood.user.user.ModUser;
+			import cn.superion.vo.system.SysRole;
+			import cn.superion.vo.system.SysUnitInfor;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.modules.Module;
+			import mx.rpc.remoting.mxml.RemoteObject;
+
+			private const MENU_NO:String="0101";			
+			
+			[Bindable]
+			public var isAdd:Boolean=true;
+
+			[Bindable]
+			public var userInfo:SysUser;
+			[Bindable]
+			private var isEditable:Boolean=true;
+			[Bindable]
+			public var parentWin:ModUser;
+
+
+			//窗口初始化事件
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				if (isAdd)
+				{
+					this.title='增加用户';
+					isEditable=true;
+					userInfo=new SysUser();
+
+					this.userCode.setFocus();
+				}
+				else
+				{
+					this.title='修改用户';
+					isEditable=false;
+
+					this.password.setFocus();
+				}
+				//获取当前用户授权单位、授权角色列表，以便授权给下一级用户
+				var currentUserCode:String=AppInfo.sysUser.userCode;
+
+				var reObject:RemoteObject;
+				reObject=RemoteUtil.getRemoteObject("userImpl", findUnitCallback);
+				reObject.findUserUnitListByUserCode(currentUserCode);
+
+				reObject=RemoteUtil.getRemoteObject("userImpl", findRoleCallback);
+				reObject.findUserRoleListByUserCode(currentUserCode);
+			}
+
+			//用户授权单位回调
+			private function findUnitCallback(rev:Object):void
+			{
+				if (rev.data)
+					userAddUnit.dgUnits.dataProvider=rev.data as ArrayCollection;
+				else
+					userAddUnit.dgUnits.dataProvider=new ArrayCollection();
+				//获取修改用户授权单位，授权角色列表，注意，存在当前用户无此单位及角色情况
+				if (!isAdd)
+				{
+					var unitsArray:ArrayCollection=userAddUnit.dgUnits.dataProvider as ArrayCollection
+					var parentUnits:ArrayCollection=parentWin.userContent.dgUserUnit.dataProvider as ArrayCollection
+					for each (var unitsItem:SysUnitInfor in parentUnits)
+					{
+						var targetItem:SysUnitInfor=ArrayCollUtils.findItemInArrayByValue(unitsArray, 'unitsCode', unitsItem.unitsCode)
+						if (targetItem)
+						{
+							targetItem.isSelected=true
+						}
+						else
+						{
+							unitsItem.isSelected=true;
+							unitsArray.addItem(unitsItem);
+						}
+					}
+					userAddUnit.dgUnits.dataProvider=unitsArray
+				}
+			}
+
+			//用户授权角色回调
+			private function findRoleCallback(rev:Object):void
+			{
+				if (rev.data)
+					userAddRole.dgRoles.dataProvider=rev.data as ArrayCollection;
+				else
+					userAddRole.dgRoles.dataProvider=new ArrayCollection();
+				//获取修改用户授权单位，授权角色列表，注意，存在当前用户无此单位及角色情况
+				if (!isAdd)
+				{
+					var rolessArray:ArrayCollection=userAddRole.dgRoles.dataProvider as ArrayCollection
+					var parentRoles:ArrayCollection=parentWin.userContent.dgUserRole.dataProvider as ArrayCollection
+					for each (var roleItem:SysRole in parentRoles)
+					{
+						var targetItem:SysRole=ArrayCollUtils.findItemInArrayByValue(rolessArray, 'roleCode', roleItem.roleCode)
+						if (targetItem)
+						{
+							targetItem.isSelected=true
+						}
+						else
+						{
+							roleItem.isSelected=true;
+							rolessArray.addItem(roleItem);
+						}
+					}
+					userAddRole.dgRoles.dataProvider=rolessArray
+				}
+			}
+
+			//窗口关闭事件
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+				// TODO Auto-generated method stub
+				PopUpManager.removePopUp(this);
+			}
+
+			//返回上级窗口
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var comps:Array=[userCode, userName, password, confirmPsw];
+				for each (var item:TextInput in comps)
+				{
+					this.removeErrorString(item);
+				}
+				PopUpManager.removePopUp(this);
+			}
+
+			private function removeErrorString(comp:TextInput):void
+			{
+				if (comp.errorString != '')
+				{
+					comp.text='';
+					comp.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OUT));
+				}
+			}
+
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					ctrl.setFocus();
+				}
+			}
+
+			//验证用户是否存在
+			protected function userCode_focusOutHandler(event:FocusEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (isEditable && this.userCode.text != "")
+				{
+					var ro:RemoteObject=RemoteUtil.getRemoteObject("userImpl", checkUniqueCallback);
+					ro.findUserByUserCode(this.userCode.text);
+				}
+				else
+				{
+					this.userCode.errorString='';
+				}
+			}
+
+			private function checkUniqueCallback(rev:Object):void
+			{
+				var revData:ArrayCollection=rev.data as ArrayCollection;
+				if (rev.data != null && revData.length > 0 && revData.getItemAt(0) != null)
+				{
+					this.userCode.errorString='该用户编号已存在，请重新输入！';
+					this.userCode.setFocus();
+				}
+				else
+				{
+					this.userCode.errorString='';
+				}
+			}
+
+			//保存事件
+			protected function btSave_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "04"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				
+				var strSave:String="add";
+				var strPassword:String="888888";
+
+				//判断用户编号
+				if (this.userCode.text == '' || this.userCode.text == null)
+				{
+					this.userCode.setFocus();
+					Alert.show("用户编号不能为空，请重新输入！", "提示信息");
+					return;
+				}
+				//判断用户名称
+				if (this.userName.text == '' || this.userName.text == null)
+				{
+					this.userName.setFocus();
+					Alert.show("用户名称不能为空，请重新输入！", "提示信息");
+					return;
+				}
+
+				if (isAdd)
+				{
+					strSave="add";
+					//判断密码
+					if (this.password.text != this.confirmPsw.text)
+					{
+						this.password.setFocus();
+						Alert.show("两次密码输入不一致，请重新输入!", "提示信息");
+						return;
+					}
+					if (this.password.text == '' || this.password.text == null)
+					{
+						strPassword="888888";
+					}
+					else
+					{
+						strPassword=this.password.text;
+					}
+				}
+				else
+				{
+					//修改用户
+					strSave="";
+				}
+
+				//保存当前用户信息
+				var unitsCodeArray:Array=userAddUnit.getSelectedValues();
+				var rolesCodeArray:Array=userAddRole.getSelectedValues();
+				//
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject("userImpl", saveCallback);
+				remoteObj.saveUser(userInfo, unitsCodeArray, rolesCodeArray, strSave);
+			}
+
+			private function saveCallback(rev:Object):void
+			{
+				isAdd=false;
+				this.userName.setFocus();
+				Alert.show(this.userName.text + "用户信息保存成功！", "提示信息");
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup x="0"
+			  y="0"
+			  width="100%"
+			  height="100%">
+		<s:BorderContainer width="100%"
+						   height="100%"
+						   backgroundColor="0xE2E8E8"
+						   borderColor="#9ABBE6">
+			<s:HGroup width="100%"
+					  height="100%">
+				<!-- 用户内容显示区域 -->
+				<mx:Form id="basicView"
+						 height="100%"
+						 paddingLeft="5"
+						 paddingRight="4"
+						 borderColor="#9ABBE6"
+						 borderStyle="inset">
+					<mx:FormItem label="用户编号"
+								 width="100%"
+								 indicatorGap="10"
+								 color="#0000FF">
+						<s:TextInput id="userCode"
+									 width="100%"
+									 text="@{userInfo.userCode}"
+									 editable="{isEditable}"
+									 maxChars="12"
+									 color="#000000"
+									 keyUp="keyUpCtrl(event,userName)"
+									 focusOut="userCode_focusOutHandler(event)"/>
+					</mx:FormItem>
+					<mx:FormItem label="用户名称"
+								 width="100%"
+								 indicatorGap="10"
+								 color="#0000FF">
+						<s:TextInput id="userName"
+									 width="100%"
+									 text="@{userInfo.userName}"
+									 maxChars="20"
+									 color="#000000"
+									 keyUp="keyUpCtrl(event,password)"/>
+					</mx:FormItem>
+					<mx:FormItem label="用户密码"
+								 width="100%"
+								 indicatorGap="10">
+						<s:TextInput id="password"
+									 displayAsPassword="true"
+									 width="100%"
+									 text="@{userInfo.password}"
+									 maxChars="30"
+									 keyUp="keyUpCtrl(event,confirmPsw)"/>
+					</mx:FormItem>
+					<mx:FormItem label="验证密码"
+								 width="100%"
+								 indicatorGap="10">
+						<s:TextInput id="confirmPsw"
+									 displayAsPassword="true"
+									 width="100%"
+									 maxChars="30"
+									 keyUp="keyUpCtrl(event,btSave)"/>
+					</mx:FormItem>
+					<mx:FormItem required="true">
+						<s:Label text="注：默认密码为888888"
+								 fontFamily="宋体"/>
+					</mx:FormItem>
+				</mx:Form>
+				<view:UserAddUnit id="userAddUnit"
+								  width="100%"/>
+				<view:UserAddRole id="userAddRole"
+								  width="260"/>
+			</s:HGroup>
+		</s:BorderContainer>
+		<!-- 操作按钮部分 -->
+		<s:HGroup height="31"
+				  paddingBottom="10"
+				  horizontalAlign="right"
+				  gap="5"
+				  width="100%">
+			<mx:LinkButton id="btSave"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 保 存"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/save20.png')"
+						   click="btSave_clickHandler(event)"/>
+			<mx:LinkButton id="btReturn"
+						   fontSize="12"
+						   width="86"
+						   height="26"
+						   label=" 返 回"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/return20.png')"
+						   click="btReturn_clickHandler(event)"/>
+			<mx:Spacer width="5"/>
+		</s:HGroup>
+		<mx:Spacer height="1"/>
+	</s:VGroup>
+</s:TitleWindow>

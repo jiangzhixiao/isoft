@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:controls="cn.superion.base.components.controls.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.DateUtil;
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import cn.superion.report2.ReportPrinter;
+			import cn.superion.report2.ReportViewer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.remoting.RemoteObject;
+			private const MENU_NO:String="0504";
+			
+			/**
+			 * @血液收发统计
+			 * @包含查询、打印、输出等相关功能
+			 * @author lcj
+			 */
+
+			/**
+			 * @打印、输出功能...
+			 * 
+			 * @param 参数说明
+			 * 		  lstrPurview 权限编号;
+			 * 		  isPrint 打印输出标示,预览：2，打印：1，输出：0
+			 */
+			private function printExpHandler(lstrPurview:String,isPrint:String):void
+			{
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, lstrPurview))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+					var laryWillPrintItems:ArrayCollection=null;
+					laryWillPrintItems = dgBloodSf.dataProvider as ArrayCollection;
+//					var unitInfo:SysUnitInfor
+					var dict:Dictionary = new Dictionary();
+					dict["单位名称"] = AppInfo.sysUser.unitsName
+					dict["日期"] =DateField.dateToString( new Date(),'YYYY-MM-DD');
+					dict["主标题"] = "血液收发统计";
+					dict["制表人"] =AppInfo.sysUser.userName;
+					dict["月份"] = txtDate1.text;
+					if(cboxBloodType.selectedItem){
+						dict["血液成份"] = cboxBloodType.selectedItem.bloodTypeName;	
+					}
+					if(cboxBlood.selectedItem){
+						dict["血型"] = cboxBlood.selectedItem.bloodName;
+					}
+					var strXml:String = "report/blood/stat/bloodRds.xml";
+					loadReportXml(strXml,laryWillPrintItems,dict,isPrint);
+//					if(isPrint == '1'){
+//						ReportPrinter.LoadAndPrint("report/blood/stat/bloodRds.xml", laryWillPrintItems, dict);
+//					}else if(isPrint == '2'){
+//						ReportViewer.Instance.Show("report/blood/stat/bloodRds.xml", laryWillPrintItems, dict);
+//					}
+			}
+			private function loadReportXml(reportUrl:String,faryDetails:ArrayCollection, fdict:Dictionary,fprintSign:String):void{
+				var loader:URLStream=new URLStream();
+				loader.addEventListener(Event.COMPLETE, function(event:Event):void{
+					var stream:URLStream = event.currentTarget as URLStream;
+					var xml:XML=XML(stream.readMultiByte(stream.bytesAvailable,"utf-8"));
+					if (fprintSign == "1")
+					{
+						ReportPrinter.Print(xml, faryDetails, fdict);
+					}
+					else
+					{
+						ReportViewer.Instance.Show(xml, faryDetails, fdict);
+					}
+				});
+				var url:URLRequest = new URLRequest(reportUrl);
+				loader.load(url);
+			}
+			//返回主页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				MainFrameUtil.closeTab(this);
+			}
+
+			//查詢功能
+			protected function btQuery_clickHandler(event:MouseEvent):void
+			{
+				var selDate:String=txtDate1.text;
+				//血型编码
+				var bloodCode:String=null;
+				if (cboxBlood.selectedIndex > -1)
+				{
+					bloodCode=cboxBlood.selectedItem.blood;
+				}
+				
+				//血型成分编码
+				var typeCode:String=null;
+				if (cboxBloodType.selectedIndex > -1)
+				{
+					typeCode=cboxBloodType.selectedItem.bloodType;
+				}
+			
+				var param:ParameterObject=new ParameterObject();
+				param.conditions={month: selDate, typeCode: typeCode, bloodCode: bloodCode};
+				var romoteO:RemoteObject=RemoteUtil.getRemoteObject('bloodRdsImpl', function(rev:Object):void
+					{
+						ArrayCollUtils.addCopyFieldToArray(rev.data, 'typeCode', 'bloodType');
+//						ArrayCollUtils.addCopyFieldToArray(rev.data, 'bloodCode', 'blood');
+						dgBloodSf.dataProvider=rev.data;
+					});
+				romoteO.findBloodRdsByCondition(param);
+			}
+			//初始化血型下拉框
+			protected function cboxBlood_creationCompleteHandler(event:FlexEvent):void
+			{
+				cboxBlood.dataProvider=BaseDict.bloodDict;
+			}
+			//初始化血型成份下拉框
+			protected function cboxBloodType_creationCompleteHandler(event:FlexEvent):void
+			{
+				cboxBloodType.dataProvider=BaseDict.bloodTypeDict;
+
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup width="100%"
+				  height="100%"
+				  gap="0">
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%"
+						  paddingLeft="5"
+						  paddingRight="5">
+					<!-- 查询条件区 -->
+					<s:HGroup width="100%"
+							  paddingLeft="5"
+							  paddingTop="5">
+						<mx:FormItem label="月份"
+									 fontSize="14"
+									 color="#0000FF"
+									 width="180">
+							<mx:DateField id="txtDate1"
+										  formatString="YYYY-MM"
+										  color="#000000"
+										  width="100%"
+										  editable="true"
+										  disabledRanges="{[{rangeStart:new Date()}]}"
+										  selectedDate="{new Date()}"/>
+						</mx:FormItem>
+						<mx:FormItem label="血液成份"
+									 fontSize="14"
+									 direction="horizontal"
+									 color="#0000FF">
+							<s:ComboBox id="cboxBloodType"
+										labelField="bloodTypeName"
+										creationComplete="cboxBloodType_creationCompleteHandler(event)"/>
+						</mx:FormItem>
+
+						<mx:FormItem label="血型"
+									 fontSize="14"
+									 color="#0000FF">
+							<s:ComboBox id="cboxBlood"
+										labelField="bloodName"
+										creationComplete="cboxBlood_creationCompleteHandler(event)"/>
+						</mx:FormItem>
+						<mx:LinkButton id="btQuery"
+									   height="24"
+									   label=" 查 找"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="btQuery_clickHandler(event)"/>
+
+					</s:HGroup>
+					<controls:SuperDataGrid id="dgBloodSf"
+											hasRowNo="true"
+											width="100%"
+											height="100%"
+											styleName="dataGrid"
+											format="{[,,,,'0.00',,'0.00',,'0.00',,'0.00']}">
+						<controls:columns>
+							<mx:DataGridColumn headerText="序号"
+											   width="2"/>
+							<mx:DataGridColumn headerText="血液成份"
+											   width="4"
+											   textAlign="left"
+											   dataField="bloodTypeName"/>
+							<mx:DataGridColumn headerText="血型"
+											   width="2"
+											   textAlign="left"
+											   dataField="bloodName"/>
+							<mx:DataGridColumn headerText="期初数量"
+											   width="3"
+											   textAlign="right"
+											   dataField="initAssiAmount"/>
+							<mx:DataGridColumn headerText="金额"
+											   width="4"
+											   textAlign="right"
+											   dataField="initCosts"/>
+							<mx:DataGridColumn headerText="收入数量"
+											   width="3"
+											   textAlign="right"
+											   dataField="inAssiAmount"/>
+							<mx:DataGridColumn headerText="金额"
+											   width="4"
+											   textAlign="right"
+											   dataField="inCosts"/>
+							<mx:DataGridColumn headerText="发出数量"
+											   width="3"
+											   textAlign="right"
+											   dataField="outAssiAmount"/>
+							<mx:DataGridColumn headerText="金额"
+											   width="4"
+											   textAlign="right"
+											   dataField="outCosts"/>
+							<mx:DataGridColumn headerText="结存数量"
+											   width="3"
+											   textAlign="right"
+											   dataField="finalAssiAmount"/>
+							<mx:DataGridColumn headerText="金额"
+											   width="4"
+											   textAlign="right"
+											   dataField="finalCosts"/>
+						</controls:columns>
+					</controls:SuperDataGrid>
+
+
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btPrint"
+									   label=" 打 印"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="printExpHandler('05','1')"
+									   icon="@Embed(source='/assets/images/button/print20.png')"/>
+						<mx:LinkButton id="btPreview"
+									   label=" 预 览"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/query20.png')"
+									   click="printExpHandler('05','2')"/>
+						<mx:LinkButton id="btExport"
+									   label=" 输 出"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   enabled="false"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="printExpHandler('08','3')"
+									   icon="@Embed(source='/assets/images/button/exp20.png')"
+									   disabledIcon="@Embed(source='/assets/images/button/exp20_disabled.png')"/>
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:BorderContainer>
+		</s:VGroup>
+	</s:BorderContainer>
+</mx:Module>

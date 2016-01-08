@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow showCloseButton="true" close="PopUpManager.removePopUp(this);" xmlns:mx="http://www.adobe.com/2006/mxml" title="保存设置" xmlns:controls="com.flexicious.controls.*" >
+<mx:Script>
+	<![CDATA[
+		import mx.managers.PopUpManager;
+		import com.flexicious.grids.ExtendedDataGrid;
+		import mx.collections.ArrayCollection;
+		import com.flexicious.utils.UIUtils;
+		import com.flexicious.grids.dependencies.IExtendedDataGrid;
+		public var _grid:IExtendedDataGrid;
+		[Bindable()]
+		public var preferencesSet:Boolean;
+		[Bindable()]
+		public var filtersEnabled:Boolean;
+		[Bindable()]
+		public function get grid():IExtendedDataGrid
+		{
+			return _grid;
+		}
+		public function set grid(val:IExtendedDataGrid):void
+		{
+			_grid=val;
+			preferencesSet=grid.preferencesSet;
+			filtersEnabled=grid.enableFilters;
+		}
+		private function onClearSettings():void{
+			grid.clearPreferences();
+			UIUtils.showMessage("设置已清空!");
+			UIUtils.removePopUp(this);
+		}
+		private function onSaveSettings():void
+		{
+			var preferencesToPersist:ArrayCollection= new ArrayCollection();
+			if(cbPERSIST_COLUMN_ORDER.selected)preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_COLUMN_ORDER);
+			if(cbPERSIST_COLUMN_VISIBILITY.selected)preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_COLUMN_VISIBILITY);
+			if(cbPERSIST_COLUMN_WIDTH.selected)preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_COLUMN_WIDTH);
+			if(cbPERSIST_FILTER.selected)preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_FILTER);
+			if(cbPERSIST_SORT.selected)preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_SORT);
+			if(cbPERSIST_FOOTER_FILTER_VISIBILITY.selected)preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_FOOTER_FILTER_VISIBILITY);
+			if(cbPERSIST_PAGE_SIZE.selected)preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_PAGE_SIZE);
+			if(cbPERSIST_PRINT_SETTINGS.selected)preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_PRINT_SETTINGS);
+			
+			
+			if(cbPERSIST_SCROLL.selected){
+				preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_VERTICAL_SCROLL);
+				preferencesToPersist.addItem(ExtendedDataGrid.PERSIST_HORIZONTAL_SCROLL);
+			}
+			grid.preferencesToPersist = preferencesToPersist.source.join(",");
+			grid.persistPreferences();
+			if(grid.preferencePersistenceMode!="server")
+			UIUtils.showMessage("设置已保存!");
+			UIUtils.removePopUp(this);
+		}
+	]]>
+</mx:Script>
+<!--<mx:Label text="The preferences you specify below will be retained when this grid is loaded in the future:"/>-->
+	<mx:Label text="以下设置将在表格下次加载时保留："/>	
+<mx:HBox>
+		<mx:VBox>
+			<mx:CheckBox id="cbPERSIST_COLUMN_ORDER" label="列的顺序" selected="true"/>
+			<mx:CheckBox id="cbPERSIST_COLUMN_VISIBILITY" label="可见列" selected="true"/>
+			<mx:CheckBox id="cbPERSIST_COLUMN_WIDTH" label="列宽" selected="true"/>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:CheckBox id="cbPERSIST_FILTER" label="筛选条件" visible="{filtersEnabled}" selected="true"/>
+			<mx:CheckBox id="cbPERSIST_SORT" label="排序设置" selected="true"/>
+			<mx:CheckBox id="cbPERSIST_SCROLL" label="滚动位置" selected="true"/>
+		</mx:VBox>
+		<mx:VBox>
+			<mx:CheckBox id="cbPERSIST_FOOTER_FILTER_VISIBILITY" label="过滤&amp;页脚 可见" visible="{filtersEnabled}" selected="true"/>
+			<mx:CheckBox id="cbPERSIST_PAGE_SIZE" label="每页条数" selected="true"/>
+			<mx:CheckBox id="cbPERSIST_PRINT_SETTINGS" label="打印设置" selected="true"/>
+		</mx:VBox>
+	</mx:HBox>
+	<mx:ControlBar horizontalAlign="right">
+		<mx:Button label="清除已有设置" click="onClearSettings()" enabled="{preferencesSet}"/>
+		<mx:Button label="保存设置" click="onSaveSettings()"/>
+		<mx:Button label="取消" click="PopUpManager.removePopUp(this);"/>
+	</mx:ControlBar>
+</mx:TitleWindow>

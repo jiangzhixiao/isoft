@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	labelField="resultValue" 
+	editable="true"
+	creationComplete="combobox1_creationCompleteHandler(event)"
+	change="combobox1_changeHandler()"
+	dataProvider="{['主次管相容 无凝集、无溶血','主侧管相容 无溶血','主侧管相容 无凝集、无溶血','次侧管相容 无凝集、无溶血']}">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.FormUtils;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.DataGrid;
+			import mx.events.FlexEvent;
+			protected function combobox1_changeHandler():void
+			{
+				data.matchResult=this.selectedLabel;
+				DataGrid( owner).invalidateList();
+			}
+
+			protected function combobox1_creationCompleteHandler(event:FlexEvent):void
+			{
+//				this.textInput.editable=false;
+				for each(var item:Object in this.dataProvider){
+					if(item==data.matchResult){
+						this.selectedItem=item;
+						return;
+					}
+				}
+			}
+
+
+
+		]]>
+	</fx:Script>	
+	
+	
+</mx:ComboBox>
+

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:controls="com.flexicious.controls.*"
+title="OLAP Wizard" >
+	<mx:Script>
+		<![CDATA[
+			import com.flexicious.grids.dependencies.IAdvancedExtendedDataGrid;
+			import com.flexicious.grids.dependencies.IExtendedDataGrid;
+			import com.flexicious.utils.UIUtils;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.DragEvent;
+			import mx.managers.DragManager;
+			import mx.managers.PopUpManager;
+			
+			[Bindable()]
+			public var _grid:IAdvancedExtendedDataGrid;
+			
+			public function get grid():IAdvancedExtendedDataGrid
+			{
+				return _grid;
+			}
+			public function set grid(val:IAdvancedExtendedDataGrid):void
+			{
+				_grid=val;
+			}
+			private var tempBorderColor:uint;
+			private var borderColorSet:Boolean = false;
+			private function dragOverHandler(event:DragEvent):void {
+				
+				event.preventDefault();
+				event.currentTarget.showDropFeedback(event);
+				if (event.dragSource.hasFormat("items"))
+				{
+					if (borderColorSet == false) {                 
+						tempBorderColor = 
+							event.currentTarget.getStyle('borderColor');
+						borderColorSet = true;
+					}
+					event.currentTarget.setStyle('borderColor', 'green');
+					DragManager.showFeedback(DragManager.MOVE);
+					return;
+				}
+				// Drag not allowed.
+				DragManager.showFeedback(DragManager.NONE);                
+			}
+			
+			private function dragDropHandler(event:DragEvent):void {
+				dragExitHandler(event);
+			}            
+			
+			// Restore the border color.
+			private function dragExitHandler(event:DragEvent):void {
+				event.currentTarget.setStyle('borderColor', tempBorderColor);
+				borderColorSet = true;
+			}
+			private function onOk():void
+			{
+				_grid.groupBy(listDestination.dataProvider.source as Array);
+				UIUtils.removePopUp(this);
+			}
+			private function reset():void{
+				lstSource.dataProvider=new ArrayCollection(_grid.columns);
+				listDestination.dataProvider = new ArrayCollection();
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox>
+		<mx:Panel title="Columns to Group By">
+			<mx:Label text="Drop Columns that you wish to group by into the list below:"/>
+			<mx:List  id="listDestination" width="300" height="200"
+					  dropEnabled="true" labelField="headerText"
+					  dragOver="dragOverHandler(event);"
+					  dragDrop="dragExitHandler(event);"
+					  dragExit="dragExitHandler(event);"/>
+		</mx:Panel>
+		<mx:Panel title="Available Columns">
+			<mx:Label text="Drag Columns that you wish to group by from the list below:"/>
+			<mx:List  id="lstSource" 
+					  dragEnabled="true" width="300" height="200"
+					  dragMoveEnabled="true" dataProvider="{_grid.columns}" labelField="headerText"/>
+			
+		</mx:Panel>
+	</mx:HBox>
+	
+	<mx:ControlBar horizontalAlign="right">
+		<mx:Button label="列重置" click="reset()"/>
+		<mx:Button label="确定" click="onOk()"/>
+		<mx:Button label="取消" click="UIUtils.removePopUp(this);"/>
+	</mx:ControlBar>
+
+</mx:TitleWindow>

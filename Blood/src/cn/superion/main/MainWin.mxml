@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 width="100%" height="100%" show="doInit()"
+		 xmlns:tabPaneNavigator="vamos.components.paneNavigators.tabPaneNavigator.*"
+		 xmlns:compassContainer="vamos.components.compassContainer.*" xmlns:pane="vamos.components.pane.*"
+		 xmlns:clocks="vamos.components.clocks.*" xmlns:view="cn.superion.main.view.*">
+	<fx:Script>
+		<![CDATA[
+		import cn.superion.base.AppInfo;
+		import cn.superion.base.RemoteUtil;
+		import cn.superion.main.util.ArrayCollUtils;
+		import cn.superion.main.treeMenu.MainFrameUtil;
+		import cn.superion.main.treeMenu.ToggleLinkButton;
+		import cn.superion.main.view.TabPane;
+		import cn.superion.vo.system.SysRoleData;
+
+		import mx.collections.ArrayCollection;
+		import mx.events.CloseEvent;
+		import mx.events.FlexEvent;
+		import mx.rpc.remoting.RemoteObject;
+
+		import spark.components.Alert;
+		import spark.events.ElementExistenceEvent;
+		import spark.events.IndexChangeEvent;
+
+		import vamos.components.buttonBar.TabBar;
+		import vamos.components.buttonBar.events.ButtonBarEvent;
+		import vamos.components.buttonBar.layouts.ButtonBarLayout;
+
+		//窗口初始化
+		protected function doInit():void {
+//				var configMenu:Array=buildTreeData(new ArrayCollection( TestData.menuDataRemote));				
+			var configMenu:Array = buildTreeData(AppInfo.sysUser.userRoles[0].menus);
+			MainFrameUtil.createMenu(configMenu, menuCon, null, mainTabHost);
+			mainTabHost.tabBarPart.addEventListener(ButtonBarEvent.BUTTON_CLOSE, onTabClose)
+//				mainTabHost.addEventListener(,onModuleLoaded);
+			//延时打开第一个菜单节点
+			setTimeout(function ():void {
+				if (MainFrameUtil.gTreePanels && MainFrameUtil.gTreePanels.length > 0) {
+					MainFrameUtil.gTreePanels[0].image1_clickHandler(new MouseEvent(MouseEvent.CLICK));
+				}
+			}, 1000)
+		}
+
+		private function onTabClose(event:ButtonBarEvent):void {
+			var tabBar:TabBar = event.target as TabBar;
+			var panes:ArrayCollection = tabBar.dataProvider as ArrayCollection;
+			var removedPane:TabPane = panes[event.indexToRemove] as TabPane;
+			var menu:ToggleLinkButton = MainFrameUtil.gToggleButtonMap[removedPane.menuNo];
+			menu.clearSelected(true);
+			MainFrameUtil.gTabMap[removedPane.menuNo] = null;
+
+		}
+
+		private function onModuleLoaded(event:Event):void {
+			loadingPane.closeFloatedPane();
+		}
+
+		/**
+		 * 构建树形菜单数据
+		 * */
+		private function buildTreeData(faryMenuData:ArrayCollection):Array {
+			var menus:ArrayCollection = faryMenuData;
+			var newMenus:ArrayCollection = new ArrayCollection();
+			for each (var item:Object in menus) {
+				item.label = item.menuName
+				item.linkTitle = item.menuName
+				item.linkUrl = item.moduleDetail
+				item.icon = item.menuIcon;
+				newMenus.addItem(item);
+				if (item.moduleDetail) {
+					newMenus.addItem({label: "-", parentCode: item.parentCode});
+				}
+			}
+			var config:Object = {};
+			config.dataList = newMenus;
+			config.labelField = "menuName";
+			config.rootParentCode = "00"
+			config.parentCodeField = "parentNo"
+			config.codeField = "menuNo";
+			var root:Object = ArrayCollUtils.buildTreeData(config);
+			var configMenu:Array;
+
+
+			if (root is Array) {
+				configMenu = root as Array
+
+			}
+			else {
+				if (root is SysRoleData) {
+					configMenu = [root];
+				} else {
+					configMenu = root.children
+				}
+			}
+			return configMenu
+		}
+
+		protected function lbExt_clickHandler(event:MouseEvent):void {
+			Alert.show("您是否退出系统？", "提示", Alert.YES | Alert.NO, null, function (evt:CloseEvent):void {
+				if (evt.detail == Alert.YES) {
+					var ro:RemoteObject = RemoteUtil.getRemoteObject("loginImpl", function (rev:Object):void {
+						//退出清空数据
+						AppInfo.sysUser = null;
+						//返回登录页面
+						navigateToURL(new URLRequest("SupBlood.html"), "_self");
+					});
+					ro.doLoginOut(AppInfo.sysUser.userCode);
+				}
+			});
+		}
+
+		protected function mainTabHost_removeHandler(event:FlexEvent):void {
+			// TODO Auto-generated method stub
+			trace("remove");
+		}
+
+		protected function mainTabHost_removedFromStageHandler(event:Event):void {
+			// TODO Auto-generated method stub
+			trace("removedFromStage");
+		}
+
+		protected function mainTabHost_changeHandler(event:IndexChangeEvent):void {
+			// TODO Auto-generated method stub
+			var tabBar:TabBar = event.target.tabBarPart;
+			if (tabBar) {
+				var panes:ArrayCollection = tabBar.dataProvider as ArrayCollection;
+				var displayedPane:Pane = panes[event.newIndex] as Pane;
+				var menu:ToggleLinkButton = MainFrameUtil.gToggleButtonMap[displayedPane.id];
+				if (menu) {
+					menu.clearSelected();
+					if (menu.id != 'tpFirstPage') {
+						menu.selected = true;
+						menu.setButtonStyle(menu);
+
+					}
+
+				}
+
+			}
+			//
+
+
+		}
+
+		protected function mainTabHost_tabIndexChangeHandler(event:Event):void {
+			// TODO Auto-generated method stub
+//				var tabBar:TabBar = event.target as TabBar;
+//				var panes:ArrayCollection = tabBar.dataProvider as ArrayCollection;
+//				var displayedPane:Pane = panes[event.newIndex] as Pane;
+//				var menu:ToggleLinkButton = MainFrameUtil.gToggleButtonMap[displayedPane.id];
+//				menu.clearSelected();
+//				menu.setButtonStyle(menu);
+		}
+
+		protected function mainTabHost_addedHandler(event:Event):void {
+			// TODO Auto-generated method stub
+			loadingPane.closeFloatedPane();
+		}
+
+		protected function mainTabHost_contentCreationCompleteHandler(event:FlexEvent):void {
+			// TODO Auto-generated method stub
+			loadingPane.closeFloatedPane();
+		}
+
+		protected function mainTabHost_elementAddHandler(event:ElementExistenceEvent):void {
+			// TODO Auto-generated method stub
+			loadingPane.closeFloatedPane();
+		}
+
+		protected function mainTabHost_elementRemoveHandler(event:ElementExistenceEvent):void {
+			// TODO Auto-generated method stub
+			trace("remove");
+			loadingPane.closeFloatedPane();
+		}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<pane:Pane id="loadingPane" 
+				   width="300" height="120"
+				   displayCloseButton="false"
+				   title="等待">
+			
+			<s:Label text="努力加载中..."
+					 horizontalCenter="0" verticalCenter="0"
+					 fontWeight="bold"/>
+		</pane:Pane>
+	</fx:Declarations>
+		<compassContainer:CompassContainer width="100%" height="100%" 
+										   showCenterChrome="false"
+										   showWestChrome="true"
+										   showNorthChrome="false"
+										   resizeRegionWidth="10"
+										   gap="-1"
+										   northBackgroundColor="#FFFFFF" northCanBeMinimized="false" northBorderAlpha="1"
+										   westBorderVisible="false" westRegionTitle="业务菜单" westCanBeClosed="false"
+										   westCanBeMinimized="true" westBorderAlpha="1"
+										   centerBorderVisible="true"  centerBackgroundColor="#FFFFFF"  centerBorderAlpha="1"
+										   minWestWidth="50" minNorthHeight="40"  
+										   maxNorthHeight="40"
+										   maxWestWidth="140">
+			<compassContainer:northContent>
+				
+				<s:HGroup width="100%" gap="2" verticalAlign="middle" paddingLeft="10">
+					<s:Label height="30"  paddingTop="10" color="#087CC9" fontSize="15" text="您好:"/>
+					<s:Label id="currentAreaTxt" width="70" height="30" backgroundAlpha="1" backgroundColor="#FFFFFF"
+							 fontSize="15" fontWeight="bold" paddingTop="10" color="#087CC9"
+							 textAlign="left"/>
+					<clocks:ClockDigital id="digitalClock" height="30" backgroundColor="#FFFFFF"
+										 displayMeridian="true" width="140"
+										 displaySeconds="true"
+										 creationComplete="digitalClock.start();"/>
+				</s:HGroup>
+			</compassContainer:northContent>
+			<compassContainer:centerContent>
+					<tabPaneNavigator:TabPaneNavigator id="mainTabHost" width="100%" height="100%"
+								  borderVisible="true" 
+								  elementAdd="mainTabHost_elementAddHandler(event)"
+								  change="mainTabHost_changeHandler(event)"
+								  backgroundColor="#FFFFFF"
+								  creationPolicy="all"
+								  creationComplete="ButtonBarLayout(mainTabHost.tabBarPart.layout).maxButtonWidth=125"
+								  >
+						<view:TabPane id="tpFirstPage"
+								   title="首页"
+								   displayCloseButton="false" displayMaximizedButton="false" displayMinimizedButton="false" includeInControlBar="false"
+								   >
+						</view:TabPane>
+					</tabPaneNavigator:TabPaneNavigator>
+			</compassContainer:centerContent>
+			<compassContainer:westContent>
+				
+				<s:BorderContainer id="menuPanel" width="100%" height="100%" color="#E9F1F4"
+								   borderVisible="false">
+					<s:layout>
+						<s:VerticalLayout gap="0" verticalAlign="middle"/>
+					</s:layout>
+					
+					<s:BorderContainer width="100%" height="100%" backgroundColor="#FFFFFF"
+									   borderColor="#8AAAC1" borderWeight="1.5" color="#087CC9">
+						<s:Scroller id="menuScroller" width="100%" height="100%">
+							<s:VGroup id="menuCon" width="100%" height="100%" gap="1" paddingTop="10"/>
+						</s:Scroller>
+						<s:Spacer height="10"/>
+					</s:BorderContainer>		
+					
+				</s:BorderContainer>
+			</compassContainer:westContent>
+			
+		</compassContainer:CompassContainer>
+</s:Group>

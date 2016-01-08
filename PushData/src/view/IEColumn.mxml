@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:AutoComplete xmlns:fx="http://ns.adobe.com/mxml/2009"
+						 searchChange="autocomplete1_searchChangeHandler(event)"
+						 dataProvider="{_results}" selectedItemStyleName="macMail" keyUp="autocomplete2_keyUpHandler(event)"
+						 showRemoveIcon="true" 
+						 valueCommit="autocomplete1_valueCommitHandler(event)"
+						 dropDownItemRenderer="{new ClassFactory(IRColumn)}" 
+						 filterField="phoInputCode" labelField="className"
+						 allowMultipleSelection="false" backspaceAction="remove"
+			  xmlns:components="com.superion.components.*">
+	<fx:Script>
+		<![CDATA[
+			import com.flexicious.nestedtreedatagrid.FlexDataGrid;
+			import com.flexicious.nestedtreedatagrid.interfaces.IFlexDataGridCell;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.ByteArrayAsset;
+			import mx.core.UIComponent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.StringUtil;
+			[Bindable]
+			private var _results:ArrayCollection = new ArrayCollection();
+			import mx.events.FlexEvent;
+			public var _this:Object = null;
+			import mx.rpc.remoting.RemoteObject;
+			
+			
+			protected function autocomplete1_valueCommitHandler(event:*):void
+			{
+				// TODO Auto-generated method stub
+				var editCell:IFlexDataGridCell = FlexDataGrid(this.owner).getCurrentEditingCell();
+				if(!editCell)return;
+				var data:Object = editCell.rowInfo.data;
+//					data.COLUMN_CODE = "";
+				if(selectedItem && selectedItem.hasOwnProperty("classCode")){
+					data.classCode = selectedItem.classCode;
+					data.className = selectedItem.className;
+					FlexDataGrid(this.owner).parentDocument.updateRow(data);
+				}
+//				parentDocument.updateRow(data);
+				
+			
+			}
+			
+			
+			protected function autocomplete1_searchChangeHandler(event:*):void
+			{
+				// TODO Auto-generated method stub
+				var inputCode:String = StringUtil.trim(this.searchText);
+				if(inputCode.length==0)return;
+				if(inputCode.charCodeAt(0)< 97 || inputCode.charCodeAt(0)> 122){
+					trace("111");
+					return;
+				}
+				
+				var editCell:IFlexDataGridCell = FlexDataGrid(this.owner).getCurrentEditingCell();
+				if(!editCell){
+					trace("222");
+					return;
+				}
+				var data:Object = editCell.rowInfo.data;
+				
+				var ro:RemoteObject = new RemoteObject();
+				ro.destination = PushData.DESTINATION_1;
+				ro.showBusyCursor = true;
+				ro.endpoint = PushData.END_POINT;
+				ro.addEventListener(ResultEvent.RESULT,resultHandler);
+				ro.addEventListener(FaultEvent.FAULT,faultHandler);
+				
+				var param:Object = {"phoInputCode":inputCode};
+				ro.findColumns(param);
+				
+			}
+			
+			protected function faultHandler(event:FaultEvent):void
+			{
+				Alert.show(event.fault.faultString,'提示');
+			}
+			protected function resultHandler(event:ResultEvent):void
+			{
+				_results = event.result as ArrayCollection;
+				var auto:* = FlexDataGrid(owner).getCurrentEditor();
+				auto.search();
+			}
+			
+			
+			protected function autocomplete1_keyUpHandler(event:KeyboardEvent):void
+			{
+				if(event.keyCode == Keyboard.ENTER){
+					trace(event.keyCode);
+					var _dg:FlexDataGrid =  FlexDataGrid(this.owner);
+//					_dg.getcol
+					var _dataProvider:ArrayCollection = FlexDataGrid(this.owner).dataProvider as ArrayCollection;
+//					setTimeout(function():void{
+//						_dg.selectedIndex=_dataProvider.length-1;
+						_dg.gotoRow(_dataProvider.length-1);
+						_dg.editedItemPosition={columnIndex:2,rowIndex:_dataProvider.length-1}
+//					},300);
+					
+				}
+			}
+			
+			protected function autocomplete2_keyUpHandler(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				trace(event.keyCode+"1111");
+				
+			}
+			
+		]]>
+	</fx:Script>
+
+</components:AutoComplete>

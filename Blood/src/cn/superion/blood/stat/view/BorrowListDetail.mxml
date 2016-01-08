@@ -1,0 +1,771 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   backgroundColor="0xE2E8E8"
+			   width="1000"
+			   height="494"
+			   styleName="titleStyle"
+			   title="详细"
+			   xmlns:controls="cn.superion.base.components.controls.*"
+			   creationComplete="doInit()"
+			   close="PopUpManager.removePopUp(_this)">
+	<s:layout>
+		<s:VerticalLayout paddingLeft="5"
+						  paddingRight="5"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.blood.stat.ModBloodBorrowList;
+			import cn.superion.report2.ReportViewer;
+			import cn.superion.vo.blood.BloodRdsMaster;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.Sort;
+			import mx.collections.SortField;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.utils.ObjectUtil;
+			import mx.utils.StringUtil;
+			
+			import spark.events.IndexChangeEvent;
+
+			public var data:Object;
+
+			[Bindable]
+			public var bloodRdsDetail:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var bloodRdsMaster:BloodRdsMaster= new BloodRdsMaster();
+			[Bindable]
+			public var _date:Date = new Date();
+			[Bindable]
+			private var destination:String="borrowCenterImpl";
+			[Bindable]
+			public var parentWin:ModBloodBorrowList;
+			private var _productCode:String = "";
+			//
+			private const MENU_NO:String="0511";
+			private var _tempDeptCode:String
+			private var _tempPersonId:String
+			private var _tempTypeCode:String
+			private var lastIndex:int; //手动入库，每次刷入表格时，记录本次的索引
+			[Bindable]
+			private var _usefulDay:Number;
+			//验证集合
+			private var _vAll:Array = [];
+			private var modifyMode:Boolean  = false;
+			private var btnModifyBeClicked :Boolean = false;
+			private var btNewBeClicked :Boolean = false;
+			private var btnCheckBeClicked :Boolean = false;
+			private var hasSameProductCode:Boolean = false;
+			[Bindable]
+			private var _this:* = this;
+			private var mainAutoId:String;
+			private var ro:RemoteObject;
+
+
+			/**
+			 * 初始化
+			 * */
+			protected function doInit():void
+			{
+				bloodDetailList();
+//				productCode.setFocus();
+				parentWin = this.data.parentWin;
+				FormUtils.setFormItemEditable(hg1,false);
+				FormUtils.setFormItemEditable(hg2,false);
+				FormUtils.setFormItemEditable(hg3,false);
+				FormUtils.setFormItemEditable(hg4,false);
+				bloodCode.enabled=false;
+				typeCode.enabled=false;
+				rhSign.enabled=false;
+				//加载部门
+//				var deptCodeItem:Object=ArrayCollUtils.findItemInArrayByValue(BaseDict.deptDict,'dept',AppInfo.sysUser.deptCode);
+//				deptCode.text=deptCodeItem==null?'':deptCodeItem.deptName; 
+//				//加载经手人
+//				personId.text =codeToName('personId', AppInfo.sysUser.personId,BaseDict.personIdDict) == null ?
+//					"":codeToName('personId', AppInfo.sysUser.personId,BaseDict.personIdDict)[2];
+//				deptCode.txtContent.setFocus();
+				_usefulDay = typeCode.dataProvider[0].usefulDay;
+			
+			}
+			
+			/**
+			 * 血液领取入库明细
+			 * */
+			private function bloodDetailList():void
+			{
+				parentWin = this.data.parentWin;
+				//加载经手人
+				personId.text =codeToName('personId', AppInfo.sysUser.personId,BaseDict.personIdDict) == null ?
+					"":codeToName('personId', AppInfo.sysUser.personId,BaseDict.personIdDict)[2];
+				//				deptCode.txtContent.setFocus();
+				_usefulDay = typeCode.dataProvider[0].usefulDay;
+				//修改
+				btnModifyBeClicked = this.data.btnModifyBeClicked;
+				btnCheckBeClicked = this.data.btnCheckBeClicked;
+				btNewBeClicked = this.data.btNewBeClicked;
+				//点修改或审核时，额外加载内容
+//				FormUtils.fillFormByItem(this, data.masterItem);
+				
+				//查询主记录对应的明细
+				mainAutoId = this.data.masterItem.autoId;
+				FormUtils.fillFormByItem(this, data.masterItem);
+				deptCode.text=this.data.masterItem.deptName;
+//				personId.text=data.masterItem.personIdName;
+				ro = RemoteUtil.getRemoteObject(destination,function(rev:Object):void{
+					//加载明细
+					ary = rev.data[0].rdsDetail as ArrayCollection;
+					//选中首条
+					gridBorrowCenterList.selectedIndex = 0;
+					var dd:ArrayCollection = gridBorrowCenterList.dataProvider as ArrayCollection;
+					var firstItem:Object = dd.getItemAt(0);
+					//选中血型
+					bloodCode.selectedIndex = codeToName('blood', firstItem.bloodCode,BaseDict.bloodDict) == null ?
+					-1:codeToName('blood', firstItem.bloodCode,BaseDict.bloodDict)[0];
+					//选中成分
+					typeCode.selectedIndex = codeToName('bloodType', firstItem.bloodCode,BaseDict.bloodTypeDict) == null ?
+					-1:codeToName('bloodType', firstItem.typeCode,BaseDict.bloodTypeDict)[0];
+					//选中rh
+					rhSign.selectedIndex = firstItem.rhSign == "1" ? 1 : 0;
+					
+				});
+				ro.findById(mainAutoId);
+			}
+			/**
+			 * codeName:编码的字段名。codeValue:编码的值。dict:字典
+			 * 返回查找出来的编码、名称、及索引
+			 * */
+			private function codeToName(codeName:String, codeValue:String,dict:ArrayCollection):Array{
+				if(dict.length == 0) return null;
+				var ary:Array =[];
+				var i:int = 0;
+				for each (var item:Object in dict ){
+					i ++;
+					if(codeValue == item[codeName]){
+						ary[0] = i - 1;
+						ary[1] =  codeValue;
+						ary[2] =  item[codeName+'Name'];
+						break;
+					}
+				}
+				return ary;
+			}
+
+			
+			/**
+			 * LabelFunction :显示序号
+			 * */
+			private function labFunSeriaNo(item:Object,column:DataGridColumn):int{
+				var ary:ArrayCollection = gridBorrowCenterList.dataProvider as ArrayCollection;
+				return ary.getItemIndex(item)+1;
+				
+			}
+			
+			/**
+			 * LabelFunction :根据成分编码显示成分名称
+			 * */
+			private function labFunTypeCode(item:Object,column:DataGridColumn):String{
+				var ary:ArrayCollection = BaseDict.bloodTypeDict;
+				if(ary.length  == 0){
+					return " ";
+				}
+				var name:String ="";
+				for each (var obj:Object  in ary){
+					if(obj.bloodType == item.typeCode){
+						name =  obj.bloodTypeName;
+					}
+				}
+				return name;
+			}
+			
+			/**
+			 * LabelFunction :根据血型编码显示血型名
+			 * */
+			private function labFunBloodCode(item:Object,column:DataGridColumn):String{
+				var ary:ArrayCollection = BaseDict.bloodDict;
+				if(ary.length  == 0){
+					return " ";
+				}
+				var name:String ="";
+				for each (var obj:Object  in ary){
+					if(obj.blood == item.bloodCode){
+						name =  obj.bloodName;
+					}
+				}
+				return name;
+			}		
+			
+			/**
+			 * LabelFunction :根据RH阴性：0，1，分别显示阳性，阴性
+			 * */
+			private function labFunRhSign(item:Object,column:DataGridColumn):String{
+				
+				switch (item.rhSign) {
+					case "0":
+						return "阳性";
+						break;
+					case "1":
+						return "阴性";
+						break;
+					default:
+						return " ";
+						break;
+				}
+			}
+			
+			/**
+			 * 打印
+			 * */
+			protected function btPrint_clickHandler(lstrPurview:String, isPrintSign:String):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, lstrPurview))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				
+				var laryWillPrintItems:ArrayCollection=null;
+				laryWillPrintItems = gridBorrowCenterList.dataProvider as ArrayCollection;
+				var newWillPrintAry :ArrayCollection = ObjectUtil.copy(laryWillPrintItems) as ArrayCollection;
+//				
+				for each (var it :Object in newWillPrintAry){
+					var newIt:Object = new Object();
+					newIt = it;
+					it.rhSign = it.rhSign == "1" ? "阴性" : "阳性";
+					it.bloodCode = codeToName('blood',it.bloodCode,BaseDict.bloodDict);
+				}
+				var dict:Dictionary = new Dictionary();
+				dict["单位名称"] = AppInfo.sysUser.unitsName
+				dict["日期"] =DateField.dateToString( new Date(),'YYYY-MM-DD');
+				dict["主标题"] = "血液领用列表";
+				dict["制表人"] =AppInfo.sysUser.userName;
+				dict["单据编号"]=billNo.text;
+				dict["单据日期"]=DateField.dateToString(billDate.selectedDate,'YYYY-MM-DD');
+				dict["部门"]=deptCode.text;
+				dict["经手人"]=personId.text;
+				dict["备注"]=remark.text;
+				dict["血袋编号"]=productCode.text;
+				dict["血型"]=bloodCode.selectedItem.bloodName;
+				dict["成份"]=typeCode.selectedItem.bloodTypeName;
+				dict["Rh(D)"]=rhSign.selectedItem.rhSignName;
+				dict["数量"]=amount.text;
+				dict["数量单位"]=assiUnits.text;
+				dict["进价"]=tradePrice.text;
+				dict["采血日期"]=DateField.dateToString(collectDate.selectedDate,'YYYY-MM-DD');
+				dict["失效日期"]=DateField.dateToString(availDate.selectedDate,'YYYY-MM-DD');
+				ReportViewer.Instance.Show("report/blood/stat/gridBorrowListDetail.xml", newWillPrintAry, dict);
+			}
+
+			//
+			protected function cboxBloodType_creationCompleteHandler(event:FlexEvent):void
+			{
+				var col:ArrayCollection = BaseDict.bloodTypeDict;
+//				var sort:Sort = new Sort();
+//				sort.fields = [new SortField("serialNo",true)];
+//				col.sort = sort;
+				col.refresh();
+				typeCode.dataProvider=BaseDict.bloodTypeDict;
+				assiUnits.text = BaseDict.bloodTypeDict[0].units;
+			}
+
+			protected function cboxBlood_creationCompleteHandler(event:FlexEvent):void
+			{
+				bloodCode.dataProvider=BaseDict.bloodDict;
+			}
+
+			/**
+			 * 处理键的keyUp事件
+			 * */
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				if(event.keyCode != 13)
+				{
+					return;
+				}
+				if(event.currentTarget.className == "TextInput")
+				{
+					if(StringUtil.trim(event.currentTarget.text).length == 0)
+					{
+						return;
+					}
+				}
+				if(ctrl.className == "DropDownList")
+				{
+					ctrl.openDropDown();
+				}
+				if(ctrl.className == "DateField")
+				{
+					ctrl.open();
+				}
+				ctrl.setFocus();
+			}
+
+		
+			private function filterFun_ProductCode(item:Object,index:int, array:Array):Boolean{
+				if(mx.utils.StringUtil.restrict(item.productCode,' 0-9') !=StringUtil.restrict( _productCode,' 0-9'))
+					return true;
+					return false;
+			}
+			
+			/**
+			 *Event: 该事件针对用户操作(非代码改变)而改变选中记录时触发
+			 * 该事件触发后，新增界面操作模式改变
+			 * */
+			protected function gridBorrowCenterList_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				modifyMode = true;
+				//同步改变页面的血液成分、血型、rh阴性
+				typeCode.selectedIndex = codeToName("bloodType",gridBorrowCenterList.selectedItem.typeCode,BaseDict.bloodTypeDict)[0];
+				bloodCode.selectedIndex = codeToName("blood",gridBorrowCenterList.selectedItem.bloodCode,BaseDict.bloodDict)[0];
+				rhSign.selectedIndex = gridBorrowCenterList.selectedItem.rhSign == "1" ? 1 : 0;
+				
+			}
+			
+			/**
+			 * Event:响应DDLT索引改变事件
+			 * */
+			protected function ddlt_indexChangeHandler(event:IndexChangeEvent):void
+			{
+				var item:Object = gridBorrowCenterList.selectedItem;
+				if(!item ){
+					if(event.target.id=="typeCode"){
+						assiUnits.text = event.target.selectedItem.units ;
+						_usefulDay = event.target.selectedItem.usefulDay ;
+					}
+					return;
+				}
+				//改变选中记录的对应的字段值
+				if(event.target.id == "typeCode"){
+					gridBorrowCenterList.selectedItem.typeCode = event.target.selectedItem.bloodType ;
+					gridBorrowCenterList.selectedItem.typeName = event.target.selectedItem.bloodTypeName ;
+					assiUnits.text = event.target.selectedItem.units ;
+					_usefulDay = event.target.selectedItem.usefulDay ;
+				}
+				if(event.target.id == "bloodCode"){
+					gridBorrowCenterList.selectedItem.bloodCode = event.target.selectedItem.blood ;
+				}
+				if(event.target.id == "rhSign"){
+					gridBorrowCenterList.selectedItem.rhSign = event.target.selectedItem.rhSign  ;
+				}
+				gridBorrowCenterList.invalidateList();
+			}
+			
+			/**
+			 * *删除
+			 * */
+//			protected function btDel_clickHandler(event:MouseEvent):void
+//			{
+//				if(!gridBorrowCenterList.selectedItem){
+//					Alert.show('选择记录','提示');
+//					return;
+//				}
+//				Alert.show('确定删除？','提示',Alert.YES | Alert.NO,null,function(e:*):void{
+//					if (e.detail == Alert.YES ) {
+//							var idx:int = gridBorrowCenterList.selectedIndex;
+//							ary.removeItemAt(idx);
+//							gridBorrowCenterList.invalidateList();
+//					}else{
+//						return;
+//					}
+//				})
+//			}
+
+
+			/**
+			 * checkbox改变事件
+			 * */
+			protected function rhSign_changeHandler(event:Event):void
+			{
+				var it :Object = gridBorrowCenterList.selectedItem;
+				if(!it){
+					return;
+				}
+			   gridBorrowCenterList.selectedItem.rhSign = event.target.selected ? "1" : "0";
+			   gridBorrowCenterList. invalidateList();
+			}
+
+//			protected function gridBorrowCenterList_itemClickHandler(event:ListEvent):void
+//			{
+//				modifyMode = true;
+//			}
+//			
+
+			protected function testDate_valueCommitHandler(event:FlexEvent):void
+			{
+				if(testDate.selectedDate && gridBorrowCenterList.selectedItem) 
+					gridBorrowCenterList.selectedItem.availDate = testDate.selectedDate;
+			}
+			/**
+			 * 根据输入的品种，到输血品种字典里找对应的最小单价。数量*最小单价=血袋进价
+			 * */
+			private function initTradePrice():void{
+				var ro :RemoteObject = RemoteUtil.getRemoteObject('bloodTypeDictImpl',function(rev:Object):void{
+					if(rev &&　rev.data && rev.data.length>0)
+					{
+						tradePrice.text = (rev.data[0].tradePrice * Number(amount.text)).toString();
+					}
+				});
+				ro.findById(typeCode.selectedItem.bloodType);	
+			}
+
+
+			/**
+			 * 响应产品码的回车事件，如果选择红字，则查询，蓝字，则正常的新增操作
+			 * */
+//			protected function productCode_keyUpHandler(event:KeyboardEvent):void
+//			{
+//				//如果是新建并且点了红单按钮,直接查询对应的血袋信息
+//				if(event.keyCode != 13) return;
+//				_productCode = productCode.text ;
+//				if(btNewBeClicked && billType.selectedValue =='2')
+//					//根据产品码调用血袋
+//				{
+//					var ro:RemoteObject = RemoteUtil.getRemoteObject("borrowCenterImpl", function(rev:Object):void{
+//						if(rev.data[0]!=null)
+//						{
+//							//验证重复产品码
+//							var differ:Boolean = ary.source.every(filterFun_ProductCode,null);
+//							if(!differ)
+//								return;
+//							//数量为负
+//							var it:BloodRdsDetail = rev.data[0] as BloodRdsDetail;
+//							it.amount = it.amount *(-1);
+//							it.assiAmount = it.assiAmount * (-1);
+//							it.tradePrice = it.tradePrice * (-1);
+//							it.retailPrice = it.retailPrice * (-1);
+//							ary.addItem(it);
+//						}
+//					});
+//					ro.findBloodByProductCode(StringUtil.trim(productCode.text));
+//				}
+//				//否则正常调用	
+//				else keyUpCtrl(event,bloodCode)
+//			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:RadioButtonGroup id="phoFiveCode"/>
+		<s:ArrayCollection id="ary"/>
+		<s:ArrayCollection id="aryRh">
+			<fx:Object rhSign="0" rhSignName="阳性"/>
+			<fx:Object rhSign="1" rhSignName="阴性"/>
+		</s:ArrayCollection>
+		<s:RadioButtonGroup id="billType"/>
+	</fx:Declarations>
+
+	<s:HGroup width="100%">
+		<s:VGroup width="100%" height="70">
+			<s:HGroup width="100%"
+					  height="31"
+					  verticalAlign="middle"
+					  paddingTop="10"
+					  paddingLeft="9"
+					  color="#0000FF"
+					  id="hg1">
+				<s:Label text="单据编号"  height="19" textAlign="center"/>
+				<s:TextInput id="billNo"
+							 width="100%"
+							 enabled="false"/>
+				<s:Label text="单据日期" height="19" verticalAlign="middle"/>
+				<mx:DateField id="billDate" monthNames="['1','2','3','4','5','6','7','8','9','10','11','12']" dayNames="['日','一','二','三','四','五','六']"
+							  width="100%"
+							  formatString="YYYY-MM-DD"
+							  selectableRange="{{rangeEnd:new Date()}}"
+							  enterFrame="{billDate.selectedDate==null?billDate.selectedDate=new Date():billDate.selectedDate}"/>
+				<s:Label text="部      门"
+						 verticalAlign="middle"
+						 fontSize="14"
+						 color="#0000FF" height="19"/>
+				<!--	<controls:TextInputIcon id="deptCode"
+				width="160"
+				height="28"
+				queryIconClick="deptCode_queryIconClickHandler()"
+				keyDown="deptCode_keyDownHandler(event)"
+				/>-->
+				<s:TextInput id="deptCode"
+							 width="160"
+							 editable="false"
+							 height="28"
+							 />
+				<s:Label text="经 手 人"
+						 verticalAlign="middle"
+						 fontSize="14"
+						 color="#0000FF" height="19"/>
+				<!--<controls:TextInputIcon id="personId"
+				width="100%"
+				height="28"
+				maxChars="20"
+				queryIconClick="personId_queryIconClickHandler()"
+				keyDown="personId_keyDownHandler(event)"/>-->
+				<s:TextInput id="personId"
+							 editable="false"
+							 width="100%"
+							 height="28"
+							 maxChars="20"
+							 />
+				
+			</s:HGroup>
+			
+			
+			<s:HGroup width="100%"
+					  height="31"
+					  paddingLeft="9"
+					  id="hg2"
+					  verticalAlign="middle"
+					  color="#0000FF">
+				<s:Label text="备　　注"  height="19" textAlign="center"/>
+				<s:TextInput id="remark"
+							 width="100%"
+							 color="#000000"
+							 enabled="{billType.selectedValue=='1'}"
+							 keyUp="keyUpCtrl(event,bloodBagCode)"
+							 maxChars="40"
+							 restrict="^"/>
+			</s:HGroup>
+		</s:VGroup>
+	</s:HGroup>
+	<s:HGroup width="100%">
+		<mx:HRule width="100%"/>
+	</s:HGroup>
+
+	<!-- 表体部分 -->
+	<s:BorderContainer width="500%"
+					   height="500%"
+					   backgroundColor="0xE2E8E8"
+					   borderStyle="solid"
+					   borderVisible="false">
+		<s:VGroup width="100%"
+				  height="100%">
+			<s:HGroup width="100%"
+					  verticalAlign="middle"
+					  paddingLeft="8"
+					  id="hg3"
+					  color="#0000FF">
+
+					<s:Label text="血袋编号" visible="false" includeInLayout="false"/>
+					<s:TextInput id="bloodBagCode"
+								 width="143" color="#000000"
+								 visible="false" includeInLayout="false"
+								 keyUp="keyUpCtrl(event,bloodCode)"
+								 maxChars="40"
+								 restrict="a-z A-z0-9\\-"/>
+				
+				<s:Label text="血袋编号" />
+					<mx:TextInput id="productCode"
+								 color="#000000" 
+								 text="@{gridBorrowCenterList.selectedItem.productCode}"
+								 maxChars="40"
+								 width="143"
+								 restrict="a-z A-z0-9\\-"/>
+				<s:Label text="血　　型"/>
+					<s:DropDownList id="bloodCode"
+								labelField="bloodName" 
+								color="#000000"
+								requireSelection="true"
+								keyUp="keyUpCtrl(event,typeCode)"
+								creationComplete="cboxBlood_creationCompleteHandler(event)"
+								change="ddlt_indexChangeHandler(event)"
+								width="80"/>
+				<s:Label text="成　　份"/>
+					<s:DropDownList id="typeCode"
+								color="#000000"
+								requireSelection="true"
+								labelField="bloodTypeName"
+								keyUp="keyUpCtrl(event,rhSign)"
+								creationComplete="cboxBloodType_creationCompleteHandler(event)"
+								change="ddlt_indexChangeHandler(event)"
+								width="153"/>
+				<s:Label text="Rh(D)" width="48"/>
+					<s:DropDownList id="rhSign"
+								width="82"
+								color="{rhSign.selectedItem.rhSign == '0'?0xf60b0b:0x070707}"
+								selectedIndex="0"
+								dataProvider="{aryRh}"
+								itemRenderer="cn.superion.blood.util.renderer.ItemRendererRhSign"
+								labelField="rhSignName"
+								change="ddlt_indexChangeHandler(event)"
+								keyUp="keyUpCtrl(event,amount)"
+								/>
+				<!--<s:Label  text="规格" width="34" height="22" verticalAlign="middle"/>
+				<s:TextInput  width="84" id="spec"
+							 maxChars="30"
+							 text="@{gridBorrowCenterList.selectedItem.spec}"
+							 keyUp="keyUpCtrl(event,amount)"
+							 />-->
+				<s:Label text="数量"/>
+					<s:TextInput id="amount"
+								 color="#000000"
+								 keyUp="keyUpCtrl(event,tradePrice);initTradePrice();"
+								 text="@{gridBorrowCenterList.selectedItem.spec}"
+								 width="63"
+								 maxChars="5"
+								 restrict="0-9."/>
+				<mx:Text id="assiUnits" text="@{gridBorrowCenterList.selectedItem.assiUnits}"/>
+				<mx:Text id="usefulDay" visible="false" includeInLayout="false"/>
+			</s:HGroup>
+
+			<s:HGroup width="100%"
+					  paddingLeft="8"
+					  id="hg4"
+					  color="#0000FF"
+					 >
+				<s:Label text = "进　　价" 
+						 height="19" 
+						 verticalAlign="middle"/>
+					<s:TextInput id="tradePrice"
+								 color="#000000"
+								 keyUp="keyUpCtrl(event,collectDate)"
+								 text="@{gridBorrowCenterList.selectedItem.tradePrice}"
+								 width="143"
+								 maxChars="11"
+								 restrict="0-9."/>
+				<s:Label text = "售 价" height="19" verticalAlign="middle" visible="false" includeInLayout="false"/>
+					<s:TextInput id="retailPrice" visible="false" includeInLayout="false"
+								 width="80"
+								 maxChars="11"
+								 text="@{gridBorrowCenterList.selectedItem.retailPrice}"
+								 color="#000000"
+								 restrict="0-9."/>
+					<s:Label text = "献血员编号" height="19" verticalAlign="middle" visible="false" includeInLayout="false"/>
+					<s:TextInput id="bloodDonorCode"
+								 color="#000000"
+								 keyUp="keyUpCtrl(event,bloodDonorName)"
+								 width="94" visible="false" includeInLayout="false"
+								 text="@{gridBorrowCenterList.selectedItem.bloodDonorCode}"
+								 restrict="0-9"/>
+				<s:Label text="献血者姓名" visible="false" includeInLayout="false"
+							 height="19" verticalAlign="middle"/>
+					
+					<s:TextInput id="bloodDonorName"
+								 color="#000000" visible="false" includeInLayout="false"
+								 keyUp="keyUpCtrl(event,collectDate)"
+								 width="65"
+								 text="@{gridBorrowCenterList.selectedItem.bloodDonorName}"
+								 maxChars="8"
+								 restrict="^a-z A-z0-9\\-"/>
+					<s:Label text="采血日期"
+							  height="19" verticalAlign="middle"/>
+					<mx:DateField id="collectDate" 
+								 width="153"
+								 selectedDate="@{gridBorrowCenterList.selectedItem.collectDate}"
+								 formatString="YYYY-MM-DD"
+								selectableRange="{{rangeEnd:new Date(_date.getFullYear(),_date.getMonth(),_date.getDate())}}"
+								 />
+				<mx:DateField id="testDate"
+							selectedDate="{new Date(collectDate.selectedDate.getFullYear(),collectDate.selectedDate.getMonth(),(collectDate.selectedDate.getDate()+_usefulDay))}"
+							valueCommit="testDate_valueCommitHandler(event)"
+							  visible="false" includeInLayout="false"
+							  formatString="YYYY-MM-DD"
+							  />
+					<s:Label text="失效日期" 
+							 height="19" verticalAlign="middle"/>
+					<mx:DateField id="availDate"
+								 width="208"
+								 enabled="false"
+								 text="{testDate.text}"
+								 selectableRange="{{rangeStart:new Date()}}"
+								 selectedDate="@{gridBorrowCenterList.selectedItem.availDate}"
+								 formatString="YYYY-MM-DD"
+								/>
+			</s:HGroup>
+			<controls:SuperDataGrid id="gridBorrowCenterList"
+									hasRowNo="true"
+									width="100%"
+									dataProvider="{ary}"
+									colorWhereColor="0xf60b0b"
+									colorWhereField="currentStatus"
+									colorWhereValue="9"
+									height="100%"
+									change="gridBorrowCenterList_changeHandler(event)"
+									headerStyleName="dataGrid">
+				<controls:columns>
+					<mx:DataGridColumn headerText="序号"  
+									   labelFunction="labFunSeriaNo" 
+									   width="2"/>
+					<mx:DataGridColumn headerText="血袋编号"
+									   width="6"
+									   textAlign="left"
+									   dataField="productCode"/>
+					<!--<mx:DataGridColumn headerText="血袋编号"
+									   width="4"
+									   textAlign="left"
+									   dataField="bloodBagCode"/>-->
+					<mx:DataGridColumn headerText="血型" 
+									   textAlign="left"
+									   width="2.5" 
+									   labelFunction="labFunBloodCode"
+									   dataField="bloodCode"/>
+					<mx:DataGridColumn headerText="血液成份" 
+									   textAlign="left"
+									   width="5" 
+									   labelFunction="labFunTypeCode"
+									   dataField="typeCode"/>
+					<mx:DataGridColumn headerText="Rh(D)" 
+									   textAlign="left"
+									   width="2" 
+									   itemRenderer="cn.superion.blood.util.renderer.ColumnItemRendererRhSign"
+									   labelFunction="labFunRhSign"
+									   dataField="rhSign"/>
+					<mx:DataGridColumn headerText="规格"
+									   width="2.5" 
+									   textAlign="left"
+									   dataField="spec"/>
+					<mx:DataGridColumn headerText="单位" 
+									   width="2" 
+									   textAlign="left"
+									   dataField="assiUnits"/>
+					<mx:DataGridColumn headerText="姓名" visible="false" 
+									   dataField="bloodDonorName" 
+									   textAlign="left" 
+									   wordWrap="true" width="3"/>
+					<mx:DataGridColumn headerText="采血日期"
+									   width="4" textAlign="left"
+									   dataField="collectDate"/>
+					<mx:DataGridColumn headerText="失效日期"
+									   width="4"
+									   textAlign="left"
+									   dataField="availDate"/>
+				</controls:columns>
+			</controls:SuperDataGrid>
+			<!-- 操作按钮部分 -->
+			<s:HGroup height="31"
+					  paddingBottom="10"
+					  horizontalAlign="right"
+					  gap="5"
+					  width="100%">
+				<mx:LinkButton id="btPrint"
+							   label=" 打 印"
+							   fontSize="12"
+							   width="86"
+							   height="26"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/print20.png')"
+							   click="btPrint_clickHandler('05','1')"/>
+				<mx:LinkButton id="btReturn"
+							   label=" 返 回"
+							   fontSize="12"
+							   width="86"
+							   height="26"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/return20.png')"
+							   click="PopUpManager.removePopUp(this)"/>
+				<mx:Spacer width="5"/>
+			</s:HGroup>
+			<mx:Spacer width="6"/>
+		</s:VGroup>
+	</s:BorderContainer>
+
+</s:TitleWindow>

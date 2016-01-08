@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PrintArea xmlns="com.flexicious.print.printareas.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" paddingBottom="0" paddingTop="0" verticalGap="0">
+	<mx:Script>
+		<![CDATA[
+			import com.flexicious.utils.UIUtils;
+			/*
+				This is a custom header. Shows up on the first page of the print out
+				This control has access to the records printed on this page, as well
+				as all records. Customize as you wish
+			*/
+			
+			//This class demonstrates two different ways to pass in custom parameters
+			//the print outs -
+			//1) Using a parameterized Renderer Factory (See MyPrintOptions.create)
+			//2) Passing in information via the MyPrintOptions (You create the MyPrintOptions, which can be accessed here.)
+			
+			[Bindable]
+			public var reportSubHeader:String
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%">
+		
+		<mx:HBox width="100%">
+			<mx:Image source="@Embed('/assets/images/vamos-log.png')"/>
+			<mx:Spacer width="100%"/>
+			<mx:Label text="打印日期: {UIUtils.formatDate(new Date(),'YYYY-MM-DD')}"/>
+		</mx:HBox>
+		<mx:HBox width="100%" horizontalAlign="center">
+			<mx:Label text="报表内容: {this.printOptions.printExportParameters.reportTitle}" fontSize="13"/>
+		</mx:HBox>
+		<mx:HBox width="100%" horizontalAlign="center">
+			<mx:Label text="{reportSubHeader}" fontSize="12" />
+		</mx:HBox>
+		<mx:Label text="平均/最小/最大(全部) {UIUtils.formatCurrency(UIUtils.average(allRecords,'annualSalary'))}/{UIUtils.formatCurrency(UIUtils.min(allRecords,'annualSalary')as Number)}/{UIUtils.formatCurrency(UIUtils.max(allRecords,'annualSalary')as Number)} "/>
+
+	</mx:VBox>
+</PrintArea>

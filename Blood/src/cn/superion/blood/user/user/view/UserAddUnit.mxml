@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:controls="cn.superion.base.components.controls.*"
+		  width="100%"
+		  height="100%"
+		  gap="0">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.vo.system.SysUnitInfor;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.DataGridEvent;
+			[Bindable]
+			private var isClicked:Boolean=true;
+
+			[Bindable]
+			public var sysUnitInfor:SysUnitInfor;
+
+			//单击选择标题
+			protected function dgUnits_headerReleaseHandler(event:DataGridEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (event.dataField == 'isSelected')
+				{
+					event.preventDefault();
+
+					for each (sysUnitInfor in dgUnits.dataProvider)
+					{
+						sysUnitInfor.isSelected=isClicked;
+					}
+					dgUnits.invalidateList();
+					isClicked=!isClicked;
+				}
+			}
+
+			// 获取选中的数据
+			public function getSelectedValues():Array
+			{
+				var array:Array=new Array();
+				var dataArray:ArrayCollection=dgUnits.dataProvider as ArrayCollection;
+				if (dataArray.length > 0)
+				{
+					for each (var item:SysUnitInfor in dataArray)
+					{
+						if (item.isSelected)
+						{
+							array.push(item.unitsCode);
+						}
+					}
+				}
+				return array;
+			}
+		]]>
+	</fx:Script>
+	<s:Label text="授权单位列表"
+			 fontSize="14"
+			 paddingTop="20"
+			 color="#0000FF"/>
+	<mx:Spacer height="6"/>
+	<controls:SuperDataGrid id="dgUnits"
+							width="100%"
+							height="100%"
+							styleName="dataGrid"
+							headerRelease="dgUnits_headerReleaseHandler(event)">
+		<controls:columns>
+			<mx:DataGridColumn sortable="true"
+							   paddingLeft="2"
+							   headerText="选择"
+							   dataField="isSelected"
+							   width="1"
+							   textAlign="center">
+				<mx:itemRenderer>
+					<fx:Component>
+						<mx:CheckBox change="data.isSelected=this.selected"
+									 selected="{data.isSelected}"
+									 textAlign="center"/>
+					</fx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="单位编码"
+							   width="2"
+							   dataField="unitsCode"/>
+			<mx:DataGridColumn headerText="单位名称"
+							   width="7"
+							   dataField="unitsName"/>
+		</controls:columns>
+	</controls:SuperDataGrid>
+</s:VGroup>

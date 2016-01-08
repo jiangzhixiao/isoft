@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:controls="cn.superion.base.components.controls.*"
+		  width="100%"
+		  height="100%"
+		  gap="0">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.vo.system.SysRole;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.DataGridEvent;
+			[Bindable]
+			private var isClicked:Boolean=true;
+
+			[Bindable]
+			public var sysRole:SysRole;
+
+			//单击选择标题
+			protected function dgRoles_headerReleaseHandler(event:DataGridEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (event.dataField == 'isSelected')
+				{
+					event.preventDefault();
+
+					for each (sysRole in dgRoles.dataProvider)
+					{
+						sysRole.isSelected=isClicked;
+					}
+					isClicked=!isClicked;
+					dgRoles.invalidateList();
+				}
+			}
+
+			//获取选中的数据
+			public function getSelectedValues():Array
+			{
+				var array:Array=new Array();
+				var dataArray:ArrayCollection=dgRoles.dataProvider as ArrayCollection;
+				if (dataArray.length > 0)
+				{
+					for each (var item:SysRole in dataArray)
+					{
+						if (item.isSelected)
+						{
+							array.push(item.roleCode);
+						}
+					}
+				}
+				return array;
+			}
+		]]>
+	</fx:Script>
+	<s:Label text="授权角色列表"
+			 fontSize="14"
+			 paddingTop="20"
+			 color="#0000FF"/>
+	<mx:Spacer height="6"/>
+	<controls:SuperDataGrid id="dgRoles"
+							width="100%"
+							height="100%"
+							styleName="dataGrid"
+							headerRelease="dgRoles_headerReleaseHandler(event)">
+		<controls:columns>
+			<mx:DataGridColumn sortable="true"
+							   headerText="选择"
+							   dataField="isSelected"
+							   width="1.5">
+				<mx:itemRenderer>
+					<fx:Component>
+						<mx:CheckBox change="data.isSelected=this.selected"
+									 selected="{data.isSelected}"
+									 textAlign="center"/>
+					</fx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="角色编码"
+							   width="2.5"
+							   dataField="roleCode"/>
+			<mx:DataGridColumn headerText="角色名称"
+							   width="5"
+							   dataField="roleName"/>
+		</controls:columns>
+	</controls:SuperDataGrid>
+</s:VGroup>

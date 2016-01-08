@@ -1,0 +1,1 @@
+Please place all the widget SWF files here in this folder, before compiling the project.

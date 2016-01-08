@@ -1,0 +1,172 @@
+/**
+////////////////////////////////////////////////////////////////////////////////
+//	
+//	Copyright 2014 Ardisia Labs LLC. All Rights Reserved.
+//
+//	This file is licensed under the Ardisia Component Library License. 
+//
+//	Only license holders are entitled to use this file subject to the  
+//	conditions of the license. All other uses are expressly forbidden. Visit 
+//	http://www.ardisialabs.com to view and purchase a license.
+//
+//	Apache Flex's source code notices are reproduced below.
+//
+// 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//  Licensed to the Apache Software Foundation (ASF) under one or more
+//  contributor license agreements.  See the NOTICE file distributed with
+//  this work for additional information regarding copyright ownership.
+//  The ASF licenses this file to You under the Apache License, Version 2.0
+//  (the "License"); you may not use this file except in compliance with
+//  the License.  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+ */
+
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+@namespace spark "com.flexicious.grids.spark.*";
+@namespace calendar "vamos.scheduling.calendar.*";
+@namespace toggleSwitchDesktop "vamos.components.toggleSwitchDesktop.*";
+
+@font-face { 
+	src: url("fonts/OpenSans/OpenSans-Regular.ttf"); 
+	fontFamily: OpenSans;
+	unicodeRange:
+		U+0020-007E; /* UPPER; LOWER; NUMERALS; PUNCTATION */
+}
+
+@font-face { 
+	src: url("fonts/OpenSans/OpenSans-Bold.ttf"); 
+	fontFamily: OpenSans;
+	fontWeight: bold;
+	unicodeRange:
+		U+0020-007E; /* UPPER; LOWER; NUMERALS; PUNCTATION */
+}
+
+@font-face { 
+	src: url("fonts/OpenSans/OpenSans-Italic.ttf"); 
+	fontFamily: OpenSans;
+	fontStyle: italic;
+	unicodeRange:
+		U+0020-007E; /* UPPER; LOWER; NUMERALS; PUNCTATION */
+}
+
+@font-face { 
+	src: url("fonts/OpenSans/OpenSans-BoldItalic.ttf"); 
+	fontFamily: OpenSans;
+	fontWeight: bold;
+	fontStyle: italic;
+	unicodeRange:
+		U+0020-007E; /* UPPER; LOWER; NUMERALS; PUNCTATION */
+}
+
+global 
+{
+	font-family: OpenSans;
+	font-size: 12;
+}
+
+toggleSwitchDesktop|ToggleSwitchDesktop s|Label
+{
+	padding-top: 1;
+}
+
+calendar|Calendar
+{
+	skin-class: ClassReference("components.shared.calendarClasses.skins.CalendarSkin");
+}
+
+s|Form
+{
+	skin-class: ClassReference("skins.FormSkin");
+}
+
+s|FormItem
+{
+	/* background support dropped */
+	font-weight: normal;
+	skin-class: ClassReference("skins.FormItemSkin");
+}
+
+s|FormHeading
+{
+	font-size: 12;
+	/* background support dropped */
+	font-weight: bold;
+	skin-class: ClassReference("skins.FormHeadingSkin");
+}
+
+s|FormItem s|Image
+{
+	skin-class: ClassReference("skins.FormImageSkin");
+}
+
+s|FormHeading
+{
+	font-size: 12;
+}
+
+mx|AdvancedDataGrid
+{
+	font-size: 11;
+	use-roll-over: false;
+	header-colors: #E9E9E9, #E9E9E9;
+}
+
+mx|AdvancedDataGridHeaderRenderer, mx|AdvancedDataGridSortItemRenderer, 
+mx|AdvancedDataGridItemRenderer, mx|AdvancedDataGridGroupItemRenderer
+{
+	color: #333333;
+	font-size: 12;
+}
+
+mx|ToolTip
+{
+	font-size: 11;
+}
+
+mx|Tree
+{
+	font-size: 11;
+}
+
+s|DataGrid #grid
+{
+	font-size: 11;
+}
+
+s|ComboBox #popUp 
+{
+	font-size: 11;
+}
+
+s|DropDownList #popUp 
+{
+	font-size: 11;
+}
+spark|ExtendedSparkDataGrid{
+	footerBackgroundColor: #CFCFCF;
+	filterBackgroundColor: #AFAFAF;
+	pagerBackgroundColor: #EFF1F2;
+	font-family:				宋体;
+	font-weight:				normal;
+	font-size:					11;
+	color:						#000000;
+	alternating-item-colors:	#f8f8f8, #ffffff;
+	alternatingRowColors:  #EFF3FA, #FFFFFF;
+}
+
+s|DefaultGridHeaderRenderer{
+	font-size: 12;
+	textAlign:center;
+	
+}

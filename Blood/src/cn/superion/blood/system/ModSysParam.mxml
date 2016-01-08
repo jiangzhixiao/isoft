@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   xmlns:controls="cn.superion.base.components.controls.*"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   creationComplete="init()">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.blood.system.view.SysParamAdd;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+
+			import flash.display.DisplayObject;
+			import flash.events.Event;
+			import flash.events.KeyboardEvent;
+			import flash.ui.Keyboard;
+
+			import mx.containers.Panel;
+			import mx.controls.Alert;
+			import mx.controls.DataGrid;
+			import mx.core.Application;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.ModuleEvent;
+			import mx.managers.PopUpManager;
+			import mx.modules.IModuleInfo;
+			import mx.modules.ModuleManager;
+			import mx.rpc.remoting.RemoteObject;
+
+			public var destination:String="centerSysParamImpl";
+			//检查页面按钮权限时使用
+			private const MENU_NO:String="0601";
+
+			protected function init():void
+			{
+				bindDataGrid();
+			}
+
+			private function bindDataGrid():void
+			{
+				var ro:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+					{
+						gdSysParam.dataProvider=rev.data;
+					})
+				ro.findSysParamListByApplication(AppInfo.APP_CODE);
+			}
+
+			//新建
+			protected function btNew_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//判断具有操作权限  -- 应用程序编号，菜单编号，权限编号
+				// 01：增加                02：修改            03：删除
+				// 04：保存                05：打印            06：审核
+				// 07：弃审                08：输出            09：输入
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "01"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+				var win:SysParamAdd=SysParamAdd(PopUpManager.createPopUp(topApp, SysParamAdd, true));
+				win.data={parentWin: this, fstrType: 'add', winTitle: "新建", rebackcall: bindDataGrid};
+				PopUpManager.centerPopUp(win);
+			}
+
+			//修改
+			protected function btChange_clickHandler(event:MouseEvent):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "02"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				if (!gdSysParam.selectedItem)
+				{
+					Alert.show("请选择所要修改的系统参数！", "提示");
+					return
+
+				}
+				else
+				{
+					var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+					var win:SysParamAdd=SysParamAdd(PopUpManager.createPopUp(topApp, SysParamAdd, true));
+					win.data={parentWin: this, fstrType: 'edit', winTitle: "修改", rebackcall: bindDataGrid};
+					PopUpManager.centerPopUp(win);
+				}
+			}
+
+			//删除
+			protected function btDel_clickHandler(event:MouseEvent):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "03"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				if (!gdSysParam.selectedItem)
+				{
+					Alert.show("请选择所要删除的系统参数！", "提示");
+					return
+				}
+				Alert.show('您是否要删除:' + gdSysParam.selectedItem.paraCode + '系统参数信息？', "警告", 3, this, delSysPrarm);
+			}
+
+			//删除确认
+			private function delSysPrarm(evt:CloseEvent):void
+			{
+				if (evt.detail == Alert.YES)
+				{
+					var ro:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+							if (rev.error == null)
+							{
+								Alert.show("删除成功！", "提示");
+							}
+							else
+							{
+								Alert.show("删除失败!", "提示");
+							}
+							bindDataGrid();
+						})
+					ro.delSysParamById(gdSysParam.selectedItem.autoId);
+				}
+			}
+
+			//返回主页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				MainFrameUtil.closeTab(this);
+			}
+
+			//双击打开修改界面
+			protected function gdSysParam_doubleClickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "02"))
+				{
+					Alert.show("您无修改的操作权限！", "提示");
+					return;
+				}
+				if (!gdSysParam.selectedItem)
+				{
+					return;
+
+				}
+				else
+				{
+					var win:SysParamAdd=SysParamAdd(PopUpManager.createPopUp(this, SysParamAdd, true));
+					win.data={parentWin: this, fstrType: 'edit', winTitle: "修改", rebackcall: bindDataGrid};
+					PopUpManager.centerPopUp(win);
+				}
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xE2E8E8"
+					   borderVisible="false">
+		<s:VGroup width="100%"
+				  height="100%"
+				  x="0"
+				  y="0">
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xE2E8E8"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%">
+					<controls:SuperDataGrid id="gdSysParam"
+											width="100%"
+											height="100%"
+											styleName="dataGrid"
+											hasRowNo="true"
+											doubleClickEnabled="true"
+											doubleClick="gdSysParam_doubleClickHandler(event)">
+						<controls:columns>
+							<mx:DataGridColumn headerText="序号"
+											   width="40"/>
+							<mx:DataGridColumn headerText="参数编号"
+											   width="100"
+											   dataField="paraCode"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="参数名称"
+											   dataField="paraName"
+											   width="320"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="参数值"
+											   dataField="paraValue"
+											   width="80"
+											   textAlign="left"/>
+							<mx:DataGridColumn headerText="参数描述"
+											   dataField="paraDescription"
+											   textAlign="left">
+							</mx:DataGridColumn>
+						</controls:columns>
+					</controls:SuperDataGrid>
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btNew"
+									   label=" 新 建"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btNew_clickHandler(event)"
+									   icon="@Embed(source='/assets/images/button/new20.png')"/>
+						<mx:LinkButton id="btChange"
+									   label=" 修 改"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btChange_clickHandler(event)"
+									   icon="@Embed(source='/assets/images/button/change20.png')"/>
+						<mx:LinkButton id="btDel"
+									   label=" 删 除"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/delete20.png')"
+									   click="btDel_clickHandler(event)"/>
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:BorderContainer>
+		</s:VGroup>
+	</s:BorderContainer>
+</mx:Module>

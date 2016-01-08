@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="dataSourceStorageLocal">
+    <data-source name="Oracle - orcl@192.168.1.33" uuid="d7c90013-8845-4688-a487-751ddf6fbfee">
+      <secret-storage>master_key</secret-storage>
+      <user-name>supblood</user-name>
+      <schema-pattern>*.SUPBLOOD</schema-pattern>
+      <default-schemas>*.SUPBLOOD *.SYS *.SYSTEM</default-schemas>
+    </data-source>
+  </component>
+</project>

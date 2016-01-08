@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="100%"
+				   height="100%"
+				   backgroundColor="0xE2E8E8"
+				   borderVisible="false">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.vo.system.SysDataView;
+			import cn.superion.vo.system.SysRoleData;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.DataGridEvent;
+
+			[Bindable]
+			private var isClicked:Boolean=true;
+
+			[Bindable]
+			public var sysDataView:SysDataView;
+
+			//单击选择：全选或全取消
+			protected function purviewDg_headerReleaseHandler(event:DataGridEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (event.dataField == 'isSelected')
+				{
+					event.preventDefault();
+
+					for each (sysDataView in purviewDg.dataProvider)
+					{
+						sysDataView.isSelected=isClicked;
+					}
+					isClicked=!isClicked;
+					purviewDg.invalidateList();
+
+					changeViewData();
+				}
+			}
+
+			//改变当前菜单授预的权限
+			public function changeViewData():void
+			{
+				var lpurviewDgData:ArrayCollection=purviewDg.dataProvider as ArrayCollection;
+				var lstrResult:String="";
+				for each (var item:SysDataView in lpurviewDgData)
+				{
+					if (item.isSelected)
+					{
+						lstrResult+=item.purviewNo + "|";
+					}
+				}
+				var lselMenu:SysRoleData=this.parentDocument.menusTree.selectedItem as SysRoleData;
+				if (lselMenu == null)
+				{
+					Alert.show("请先选择菜单项，然后再选择数据权限！", "提示");
+					return;
+				}
+				lselMenu.purviewNo=lstrResult;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup width="100%"
+			  height="100%">
+		<s:Label text="数据权限"
+				 paddingTop="2"
+				 color="#0000FF"/>
+		<mx:DataGrid id="purviewDg"
+					 width="100%"
+					 height="100%"
+					 styleName="dataGrid"
+					 headerRelease="purviewDg_headerReleaseHandler(event)">
+			<mx:columns>
+				<mx:DataGridColumn sortable="true"
+								   headerText="选择"
+								   dataField="isSelected"
+								   width="2">
+					<mx:itemRenderer>
+						<fx:Component>
+							<mx:CheckBox change="checkbox1_changeHandler(event)"
+										 selected="{data.isSelected}"
+										 enabled="true"
+										 textAlign="center">
+								<fx:Script>
+									<![CDATA[
+										protected function checkbox1_changeHandler(event:Event):void
+										{
+											// TODO Auto-generated method stub
+											data.isSelected=this.selected
+											outerDocument.changeViewData();
+										}
+									]]>
+								</fx:Script>
+							</mx:CheckBox>
+
+						</fx:Component>
+					</mx:itemRenderer>
+				</mx:DataGridColumn>
+				<mx:DataGridColumn headerText="编号"
+								   width="2.5"
+								   dataField="purviewNo"/>
+				<mx:DataGridColumn headerText="权限名称"
+								   width="5"
+								   dataField="purviewData"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</s:VGroup>
+</s:BorderContainer>

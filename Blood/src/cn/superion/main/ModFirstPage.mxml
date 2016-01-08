@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  creationComplete="module1_creationCompleteHandler(event)"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:textInput="vamos.components.textInput.*" xmlns:separators="vamos.components.separators.*" xmlns:calculator="vamos.components.calculator.*" xmlns:clocks="vamos.components.clocks.*" xmlns:spark="com.flexicious.grids.spark.*"
+		  xmlns:nestedtreedatagrid="com.flexicious.nestedtreedatagrid.*"
+		  xmlns:columns="com.flexicious.grids.spark.columns.*"
+		  xmlns:htmlFrame="vamos.components.htmlFrame.*"
+		  xmlns:main="cn.superion.main.*"
+		  xmlns:components="com.fusioncharts.components.*">
+	<fx:Script>
+		<![CDATA[
+        import cn.superion.base.filter.MyFilter;
+        import cn.superion.base.AppInfo;
+        import cn.superion.base.config.BaseDict;
+        import cn.superion.base.config.ParameterObject;
+        import cn.superion.base.filter.MyFilterResult;
+        import cn.superion.base.util.ArrayCollUtils;
+        import cn.superion.base.RemoteUtil;
+        import cn.superion.main.constant.Constant;
+        import cn.superion.main.treeMenu.MainFrameUtil;
+        import cn.superion.main.view.ActionMenu;
+        import cn.superion.vo.dataDict.CvBloodTypeDict;
+
+        import com.flexicious.controls.toaster.Toaster;
+        import com.flexicious.grids.events.FilterPageSortChangeEvent;
+        import com.flexicious.nestedtreedatagrid.events.ExtendedFilterPageSortChangeEvent;
+        import com.flexicious.nestedtreedatagrid.events.FlexDataGridEvent;
+        import com.flexicious.nestedtreedatagrid.interfaces.IFlexDataGridDataCell;
+        import com.flexicious.utils.UIUtils;
+        import com.fusioncharts.components.FCChartData;
+        import com.fusioncharts.components.FusionCharts;
+
+        import flash.net.navigateToURL;
+        import flash.utils.setTimeout;
+
+        import mx.collections.ArrayCollection;
+        import mx.core.IUIComponent;
+        import mx.events.FlexEvent;
+        import mx.rpc.events.ResultEvent;
+        import mx.rpc.remoting.RemoteObject;
+
+        import spark.collections.Sort;
+        import spark.collections.SortField;
+        import spark.events.GridEvent;
+        import spark.events.IndexChangeEvent;
+        import spark.events.TextOperationEvent;
+
+
+        private var chart_data:ArrayCollection;
+
+        // Tracking down whether the chart will animate or not
+        private var animate:String;
+        [Bindable]
+        private var singleData:ArrayCollection = new ArrayCollection([
+            {label: 'Diego', value: '22'},
+            {label: 'Steve', value: '20'},
+            {label: 'Bill', value: '18'},
+            {label: 'Stela', value: '64'},
+            {label: 'Walls', value: '48'},
+            {label: 'Trex', value: '43'},
+            {label: 'John', value: '32'},
+            {label: 'Venky', value: '56'},
+            {label: 'Lexi', value: '26'},
+            {label: 'Bert', value: '21'}]);
+
+        [Bindable()]
+        private var _totalRecords:int;
+        [Bindable()]
+        private var _dpNotices:ArrayCollection = new ArrayCollection([{
+            "noticeTitle": "测试1",
+            "createDate": "2014-05-06",
+            "createPerson": "江知晓"
+        },
+            {"noticeTitle": "测试2", "createDate": "2014-05-07", "createPerson": "江知晓2"},
+            {"noticeTitle": "测试3", "createDate": "2014-05-08", "createPerson": "江知晓3"},
+            {"noticeTitle": "测试4", "createDate": "2014-05-09", "createPerson": "江知晓4"}]);
+
+        private var ro:RemoteObject = null;
+
+        /**
+         * 输入改变事件
+         */
+        protected function filterCmps(event:TextOperationEvent):void {
+            function filterFn(item:Object):Boolean {
+                if (item.menuName && String(item.menuName).toLowerCase().indexOf(needle.toLowerCase()) > -1)
+                    return true;
+
+                return false;
+            }
+
+            var dp:ArrayCollection = allCmpList.dataProvider as ArrayCollection;
+            var needle:String = filterInput.text;
+
+            if (!needle || needle.length < 1) {
+                dp.filterFunction = null;
+            }
+            else {
+                dp.filterFunction = filterFn;
+            }
+
+            dp.refresh();
+        }
+
+        /**
+         * 按下回车时调用
+         */
+        protected function filterInput_keyDownHandler(event:KeyboardEvent):void {
+            // load the first filtered module on the ENTER key
+            if (event.keyCode == Keyboard.ENTER &&
+                    allCmpList.dataProvider.length > 0 && !allCmpList.dataProvider[0].header) {
+//					changeModule(allCmpList.dataProvider[0].label);
+            }
+        }
+
+        protected function module1_creationCompleteHandler(event:FlexEvent):void {
+            // TODO Auto-generated method stub
+            //首页加载完成后，关闭进度条
+            parentApplication.progressDisplay.close();
+            var menus:ArrayCollection = AppInfo.sysUser.userRoles[0].menus;
+            var len:int = menus.length;
+
+            allCmpList.dataProvider = menus;
+
+            var dp:ArrayCollection = new ArrayCollection();
+            for each(var menu:Object in menus) {
+                if (menu.oftenUse == '1') {
+                    dp.addItem(menu);
+                }
+            }
+            featuredCmpSelect.dataProvider = dp;
+
+            //
+
+            var filter:MyFilter = new MyFilter(null);
+            filter.pageIndex = 0;
+            filter.pageSize = gdNotice.pageSize;
+//				var filtersort:FilterSort = new FilterSort();
+//				filtersort.sortColumn="autoId";
+//				filtersort.isAscending=true;
+//				filter.sorts.addItem(new MyFilterSort(filtersort));
+            ro = RemoteUtil.getRemoteObject(Constant.DES_LOGIN, onResult)
+            ro.findNotice(filter);
+//				var url:URLRequest = new URLRequest('samples/bar3D.html');
+//				navigateToURL(url);
+//				var fc:FusionCharts = new FusionCharts();
+
+
+            //
+//				fc1.FCChartType="MSColumn2D";
+//				fc1.FCData(_dataProviderChart);
+//				fc1.FCParams(initial_param());
+//				fc1.FCTrendLines(""); 
+//				fc1.FCStyles("");       
+//				fc1.FCRender();
+//				loadColumnChartData();
+//				loadLineChartData();
+        }
+
+        private function initChart(chartType:String, chartData:ArrayCollection, chartParams:ArrayCollection, chartStyle:ArrayCollection = null):FusionCharts {
+            //加载图形
+            var baseParam:ArrayCollection = new ArrayCollection([
+                {baseFont: '宋体'}, {baseFontSize: '12'}, {outCnvBaseFont: '宋体'}, {outCnvBaseFontSize: '14'},
+                {labelDisplay: 'Wrap'},//'Rotate' 为垂直，再加上slantLabels='1'，为45度
+                {showBorder: '0'}, {bgColor: 'FFFFFF'}, {bgAlpha: 50}, {showValues: "0"}, {animation: "1"},//整个chart的背景色，边框，透明度，每一个series顶部是否显示数据，是否缓动
+                {canvasBorderThickness: '1'}, {canvasBorderColor: '000000'},//Canvas的样式
+                {toolTipBorderColor: '3F9AD8'}, {toolTipBgColor: 'FFFFFF'}, //提示框的背景和边框
+            ]);
+            var baseStyle:ArrayCollection = new ArrayCollection([
+                {name: "captionFont", type: "font", color: "000000", size: "15", align: 'left'},//去掉bgColor:"FFFFDD", borderColor:"666666"，则无背景，边框
+                {name: "subCaptionFont", type: "font", bold: "1"},
+                {name: 'glow', type: 'Glow', color: 'FF5904', alpha: '75'},
+                {name: 'toolTipFont', type: 'font', color: '000000', size: '14'},
+                {name: 'yaxisFont', type: 'font', color: '000000', size: '14'},
+                //
+                {toObject: 'XAxisName', styles: 'glow'},
+                {toObject: 'YAxisName', styles: 'yaxisFont'},
+                {toObject: "Caption", styles: "captionFont"},
+                {toObject: "SubCaption", styles: "subCaptionFont"},
+                {toObject: "ToolTip", styles: "toolTipFont"}]);
+
+            var fusionChart:FusionCharts = new FusionCharts();
+            fusionChart.percentHeight = 100;
+            fusionChart.percentWidth = 100;
+            fusionChart.FCChartType = chartType;
+            fusionChart.FCData(chartData);
+            baseParam.addAll(chartParams);
+            fusionChart.FCParams(baseParam);
+            fusionChart.FCTrendLines("");
+            if (chartStyle && chartStyle.length > 0) {
+                baseStyle.addAll(chartStyle);
+            }
+            fusionChart.FCStyles(baseStyle);
+            fusionChart.FCRender();
+            return fusionChart;
+        }
+
+
+        /**
+         * 将数据源拼装成chart需要的格式(多序列柱状图)
+         * 运用场景：要展示的数据和时间有关联;
+         * */
+        private function recreateLineChartData(types:ArrayCollection, result:ArrayCollection):Array {
+
+            var chartData:Array = [];
+            var series:Object = {};
+            for (var i:int = 0; i < types.length; i++) {
+                series['series' + i] = [{seriesName: types[i].typeName}];//每一个series表示的名称
+                for (var j:int = 0; j < result.length; j++) {
+                    if (i == 0) {//构建xAxisName，x轴上显示的名称
+                        var lab:String = result[j][0];//年份
+                        chartData.push({label: lab + '年'});
+                    }
+                    //根据成分单位，来转化
+                    var value:Number = result[j][i + 1] ? Number(result[j][i + 1]) : 0;
+                    if (types[i].units == '治疗量') {
+                        value = value * 10;
+                    }
+                    if (types[i].units == 'ml') {
+                        if (types[i].typeName == 'RH阴性全血' || types[i].typeName == '全血') {
+                            value = value / 200;
+                        } else {
+                            value = value / 100;
+                        }
+                    }
+                    series['series' + i].push({value: value});//绘制series的数据，对应于表中列
+                }
+                chartData = chartData.concat(series['series' + i]);
+            }
+            trace(chartData);
+//				chartData = (chartData.concat(seriesA.concat(seriesB.concat(seriesAB.concat(seriesO)))));
+            return chartData;
+        }
+
+        /**
+         * 将数据源拼装成chart需要的格式(多序列柱状图)
+         * 运用场景：要展示的数据和时间没关联;
+         * */
+        private function recreateColumnChartData(result:ArrayCollection):Array {
+
+            var chartData:Array = [];
+            var seriesA:Array = [];
+            seriesA.push({seriesName: "A型"});
+            var seriesB:Array = [];
+            seriesB.push({seriesName: "B型"});
+            var seriesAB:Array = [];
+            seriesAB.push({seriesName: "AB型"});
+            var seriesO:Array = [];
+            seriesO.push({seriesName: "O型"});
+            for each (var obj:Array in result.toArray()) {
+                var lab:String = obj[0];
+                chartData.push({label: lab});
+                seriesA.push({value: obj[1] ? obj[1] : "0"});
+                seriesB.push({value: obj[2] ? obj[2] : "0"});
+                seriesAB.push({value: obj[3] ? obj[3] : "0"});
+                seriesO.push({value: obj[4] ? obj[4] : "0"});
+            }
+            chartData = (chartData.concat(seriesA.concat(seriesB.concat(seriesAB.concat(seriesO)))));
+            return chartData;
+        }
+
+        private function loadColumnChartData():void {
+
+            var paramQuery:ParameterObject = new ParameterObject();
+            var ro:RemoteObject = RemoteUtil.getRemoteObject("patientUseBloodImpl", function (rev:Object):void {
+
+                if (rev.data && rev.data.length > 0) {
+                    if (rev.data[1].length > 0) {
+                        var chartData:Array = recreateColumnChartData(rev.data[1]);
+                        var chartParams:ArrayCollection = new ArrayCollection([{caption: "病区血型分布图"},
+                            {yAxisName: "人数"},
+                            {yAxisNamePadding: '0'}, {chartTopMargin: '4'}]);
+                        vgrp1.addElement(initChart("ScrollColumn2D", new ArrayCollection(chartData), chartParams));
+
+                    } else {
+//							_dataProviderChart.removeAll();
+                    }
+                }
+
+            });
+            ro.findBloodTypeDistribution(paramQuery);
+
+        }
+
+        private function loadLineChartData():void {
+
+            var paramQuery:ParameterObject = new ParameterObject();
+            var params:Object = {};
+            params["beginDate"] = "2010-01-01";
+            params["endDate"] = "2014-12-30";
+            params["groupBy"] = "Year"
+            paramQuery.conditions = params;
+            var ro:RemoteObject = RemoteUtil.getRemoteObject("workLoadStatImpl", function (rev:Object):void {
+
+                if (rev.data && rev.data.length > 0) {
+                    if (rev.data[0].length > 0 && rev.data[1].length > 0) {
+                        var chartData:Array = recreateLineChartData(rev.data[1], rev.data[0]);
+                        var chartParams:ArrayCollection = new ArrayCollection([{caption: "血液成分年度对比"},
+                            {numberScaleValue: '1'}, {numberScaleUnit: 'u'},//数据的比例，比例单位
+                            {yAxisName: "单位(u)"}, {showLabels: "1"}, {legendPosition: "right"},//y轴代表的名称，x,y轴是否显示数据，legend图例的位置
+                            {yAxisNamePadding: '0'}, {chartTopMargin: '4'}]);
+                        vgrp.addElement(initChart("ScrollLine2D", new ArrayCollection(chartData), chartParams));
+
+                    } else {
+                        //							_dataProviderChart.removeAll();
+                    }
+                }
+
+            });
+            ro.findWardUseBloodByCon1(paramQuery);
+
+        }
+
+        protected function allCmpList_changeHandler(event:IndexChangeEvent):void {
+            // TODO Auto-generated method stub
+            var menuNo:String = allCmpList.selectedItem ? allCmpList.selectedItem.menuNo : featuredCmpSelect.selectedItem.menuNo;
+            MainFrameUtil.openOneTab(menuNo);
+        }
+
+        protected function grid_itemRollOverHandler(event:FlexDataGridEvent):void {
+            if (event.cell is IFlexDataGridDataCell)//only if we hover over a data cell, not a header or filter or pager cell
+            {
+                var mouseEvent:MouseEvent = event.triggerEvent as MouseEvent;
+                var point:Point =
+                        new Point(mouseEvent ? mouseEvent.stageX : 0, mouseEvent ? mouseEvent.stageY : 0);
+                gdNotice.showTooltip(event.cell as IUIComponent, new ActionMenu(), event.cell.rowInfo.data, point, 0, 0);
+            } else {
+                gdNotice.showTooltip(event.cell as IUIComponent, new ActionMenu(), event.cell.rowInfo.data, null, 0,
+                        0,
+                        true, "none");
+            }
+
+        }
+
+        protected function grid_itemRollOutHandler(event:FlexDataGridEvent):void {
+            gdNotice.hideTooltip()
+        }
+
+        protected function gdNotice_gridRollOverHandler(event:GridEvent):void {
+            // TODO Auto-generated method stub
+            var event:GridEvent = event;
+//				callout.open(gdNotice);
+//				gdNotice.showToaster(event.item.noticeTitle,Toaster.POSITION_BOTTOM_RIGHT);
+//				gdNotice.show(event.item.noticeTitle,Toaster.POSITION_BOTTOM_RIGHT);
+        }
+
+        protected function gdNotice_gridRollOutHandler(event:GridEvent):void {
+            // TODO Auto-generated method stub
+            callout.close();
+        }
+
+        private function onResult(rev:MyFilterResult):void {
+            gdNotice.totalRecords = rev.totalRecords;
+            gdNotice.dataProvider = rev.records as ArrayCollection;
+        }
+
+        private function onFilterPageSortChange(event:ExtendedFilterPageSortChangeEvent):void {
+            ro.findNotice(new MyFilter(event.filter));
+        }
+
+        private function labFun(item:Object, column:FlexDataGridColumn):String {
+            var personId:String = item.createPerson;
+            var person:Object = ArrayCollUtils.findItemInArrayByValue(BaseDict.personIdDict, 'personCode', personId);
+            if (person) return person.personIdName;
+            return "";
+
+        }
+        ]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:Callout id="callout">
+			<s:VGroup>
+				<s:Label text="预览"/>
+				<s:Label id="noticePreview"/>
+				<s:Button label="关闭" click="callout.close()"/>
+			</s:VGroup>
+		</s:Callout>
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="#FFFFFF"
+					   borderVisible="false">
+		<s:VGroup width="100%" paddingTop="4" paddingLeft="4" gap="0" paddingBottom="4" paddingRight="5"
+				  height="100%"			  
+				  >
+				<s:BorderContainer width="100%"
+								   height="100%"
+								   borderStyle="solid"
+								   borderColor="#9ABBE6">
+					<s:VGroup width="100%" height="100%" gap="0">
+						<s:HGroup width="100%" height="55%">
+							
+							<s:VGroup top="35" right="0" bottom="0"  height="100%" width="30%"
+									  horizontalAlign="justify" paddingLeft="20" verticalAlign="middle"
+									  gap="20">
+								
+								<s:Label text="通知"
+										 fontSize="15" fontWeight="bold" paddingTop="17"
+										 paddingLeft="20" />
+								<nestedtreedatagrid:FlexDataGrid width="100%" id="gdNotice" pageSize="8" height="100%"
+																 filterPageSortChange="onFilterPageSortChange(event)"
+																 selectionMode="singleRow"
+																 rowHeight="28"
+																 filterPageSortMode="server"
+																 enablePaging="true"  
+																 enableFilters="true"
+															 >
+									<nestedtreedatagrid:columns>
+										<nestedtreedatagrid:FlexDataGridColumn headerText="主题" headerAlign="left" textAlign="left"
+																			   filterOperation="Contains" filterControl="TextInput"
+																			   dataField="noticeTitle"
+														  />
+										<nestedtreedatagrid:FlexDataGridColumn headerText="发布日期" dataField="createDate" textAlign="left"
+																			   formatterDateFormatString="YYYY-MM-DD" format="date"
+																			   width="120" filterControl="DateComboBox" 
+																			   columnWidthOffset="20"
+														  />
+										<nestedtreedatagrid:FlexDataGridColumn headerText="发布人" 
+																			   labelFunction="labFun"
+																			   icon="@Embed('/assets/images/16x16/columnSearch.png')"
+																			   enableIcon="true"  showIconOnCellHover="true" 
+																			   iconHandCursor="true"  iconRight="4" 
+																			   iconTooltipRenderer="cn.superion.main.renderer.IRNotice"
+																			   dataField="createPerson" textAlign="left" 
+														  />
+									</nestedtreedatagrid:columns>
+								</nestedtreedatagrid:FlexDataGrid>
+								
+							</s:VGroup>
+							
+							<separators:VSeparator height="100%" primaryStrokeColor="#3F9AD8"
+												   paddingBottom="6" paddingTop="21"/>
+							<s:VGroup top="35" right="0" bottom="0" left="0" height="100%" width="35%"
+									  horizontalAlign="justify"
+									  gap="20">
+								
+								<s:Label text="常用菜单"
+										 fontSize="15" fontWeight="bold" paddingTop="17"
+										 paddingLeft="33" />
+								
+								<s:List id="featuredCmpSelect"
+										width="100%" height="100%"
+										focusEnabled="false"
+										borderVisible="false"
+										change="allCmpList_changeHandler(event)"
+										contentBackgroundAlpha="0"
+										>
+									
+									<s:layout>
+										<s:TileLayout requestedColumnCount="2" 
+													  horizontalAlign="justify"
+													  horizontalGap="0" verticalGap="6"
+													  columnAlign="justifyUsingWidth"
+													  orientation="columns" 
+													  paddingRight="20" paddingLeft="20" paddingBottom="45"/>
+									</s:layout>
+									
+									<s:itemRenderer>
+										<fx:Component>
+											<s:ItemRenderer width="100" height="95"
+															clipAndEnableScrolling="false">
+												
+												<s:states>
+													<s:State name="normal" />
+													<s:State name="hovered" stateGroups="hoveredGroup"/>
+													<s:State name="selectedAndHovered" stateGroups="selectedGroup, hoveredGroup"/>
+													<s:State name="selected" stateGroups="selectedGroup"/>
+												</s:states>
+												
+												<s:Rect top="0" right="0" bottom="0" left="0">
+													<s:fill>
+														<s:SolidColor alpha="0" alpha.hoveredGroup="1" 
+																	  color="{outerDocument.getStyle('rollOverColor')}"/>
+													</s:fill>
+												</s:Rect>
+												
+												<s:BitmapImage top="15" left="20"
+															   source="{data.menuIcon}"/>
+												
+												<s:VGroup top="15" left="65" right="10" bottom="10"
+														  horizontalAlign="justify">
+													
+													<s:Label id="labelDisplay2"
+															 color="#000000"
+															 maxDisplayedLines="1"
+															 fontSize="14"
+															 text="{data.menuName}"/>
+													
+													<s:Label id="description"
+															 lineHeight="140%"
+															 lineBreak="toFit"
+															 color="#000000"
+															 maxDisplayedLines="3"
+															 fontSize="12"
+															 text="{data.menuName}"/>
+													
+												</s:VGroup>
+												
+											</s:ItemRenderer>
+										</fx:Component>
+									</s:itemRenderer>
+									
+								</s:List>
+								
+							</s:VGroup>
+							<separators:VSeparator height="100%" primaryStrokeColor="#3F9AD8"
+												   paddingBottom="6" paddingTop="21"/>
+							<s:VGroup top="35" right="0" bottom="0" left="0"
+									  horizontalAlign="justify" height="100%" width="30%"
+									  gap="15">
+								
+								<s:Label text="全部菜单"
+										 fontSize="15" fontWeight="bold" paddingTop="17"
+										 paddingLeft="28"/>
+								
+								<s:Group>
+									<textInput:TextInput id="filterInput" 
+														 left="28" right="20"
+														 prompt="快速查找..."
+														 change="filterCmps(event)"
+														 keyDown="filterInput_keyDownHandler(event)"/>
+								</s:Group>
+								
+								<s:List id="allCmpList"
+										focusEnabled="false"
+										height="100%" width="100%"
+										borderVisible="false"
+										contentBackgroundAlpha="0"
+										change="allCmpList_changeHandler(event)"
+										>
+									
+									<s:layout>
+										<s:VerticalLayout gap="0" 
+														  horizontalAlign="justify"
+														  paddingBottom="45"/>
+									</s:layout>
+									
+									<s:itemRenderer>
+										<fx:Component>
+											<s:ItemRenderer autoDrawBackground="false">
+												
+												<fx:Script>
+													<![CDATA[
+														
+														override public function set data(value:Object):void
+														{
+															super.data = value;
+															
+															img.source = value.parentCode=='0' && value.menuIcon ? value.menuIcon : null;
+															labelDisplay.text = value.menuName ? String(value.menuName) : String(value.menuName);
+															
+															labelDisplay.setStyle("fontWeight", value.moduleDetail==null ? "bold" : "normal");
+															wrapper.left = value.moduleDetail==null ? 13 : 29;
+															
+															background.visible = value.moduleDetail!=null ;
+														}
+														
+													]]>
+												</fx:Script>
+												
+												<s:states>
+													<s:State name="normal" />
+													<s:State name="hovered" stateGroups="hoveredGroup"/>
+													<s:State name="selectedAndHovered" stateGroups="selectedGroup, hoveredGroup"/>
+													<s:State name="selected" stateGroups="selectedGroup"/>
+												</s:states>
+												
+												<s:Rect id="background" 
+														top="0" right="0" bottom="0" left="0">
+													<s:fill>
+														<s:SolidColor alpha="0" alpha.hoveredGroup="1"
+																	  color.hovered="{outerDocument.getStyle('rollOverColor')}"/>
+													</s:fill>
+												</s:Rect>
+												
+												<s:HGroup id="wrapper" 
+														  top="7" right="10" bottom="5"
+														  verticalAlign="middle"
+														  gap="8"
+														  paddingLeft="20">
+													<s:BitmapImage id="img"/>
+													<s:Label id="labelDisplay"
+															 maxDisplayedLines="1"
+															 color="#000000"
+															 fontSize="14"/>
+												</s:HGroup>
+												
+											</s:ItemRenderer>
+										</fx:Component>
+									</s:itemRenderer>
+									
+								</s:List>
+								
+							</s:VGroup>
+							
+						</s:HGroup>
+						<separators:HSeparator width="100%" primaryStrokeColor="#3F9AD8"
+											   paddingLeft="6" paddingRight="6"/>
+						<s:HGroup width="100%" height="44%" paddingLeft="4" paddingTop="2" >
+							<s:VGroup height="100%" width="42%" paddingBottom="5" id="vgrp1"
+									  >
+							</s:VGroup>
+							<s:VGroup  height="100%" width="15%"
+									  horizontalAlign="justify"
+									  gap="10">
+								
+								<s:Label text="时钟"
+										 fontSize="15" fontWeight="bold"
+										 paddingLeft="33" />
+								<clocks:ClockAnalog id="analogClock" 
+													verticalCenter="0" horizontalCenter="0"
+													creationComplete="analogClock.start();"/>
+							</s:VGroup>
+							<s:VGroup width="43%" height="100%" id="vgrp" paddingBottom="5">
+							</s:VGroup>
+						</s:HGroup>
+					</s:VGroup>
+					
+					
+				</s:BorderContainer>
+					
+			</s:VGroup>
+		</s:BorderContainer>
+	<!--<s:BorderContainer width="100%" height="100%" borderVisible="false" backgroundColor="#E9F1F4">
+		
+		<s:HGroup width="100%" height="100%" paddingTop="10" paddingLeft="10"
+				  verticalAlign="justify"
+				  gap="0">
+			
+				
+			<separators:HSeparator depth="1" />
+				
+			
+		</s:HGroup>
+		
+	</s:BorderContainer>-->
+</s:Module>

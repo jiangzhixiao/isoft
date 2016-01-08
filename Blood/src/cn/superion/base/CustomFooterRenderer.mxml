@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="onCreationComplete()" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import com.flexicious.grids.dependencies.IExtendedDataGrid;
+			import com.flexicious.grids.columns.ExtendedDataGridColumn;
+			import com.flexicious.utils.UIUtils;
+			
+			//This is a custom footer renderer, so you can implement a footer
+			//that has a bunch of information other than what is supported
+			//out of the box - i.e. count,sum,average,min,max
+			
+			//we need this to access the owner property of the column
+			import mx.core.mx_internal;
+			use namespace mx_internal;
+			
+			
+			[Bindable()]
+			private var average:String;
+			[Bindable()]
+			private var min:String;
+			[Bindable()]
+			private var max:String;
+			private function onCreationComplete():void{
+				//we set the data property to the column in the core library
+				var col:ExtendedDataGridColumn = data as ExtendedDataGridColumn;
+				//the owner of the column is the grid 
+				var grid:IExtendedDataGrid = data.owner as IExtendedDataGrid; 
+				//we calculate using the grids data provider
+				average = UIUtils.formatCurrency(UIUtils.average(grid.dataProviderNoPaging,data.dataField));	 
+				min = UIUtils.formatCurrency(UIUtils.min(grid.dataProviderNoPaging,data.dataField) as Number);
+				max = UIUtils.formatCurrency(UIUtils.max(grid.dataProviderNoPaging,data.dataField) as Number);
+				//note : in server mode, you may use grid.parent to get access to the actual document
+				//which may contain the variables that store summary information from the server.
+			}
+		]]>
+	</mx:Script>
+
+	<mx:VBox verticalGap="0">
+		<mx:Label text="平均: {average}"/>
+		<mx:Label text="最小: {min}"/>
+		<mx:Label text="最大: {max}"/>	
+	</mx:VBox>
+</mx:Canvas>

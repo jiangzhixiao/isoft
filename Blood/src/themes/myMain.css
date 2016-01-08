@@ -1,0 +1,105 @@
+﻿@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+/*设置常用全局字体大小*/
+global
+{
+	font-family: 宋体;
+	font-size: 14;
+/*	vertical-align: middle;*/
+}
+s|Label{
+	font-family: 宋体;
+	font-size: 14;
+}
+
+/* 自定义的表格的标题居中等 */
+.dataGrid{
+	font-family: 宋体;
+	font-size:14;
+	header-text-align :center;
+	vertical-grid-line-color:#CCCCCC;
+	header-style-name:myHeaderStyleName;
+}
+.myHeaderStyleName{
+	font-family: 宋体;
+	font-size:14;
+	text-align:center;
+}
+mx|LinkButton
+{
+	fontSize: 12;
+	cornerRadius: 4;
+    font-family:宋体;
+	width: 86;
+	height: 26;
+}
+mx|ComboBox
+{
+	
+	color:black;
+}
+
+s|ComboBox
+{
+	color:black;
+}
+
+mx|DateField
+{
+	color:black;
+}
+
+s|TextInput
+{
+	text-align:left;
+	font-family: 宋体;
+	font-size:14;	
+}
+
+mx|FormItem {
+	font-size:14;
+	font-family: 宋体;
+	indicatorGap:5;
+	label-style-name:forItemStyle;
+	text-field-class:textFieldStyle;
+	
+}
+.forItemStyle{
+	font-color:red;
+}
+.textFieldStyle{
+	font-color:black;
+}
+
+
+.radioButton{
+	font-family: 宋体;
+	font-size:14;	
+}
+.irCheckBox{
+	border-color:red
+}
+
+.errorTip{
+	color:#FFFFFF;
+	fontSize:14;
+	fontWeight:"bold";
+	shadowColor: #000000;
+	borderColor: #CE2929;
+	borderStyle: "errorTipRight";
+	paddingBottom: 4;
+	paddingLeft: 4;
+	paddingRight: 4;
+	paddingTop: 4;
+}
+mx|ToolTip{
+	backgroundAlpha: 0.8;
+	cornerRadius: 5;
+	backgroundColor: #b51515;
+	color: #f0ffff;
+	font-size:14;
+}
+s|TitleWindow{
+	text-align:left;
+}

@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="100%"
+				   height="100%"
+				   backgroundColor="0xE2E8E8"
+				   borderVisible="false"
+				   xmlns:controls="cn.superion.base.components.controls.*"
+				   xmlns:view="cn.superion.blood.user.role.view.*"
+				   creationComplete="init()">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.vo.system.SysRole;
+			import cn.superion.vo.system.SysRoleData;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+
+			//打开窗口初始化事件
+			protected function init():void
+			{
+				// TODO Auto-generated method stub
+				//初始化当前菜单
+				btQuery_clickHandler();
+				//queryMenusByRoleCode('');
+			}
+
+			//回车事件
+			protected function queryRoleName_keyDownHandler(event:KeyboardEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (event.keyCode == 13)
+				{
+					btQuery_clickHandler();
+				}
+			}
+
+			//查询事件 --- 保存事件又调用
+			public function btQuery_clickHandler():void
+			{
+				// TODO Auto-generated method stub
+
+				var roleName:String=queryRoleName.text == null ? '' : queryRoleName.text;
+
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject("roleImpl", queryClickCallback);
+				remoteObj.findRoleListByRoleName(roleName);
+			}
+
+			private function queryClickCallback(rev:Object):void
+			{
+				//记录当前操作位置，以便回滚到操作的位置
+				var currentIndex:int=dgRole.selectedIndex;
+
+				dgRole.dataProvider=rev.data as ArrayCollection;
+
+				//回滚上次操作的位置
+				if (currentIndex >= rev.data.length)
+				{
+					currentIndex=rev.data.length - 1;
+				}
+				dgRole.selectedIndex=currentIndex;
+				if (currentIndex != -1)
+				{
+					dgRole.scrollToIndex(currentIndex);
+				}
+				else
+				{
+					dgRole.selectedIndex=0;
+				}
+
+				//选择当前行
+				var selectedRole:SysRole=dgRole.selectedItem as SysRole;
+				if (selectedRole)
+				{
+					//加载当前菜单
+					queryMenusByRoleCode(selectedRole.roleCode);
+				}
+				else
+				{
+					queryMenusByRoleCode('');
+				}
+			}
+
+			// 初始获取所有的菜单 
+			private function queryMenusByRoleCode(roleCode:String):void
+			{
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject("roleImpl", queryMenusCallback);
+				remoteObj.findMenuListByRoleCode(roleCode);
+			}
+
+			private function queryMenusCallback(rev:Object):void
+			{
+				if (rev == null && rev.data == null)
+				{
+					return;
+				}
+				var dataArray:ArrayCollection=rev.data as ArrayCollection;
+				//
+				var config:Object={};
+				config.dataList=dataArray;
+				config.labelField='menuName';
+				config.rootParentCode='00';
+				config.parentCodeField='appParentCode';
+				config.codeField='appMenuNo';
+				//
+				var treeData:*=ArrayCollUtils.buildTreeData(config);
+				if (treeData.menuName == "root")
+				{
+					//多个应用程序
+					treeData.menuName="应用程序";
+				}
+				menusTree.dataProvider=treeData;
+				menusTree.openItems=[treeData];
+			}
+
+			//共享标志
+			private function shareIndicLabel(item:Object, column:DataGridColumn):String
+			{
+				if (item.shareIndic == '' || item.shareIndic == '0' || item.shareIndic == null)
+				{
+					return '否';
+				}
+				else
+				{
+					return '是'
+				}
+			}
+
+			//删除所选中记录
+			public function delRole():void
+			{
+				var selectedItem:SysRole=dgRole.selectedItem as SysRole;
+				if (!selectedItem)
+				{
+					Alert.show("请选择角色记录，然后再点击删除。", "提示信息");
+					return;
+				}
+				if (selectedItem.roleCode <= '02')
+				{
+					Alert.show(selectedItem.roleName + "为系统角色，您不能进行删除操作！", "提示信息");
+					return;
+				}
+				Alert.show("您是否要删除： " + selectedItem.roleName + "角色信息?", "提示信息", Alert.YES | Alert.NO, null, deleteCallback);
+			}
+
+			private function deleteCallback(rev:CloseEvent):void
+			{
+				if (rev.detail == Alert.YES)
+				{
+					var selectedItem:SysRole=dgRole.selectedItem as SysRole;
+					var remoteObj:RemoteObject=RemoteUtil.getRemoteObject("roleImpl", function(rev:Object):void
+						{
+							Alert.show("删除：" + selectedItem.roleName + "角色成功，请确定！", "提示信息");
+							btQuery_clickHandler();
+						});
+					remoteObj.delRoleByRoleCode(selectedItem.roleCode);
+				}
+			}
+
+			//单击树的事件
+			protected function menusTree_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				//当选所选择的角色
+				var selectedRole:SysRole=dgRole.selectedItem as SysRole;
+				var roleCode:String=selectedRole ? selectedRole.roleCode : '';
+				//当前所选择的树菜单编号
+				var selectedMenuItem:SysRoleData=menusTree.selectedItem as SysRoleData;
+				var application:String=selectedMenuItem ? selectedMenuItem.application : '';
+				var menuNo:String=selectedMenuItem ? selectedMenuItem.menuNo : '';
+
+				var remoteObj:RemoteObject=RemoteUtil.getRemoteObject("roleImpl", function(rev:Object):void
+					{
+						if (rev != null && rev.data != null)
+						{
+							dgDataView.dataProvider=rev.data as ArrayCollection;
+						}
+					});
+				remoteObj.findDataListByRoleCode(roleCode, application, menuNo);
+			}
+
+			//单击角色按钮
+			protected function dgRole_itemClickHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				var selectedRole:SysRole=dgRole.selectedItem as SysRole;
+				var roleCode:String=selectedRole ? selectedRole.roleCode : '';
+
+				this.queryMenusByRoleCode(roleCode);
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup width="100%"
+			  height="100%">
+		<!-- 查询条件区 -->
+		<s:HGroup width="100%"
+				  paddingLeft="5"
+				  paddingTop="5">
+			<mx:FormItem label="角色名称"
+						 fontSize="14"
+						 color="#0000FF">
+				<s:TextInput id="queryRoleName"
+							 keyDown="queryRoleName_keyDownHandler(event)"/>
+			</mx:FormItem>
+			<mx:LinkButton id="btQuery"
+						   height="24"
+						   label=" 查 找"
+						   skin="mx.skins.halo.ButtonSkin"
+						   icon="@Embed(source='/assets/images/button/query20.png')"
+						   click="btQuery_clickHandler()"/>
+		</s:HGroup>
+		<!-- 主体部分 -->
+		<s:BorderContainer width="100%"
+						   height="100%"
+						   backgroundColor="0xE2E8E8"
+						   borderStyle="solid"
+						   borderColor="#9ABBE6"
+						   borderVisible="false">
+			<s:HGroup width="100%"
+					  height="100%">
+				<!-- 角色显示列表 -->
+				<controls:SuperDataGrid id="dgRole"
+										width="300"
+										height="100%"
+										styleName="dataGrid"
+										verticalGridLineColor="#cccccc"
+										colorWhereField="shareIndic"
+										colorWhereValue="0"
+										itemClick="dgRole_itemClickHandler(event)">
+					<controls:columns>
+						<mx:DataGridColumn headerText="角色编号"
+										   dataField="roleCode"
+										   width="1.5"/>
+						<mx:DataGridColumn headerText="角色名称"
+										   dataField="roleName"
+										   width="3"/>
+						<mx:DataGridColumn headerText="共享"
+										   dataField="shareIndic"
+										   width="1"
+										   labelFunction="{shareIndicLabel}"
+										   textAlign="center"/>
+					</controls:columns>
+				</controls:SuperDataGrid>
+				<!-- 已授权菜单树 -->
+				<s:VGroup width="100%"
+						  height="100%"
+						  verticalAlign="middle">
+					<s:Label text="已授权菜单"
+							 paddingTop="2"
+							 color="#0000FF"/>
+					<controls:CheckBoxTree id="menusTree"
+										   width="100%"
+										   height="100%"
+										   chkEditable="false"
+										   labelField="menuName"
+										   checkField="hasPurview"
+										   click="menusTree_clickHandler(event)"/>
+				</s:VGroup>
+				<!-- 已授权操作权限 -->
+				<view:RoleDataList id="dgDataView"
+								   width="250"/>
+			</s:HGroup>
+		</s:BorderContainer>
+	</s:VGroup>
+</s:BorderContainer>

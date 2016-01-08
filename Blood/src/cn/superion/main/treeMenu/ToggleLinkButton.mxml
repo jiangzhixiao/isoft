@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="136" height="44" backgroundAlpha="0" backgroundColor="#ffffff"
+				   borderVisible="false" click="linkbutton1_clickHandler(event)"
+				   creationComplete="doInit()">
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.main.view.TabPane;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.containers.TabNavigator;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.ModuleEvent;
+			
+			import spark.components.Group;
+			import spark.components.HGroup;
+			import spark.components.NavigatorContent;
+			import spark.modules.ModuleLoader;
+			
+			import vamos.components.pane.Pane;
+			import vamos.components.paneNavigators.tabPaneNavigator.TabPaneNavigator;
+			private var _selected:Boolean=false;
+			private var _label:String;
+			private var _linkUrl:String;
+			private var _menuNo:String; //菜单号，关联sys_application_menu中的menu_no
+			private var _linkTitle:String;
+			
+			private var _buttonBar:HGroup;
+			[Bindable]
+			private var _buttonIcon:String;
+			[Bindable]
+			private var _paddingLeft:Number=0;
+			private var _mainTabHost:TabPaneNavigator;
+			private var _parentCon:TreePanel;
+			
+			public var userDefinedSign:String = "0";//用户自定义标识
+			
+			public function get parentCon():TreePanel
+			{
+				return _parentCon;
+			}
+
+			public function set parentCon(value:TreePanel):void
+			{
+				_parentCon = value;
+			}
+
+			public function get buttonIcon():String
+			{
+				return _buttonIcon;
+			}
+
+			public function set buttonIcon(value:String):void
+			{
+				_buttonIcon = value;
+			}
+
+			public function get menuNo():String
+			{
+				return _menuNo;
+			}
+			
+			public function set menuNo(value:String):void
+			{
+				_menuNo = value;
+			}
+
+			
+			public function get buttonBar():HGroup
+			{
+				return _buttonBar;
+			}
+
+			public function set buttonBar(value:HGroup):void
+			{
+				_buttonBar = value;
+			}
+
+			public function get mainTabHost():TabPaneNavigator
+			{
+				return _mainTabHost;
+			}
+
+			public function set mainTabHost(value:TabPaneNavigator):void
+			{
+				_mainTabHost = value;
+			}
+
+			public function get linkTitle():String
+			{
+				return _linkTitle;
+			}
+
+			public function set linkTitle(value:String):void
+			{
+				_linkTitle = value;
+			}
+
+			public function get linkUrl():String
+			{
+				return _linkUrl;
+			}
+
+			public function set linkUrl(value:String):void
+			{
+				_linkUrl = value;
+			}
+
+			public function doInit():void{
+				if(!_buttonIcon){
+					_buttonIcon=MainFrameUtil. gDefaultIcon;
+				}
+				_paddingLeft=parentCon.treeIcon.x
+				if(_paddingLeft>20){
+					_paddingLeft+=10
+				}
+				mlabel.text=_label;
+			}
+			public function get label():String
+			{
+				return mlabel.text;
+			}
+
+			public function set label(value:String):void
+			{
+				_label=value;
+			}
+
+			public function get selected():Boolean
+			{
+				return _selected;
+			}
+
+			public function set selected(value:Boolean):void
+			{
+				_selected = value;
+			}
+
+			public function linkbutton1_clickHandler(event:MouseEvent):void
+			{
+				if(userDefinedSign == "1")
+				{
+					navigateToURL(new URLRequest(linkUrl),"_blank");
+					return;
+				}
+				
+				if(userDefinedSign == "2")
+				{
+					if(ExternalInterface.available){ExternalInterface.call("loadLocalExec",linkUrl);}
+					return;
+				}
+				
+				MainFrameUtil. closeOldTab()
+				clearSelected();
+				_selected=true
+				setButtonStyle(this);
+				
+				callLater(switchTab);
+			}
+			private function switchTab():void{
+				var toggleButton:ToggleLinkButton=this;
+				if(toggleButton.selected){
+					var pane:TabPane=MainFrameUtil.gTabMap[toggleButton.menuNo];
+					
+					if(!pane)
+					{
+						
+						pane = new TabPane();
+						pane.paneTitle = toggleButton.linkTitle;
+						pane.menuNo = toggleButton.menuNo;
+						pane.url = toggleButton.linkUrl;
+						
+						_mainTabHost.addElement(pane);
+						MainFrameUtil.gTabMap[toggleButton.menuNo]=pane;
+						
+						
+					}
+					_mainTabHost.selectedChild=pane;
+				}
+			}
+			private function invalidateNav():void
+			{
+				_mainTabHost.invalidateDisplayList();
+			}
+			private function createTitleButton():CloseButton{
+				var titleButton:CloseButton=new CloseButton();
+				_buttonBar.addElement(titleButton);
+				return titleButton;
+			}
+			/**
+			 * 清除垂直菜单的所有选中
+			 * */
+			public function clearSelected(fisAllClear:Boolean=false):void{
+				var buttons:Array= FormUtils.getElementsByTag(this.parentDocument,ToggleLinkButton);
+				disSelectItem(buttons);
+				if(this.parentDocument){
+					buttons= FormUtils.getElementsByTag(this.parentDocument,ToggleLinkButton);
+					disSelectItem(buttons,fisAllClear);
+				}
+			}
+			private function disSelectItem(faryItem:Array,fisAllClear:Boolean=false):void{
+				for each(var item:ToggleLinkButton in faryItem){
+					if(item==this&&!fisAllClear){
+						continue;
+					}
+					item.selected=false;
+					setButtonStyle(item);
+				}
+			}
+			public function setButtonStyle(fitem:ToggleLinkButton):void{
+				if(fitem.selected){
+					fitem.setStyle("backgroundAlpha","1");
+					fitem.graphics.lineStyle(1)
+					fitem.graphics.moveTo(0,-1)
+					fitem.graphics.lineTo(fitem.width-2,-1)	
+					fitem.graphics.moveTo(0,fitem.height)	
+					fitem.graphics.lineTo(fitem.width-2,fitem.height)	
+				}else{
+					fitem.setStyle("backgroundAlpha","0");
+					fitem.graphics.clear();
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="0" verticalAlign="middle"/>
+	</s:layout>
+	<s:Spacer width="{_paddingLeft}"/>
+	<s:Image source="{_buttonIcon}" verticalCenter="0"/>
+	<s:Label id="mlabel" fontSize="12" verticalCenter="0" buttonMode="true"/>
+</s:BorderContainer>

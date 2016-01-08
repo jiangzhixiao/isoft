@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow showCloseButton="true" close="PopUpManager.removePopUp(this);" xmlns:mx="http://www.adobe.com/2006/mxml" title="导出选项" xmlns:controls="com.flexicious.controls.*" width="400">
+	<mx:Script>
+		<![CDATA[
+			import com.flexicious.export.ExportOptions;
+			import com.flexicious.export.exporters.Exporter;
+			import com.flexicious.grids.dependencies.IExtendedDataGrid;
+			import com.flexicious.grids.events.PrintExportOptions;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			
+		/*
+		* This is the view that shows up when the user
+		* clicks on the export button. The grid has a default implementation
+		* of this view so this is not a required screen, but it is 
+		* provided in the client section of the code
+		* in case there are any UI customizations that you wish to make
+		* All it needs is a ok property to tell the controller that the
+		* user wishes to continue. 
+		*/
+		
+			[Bindable()]
+			public var exportOptions:ExportOptions=new ExportOptions();
+
+			public var _grid:IExtendedDataGrid;
+
+			public function get grid():IExtendedDataGrid
+			{
+				return _grid;
+			}
+
+			public function set grid(val:IExtendedDataGrid):void
+			{
+				_grid=val;
+				enablePaging=val.enablePaging;
+				pageCount=val.pageSize > 0 ? val.totalRecords / val.pageSize : 1;
+				selectedObjectsCount=val.selectedObjects ? val.selectedObjects.length : 0;
+			}
+			[Bindable()]
+			public var enablePaging:Boolean=false;
+			[Bindable()]
+			public var pageCount:int=1;
+			[Bindable()]
+			public var selectedObjectsCount:int=0;
+
+			private function onOk():void
+			{
+				exportOptions.printExportOption=grpExportOptions.selectedValue.toString();
+				if (rbnSpecifyPages.selected)
+				{
+					if (Validator.validateAll([vldTxtPageFrom, vldTxtPageTo]).length == 0)
+					{
+						exportOptions.pageFrom=Number(txtPageFrom.text);
+						exportOptions.pageTo=Number(txtPageTo.text);
+						if (exportOptions.pageFrom <= exportOptions.pageTo)
+						{
+							close(Alert.OK);
+						}
+						else
+						{
+							Alert.show("Please ensure that the 'page from' is less than or equal to 'page to'");
+						}
+					}
+				}
+				else
+				{
+					close(Alert.OK);
+				}
+			}
+
+			private function close( dialogResult:uint):void{
+				var closeEvent:CloseEvent = new CloseEvent(Event.CLOSE);
+				closeEvent.detail=dialogResult;
+				dispatchEvent(closeEvent);
+			}
+		]]>
+	</mx:Script>
+	<mx:NumberValidator id="vldTxtPageFrom" source="{txtPageFrom}" property="text" required="true" minValue="1" maxValue="{pageCount+1}"/>
+	<mx:NumberValidator id="vldTxtPageTo" source="{txtPageTo}" property="text" required="true" minValue="1" maxValue="{pageCount+1}"/>
+
+	<mx:RadioButtonGroup id="grpExportOptions"/>
+	<mx:RadioButton id="rbnCurrentPage" group="{grpExportOptions}" label="当前页" selected="true" value="{PrintExportOptions.PRINT_EXPORT_CURRENT_PAGE}"/>
+	<mx:RadioButton id="rbnAllPages" group="{grpExportOptions}" label="所有页" value="{PrintExportOptions.PRINT_EXPORT_ALL_PAGES}" enabled="{enablePaging}"/>
+	<mx:RadioButton id="rbnSpecifyPages" group="{grpExportOptions}" label="指定页" value="{PrintExportOptions.PRINT_EXPORT_SELECTED_PAGES}" enabled="{enablePaging}"/>
+	<mx:HBox enabled="{rbnSpecifyPages.selected}">
+		<mx:TextInput id="txtPageFrom" width="50"/>
+		<mx:Label text="到"/>
+		<mx:TextInput id="txtPageTo" width="50"/>
+		<mx:Label text="(最大 {pageCount+1})"/>
+	</mx:HBox>
+	<mx:RadioButton id="rbnSelectedRecords" group="{grpExportOptions}" label="选中记录 ({selectedObjectsCount==0?'None Selected':selectedObjectsCount})" value="{PrintExportOptions.PRINT_EXPORT_SELECTED_RECORDS}" enabled="{selectedObjectsCount>0}"/>
+	<mx:HBox>
+		<mx:Label text="导出格式："/>
+		<controls:ComboBox id="cbxExporters" dataProvider="{exportOptions.exporters}" labelField="name" dataField="name" bindingSource="{exportOptions}" bindingProperty="exporterName" change="exportOptions.exporter=cbxExporters.selectedItem as Exporter"/>
+	</mx:HBox>
+
+
+	<mx:ControlBar horizontalAlign="right">
+		<mx:Button label="导出" click="onOk()"/>
+		<mx:Button label="取消" click="PopUpManager.removePopUp(this);"/>
+	</mx:ControlBar>
+</mx:TitleWindow>

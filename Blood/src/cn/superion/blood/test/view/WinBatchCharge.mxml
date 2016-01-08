@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	 批量计费
+	 author:吴小娟   2011.06.21
+	 checked by
+-->
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="300"
+			   height="470"
+			   backgroundColor="0xE2E8E8"
+			   title="批量计费列表"
+			   close="btReturn_clickHandler(null)"
+			   creationComplete="doInit()"
+			   xmlns:controls="cn.superion.base.components.controls.*"
+			   xmlns:util="cn.superion.blood.util.*" >
+
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.RemoteUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.ListCollectionView;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import mx.rpc.remoting.RemoteObject;
+
+			public var callback:Function;
+			public var data:Object;
+			private var _this:*=this;
+
+			/**
+			 * 关闭按钮
+			 * */
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+			/**
+			 * 初始化
+			 * */
+			protected function doInit():void
+			{
+				queryDate.selectedDate=data.parentWin.queryDate.selectedDate;
+				queryDate_changeHandler();
+			}
+
+			/**
+			 * 按检验日期查询
+			 * */
+			protected function queryDate_changeHandler():void
+			{
+				var ro:RemoteObject=RemoteUtil.getRemoteObject("bloodCheckImpl", function(rev:Object):void
+					{
+						if (rev.data && rev.data.length > 0)
+						{
+							gridPatientList.dataProvider=rev.data;
+							return;
+						}
+						gridPatientList.dataProvider=null;
+					});
+				ro.findUnchargedByExamDate(queryDate.selectedDate);
+			}
+
+			/**
+			 * 获取勾选的病人信息
+			 * 返回autoId集合
+			 * */
+			private function getSelectItem():ArrayCollection
+			{
+				var lnewList:ArrayCollection=new ArrayCollection();
+				var laryList:ArrayCollection=gridPatientList.dataProvider as ArrayCollection;
+				for each (var item:Object in laryList)
+				{
+					if (item.isSelected)
+					{
+						lnewList.addItem(item.autoId);
+					}
+				}
+				return lnewList;
+			}
+
+			/**
+			 * 确认按钮
+			 * */
+			protected function btConfirm_clickHandler(event:MouseEvent):void
+			{
+				if (getSelectItem().length == 0)
+				{
+					Alert.show("请选择要批量计费的病人信息！", "提示信息");
+					return;
+				}
+				
+				var ro:RemoteObject=RemoteUtil.getRemoteObject('bloodCheckImpl', function(rev:Object):void
+					{
+						Alert.show("批量计费成功！", "提示信息");
+						btConfirm.enabled = true;
+						data.parentWin.queryDate.selectedDate=queryDate.selectedDate;
+						data.parentWin.queryDate_changeHandler();
+						btReturn_clickHandler(null);
+					});
+				ro.saveBatchCheckCharge(getSelectItem());
+				btConfirm.enabled = false;
+			}
+
+			/**
+			 * 全选
+			 * */
+			protected function selectAll_clickHandler():void
+			{
+				for each (var item:Object in gridPatientList.dataProvider)
+				{
+					item.isSelected = this.selAll.selected;
+					ListCollectionView(gridPatientList.dataProvider).itemUpdated(item, "isSelected");
+				}
+			}
+
+			/**
+			 * 确定回车事件处理方法
+			 * */
+			protected function btConfirm_keyUpHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER)
+				{
+					btConfirm_clickHandler(null);
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:VerticalLayout paddingLeft="10"
+						  paddingRight="10"
+						  paddingTop="10"
+						  paddingBottom="10"/>
+	</s:layout>
+
+	<s:VGroup width="100%"
+			  height="100%">
+		<s:HGroup verticalAlign="middle"
+				  width="100%">
+			<s:Label text="检验日期"
+					 fontSize="14"
+					 color="blue"/>
+			<mx:DateField id="queryDate"
+						  width="150"
+						  monthNames="['1','2','3','4','5','6','7','8','9','10','11','12']"
+						  dayNames="['日','一','二','三','四','五','六']"
+						  formatString="YYYY-MM-DD"
+						  editable="false"
+						  change="queryDate_changeHandler()"/>
+		</s:HGroup>
+		<controls:SuperDataGrid width="100%"
+								height="100%"
+								id="gridPatientList"
+								textAlign="center"
+								wordWrap="true"
+								styleName="dataGrid">
+			<controls:columns>
+				<mx:DataGridColumn headerText="选择"
+								   width="50"
+								   sortable="false"
+								   textAlign="center"
+								   editable="false">
+					<mx:itemRenderer>
+						<!-- change="data.isSelected=this.selected;"-->
+						<fx:Component>
+							<util:CBoxIR 
+								change="checkbox1_changeHandler(event)"
+								selected="{this.parentDocument.owner.selAll.selected}"
+								textAlign="center">
+								<fx:Script>
+									<![CDATA[
+										import mx.collections.ListCollectionView;
+										import mx.collections.ArrayCollection;
+										import mx.controls.Alert;
+										protected function checkbox1_changeHandler(event:Event):void
+										{
+											// TODO Auto-generated method stub
+											if(event.currentTarget.selected == false){
+												//this.parentDocument.selAll.selected = false;
+												var tempAry23:ArrayCollection = parentDocument.owner.gridPatientList.dataProvider as ArrayCollection
+												for each(var item0:Object in tempAry23){
+													if(item0.sampleNo == data.sampleNo){
+														item0.isSelected = false;
+														ListCollectionView(parentDocument.owner.gridPatientList.dataProvider).itemUpdated(item0, "isSelected");
+														break;
+													}
+												}
+												parentDocument.owner.gridPatientList.getRawDataProvider().invalidateList();
+												return;
+											}
+											var tempAry:ArrayCollection = parentDocument.owner.gridPatientList.dataProvider as ArrayCollection
+											for each(var item:Object in tempAry){
+												if(item.sampleNo == data.sampleNo){
+													item.isSelected = this.selected;
+													ListCollectionView(parentDocument.owner.gridPatientList.dataProvider).itemUpdated(item, "isSelected");
+												}
+											}
+											parentDocument.owner.gridPatientList.getRawDataProvider().invalidateList();
+										}
+									]]>
+								</fx:Script>
+							</util:CBoxIR>
+						</fx:Component>
+					</mx:itemRenderer>
+				</mx:DataGridColumn>
+				<mx:DataGridColumn headerText="样本号"
+								   width="70"
+								   dataField="sampleNo"
+								   textAlign="left"/>
+				<mx:DataGridColumn headerText="姓名"
+								   width="70"
+								   dataField="personName"/>
+				<mx:DataGridColumn headerText="autoId"
+								   dataField="autoId"
+								   visible="false"/>
+			</controls:columns>
+		</controls:SuperDataGrid>
+		<s:HGroup width="50"
+				  height="30"
+				  horizontalAlign="center"
+				  verticalAlign="middle">
+			<s:CheckBox id="selAll"
+						label="全选"
+						selected="{gridPatientList.dataProvider[0].isSelected}"
+						click="selectAll_clickHandler()"/>
+		</s:HGroup>
+	</s:VGroup>
+	<s:HGroup width="100%"
+			  height="31"
+			  horizontalAlign="right"
+			  verticalAlign="middle"
+			  gap="5">
+		<mx:LinkButton id="btConfirm"
+					   icon="@Embed('//assets/images/button/confirm20.png')"
+					   label=" 确 认 "
+					   skin="mx.skins.halo.ButtonSkin"
+					   height="26"
+					   click="btConfirm_clickHandler(event)"/>
+		<mx:LinkButton id="btReturn"
+					   height="26"
+					   label=" 返 回 "
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/return20.png')"
+					   click="btReturn_clickHandler(event)"/>
+	</s:HGroup>
+</s:TitleWindow>

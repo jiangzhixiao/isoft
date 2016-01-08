@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:s="library://ns.adobe.com/flex/spark"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   layout="vertical"
+		   width="100%"
+		   height="100%"
+		   paddingBottom="5"
+		   paddingLeft="5"
+		   paddingRight="5"
+		   paddingTop="5"
+		   horizontalGap="0"
+		   verticalGap="0"
+		   xmlns:controls="cn.superion.base.components.controls.*"
+		   creationComplete="inita(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.base.AppInfo;
+			import cn.superion.base.config.BaseDict;
+			import cn.superion.base.config.ParameterObject;
+			import cn.superion.base.util.ArrayCollUtils;
+			import cn.superion.base.util.DateUtil;
+			import cn.superion.base.util.FormUtils;
+			import cn.superion.base.util.LoadModuleUtil;
+			import cn.superion.base.util.PurviewUtil;
+			import cn.superion.base.RemoteUtil;
+			import cn.superion.blood.receive.view.BorrowCenterAdd;
+			import cn.superion.blood.receive.view.BorrowCenterImp;
+			import cn.superion.blood.util.DefaultPage;
+			import cn.superion.main.treeMenu.MainFrameUtil;
+			import cn.superion.main.treeMenu.ToggleLinkButton;
+			import cn.superion.report2.ReportPrinter;
+			import cn.superion.report2.ReportViewer;
+			import cn.superion.vo.blood.BloodRdsMaster;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.modules.ModuleLoader;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			import vamos.components.pane.Pane;
+			import vamos.components.paneNavigators.tabPaneNavigator.TabPaneNavigator;
+
+			private const MENU_NO:String="0101";
+			private const PARA_CODE:String='0102'
+//			private var para:ParameterObject=new ParameterObject();
+//			[Bindable]
+			public var bloodRdsMaster:BloodRdsMaster;
+			[Bindable]
+			public var destination:String="borrowCenterImpl";
+
+
+			private function inita(event:Event):void
+			{
+				trace("inita========");
+				if(DefaultPage.isLinkApply == true)
+				{
+//					btNew_clickHandler(event);
+				}
+				var para:ParameterObject=new ParameterObject();
+				para.conditions={"beginBillDate": beginBillDate.selectedDate, "endBillDate": endBillDate.selectedDate, "billNo": billNo.text ==null ? " " : billNo.text};
+				gridBorrowCenterList.config(para, destination, "findCurListByCondition", queryFunction,null,true);
+				//新建数据，蓝色字体
+				gridBorrowCenterList.grid.colorWhereField="currentStatus";
+				gridBorrowCenterList.grid.colorWhereValue='0';
+				gridBorrowCenterList.grid.colorWhereColor=0x0000FF;
+			
+//				gridBorrowCenterList.reQuery(para);
+				//读取参数，判断是否自动审核
+//				var ro:RemoteObject=RemoteUtil.getRemoteObject("centerSysParamImpl",function(rev:Object):void
+//				{
+//					if(rev==null||rev.data==null||rev.data.length < 1||rev.data[0]==1)
+//					{
+//						btCheck.enabled=false;
+//					}
+//				});
+//				ro.findSysParamByParaCode(PARA_CODE);
+			}
+
+			//定义的回调函数
+			private function queryFunction(rev:Object):void
+			{
+				if (rev.data.length == 0) 
+					return;
+				var lst:ArrayCollection=rev.data as ArrayCollection;
+				gridBorrowCenterList.grid.dataProvider=lst;
+			}
+
+			//新建
+			protected function btNew_clickHandler(event:Event):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "01"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				
+//				var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+//				var testWin:BorrowCenterAdd=BorrowCenterAdd(PopUpManager.createPopUp(topApp, BorrowCenterAdd, true));
+//				testWin.data={parentWin: this, btNewBeClicked: true};
+//				testWin.parentWin = this;
+//				
+				var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+				var win:BorrowCenterAdd=new BorrowCenterAdd();
+				win.data={parentWin: this, btNewBeClicked: true};
+				PopUpManager.addPopUp(win, this, true);
+				FormUtils.fullScreenWindow(win);
+			}
+			
+			//返回主页面
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				
+				MainFrameUtil.closeTab(this);
+				
+//				MainFrameUtil.closeTab(this);
+//				var nav:TabPaneNavigator = this.parentDocument.owner;
+//				var removedPane:Pane =nav.selectedChild as Pane;
+//				var removedIndex:int = nav.selectedIndex;
+//				var panes:ArrayCollection = nav.tabBarPart.dataProvider as ArrayCollection;
+//				panes.removeItem(removedPane);
+////				panes.removeItemAt(removedIndex);
+//				nav.removeElement(removedPane);
+//				var menu:ToggleLinkButton = MainFrameUtil.gToggleButtonMap[removedPane.id];
+//				menu.clearSelected(true);
+//				MainFrameUtil.gTabMap[removedPane.id] = null;
+			}
+
+			//查询
+			public function btQuery_clickHandler():void
+			{
+				var parame:ParameterObject=new ParameterObject();
+				parame.conditions={"beginBillDate": beginBillDate.selectedDate, "endBillDate": endBillDate.selectedDate, "billNo": billNo.text == null ? " " : billNo.text, "productCode": productCode.text== null ? " " : productCode.text};
+				gridBorrowCenterList.reQuery(parame);
+			}
+
+			protected function btPrint_clickHandler(lstrPurview:String, isPrintSign:String):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, lstrPurview))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				var laryWillPrintItems:ArrayCollection=null;
+				laryWillPrintItems=gridBorrowCenterList.grid.dataProvider as ArrayCollection;
+
+				for each (var it:Object in laryWillPrintItems)
+				{
+					var newIt:Object=new Object();
+					newIt=it;
+					it.rhSign=it.rhSign == "1" ? "阴性" : "阳性";
+				}
+				var dict:Dictionary=new Dictionary();
+				dict["单位名称"]=AppInfo.sysUser.unitsName
+				dict["日期"]=DateField.dateToString(new Date(), 'YYYY-MM-DD');
+				dict["主标题"]="血液领取入库";
+				dict["制表人"]=AppInfo.sysUser.userName;
+				dict["开始日期"]=DateField.dateToString(beginBillDate.selectedDate, 'YYYY-MM-DD');
+				dict["结束日期"]=DateField.dateToString(endBillDate.selectedDate, 'YYYY-MM-DD');
+				dict["单据编号"]=billNo.text;
+				dict["血袋编号"]=productCode.text;
+				var strXml:String = "report/blood/receive/gridBorrowCenterList.xml";
+				loadReportXml(strXml,laryWillPrintItems,dict,isPrintSign);
+			}
+			private function loadReportXml(reportUrl:String,faryDetails:ArrayCollection, fdict:Dictionary,fprintSign:String):void{
+				var loader:URLStream=new URLStream();
+				loader.addEventListener(Event.COMPLETE, function(event:Event):void{
+					var stream:URLStream = event.currentTarget as URLStream;
+					var xml:XML=XML(stream.readMultiByte(stream.bytesAvailable,"utf-8"));
+					if (fprintSign == "1")
+					{
+						ReportPrinter.Print(xml, faryDetails, fdict);
+					}
+					else
+					{
+						ReportViewer.Instance.Show(xml, faryDetails, fdict);
+					}
+				});
+				var url:URLRequest = new URLRequest(reportUrl);
+				loader.load(url);
+			}
+			protected function btImport_clickHandler(event:MouseEvent):void
+			{
+				var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+				var win:BorrowCenterImp=PopUpManager.createPopUp(topApp, BorrowCenterImp, true) as BorrowCenterImp;
+				win._parent=this;
+				FormUtils.fullScreenWindow(win);
+			}
+
+			//修改验证
+			private function saveValidate():Boolean
+			{
+				if (this.billNo.text == '')
+				{
+					Alert.show('主题不能为空!', '提示');
+					return false;
+				}
+				return true;
+			}
+
+			//修改事件
+			protected function btChange_clickHandler(event:Event):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "02"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				if (!gridBorrowCenterList.grid.selectedItem)
+				{
+					Alert.show('请先选择一条记录', '提示');
+					return
+				}
+				var topApp:DisplayObject=DisplayObject(FlexGlobals.topLevelApplication);
+				var win:BorrowCenterAdd=new BorrowCenterAdd();
+				win.data={masterItem: gridBorrowCenterList.grid.selectedItem, parentWin: this, btnModifyBeClicked: true};
+				win.title='修改';
+				PopUpManager.addPopUp(win, this, true);
+				FormUtils.fullScreenWindow(win);
+			}
+
+			//删除事件
+			protected function btDel_clickHandler(event:MouseEvent):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "03"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				if (!gridBorrowCenterList.grid.selectedItem)
+				{
+					Alert.show("请选择要删除的信息记录", "提示");
+					return;
+				}
+				Alert.show("您确定删除血袋编号为【" + gridBorrowCenterList.grid.selectedItem.bloodBagCode +
+					"】，成份为【" + gridBorrowCenterList.grid.selectedItem.typeName + "】的血袋?", 
+					"提示", Alert.YES | Alert.NO, null, deleteCallback);
+			}
+
+			private function deleteCallback(rev:CloseEvent):void
+			{
+				if (rev.detail == Alert.YES)
+				{
+					var lobjSelItem:Object=gridBorrowCenterList.grid.selectedItem;
+					var remoteObj:RemoteObject=RemoteUtil.getRemoteObject(destination, function(rev:Object):void
+						{
+							Alert.show("删除血袋编号为【" + gridBorrowCenterList.grid.selectedItem.bloodBagCode + 
+								"】，成份为【" + gridBorrowCenterList.grid.selectedItem.typeName + "】的血袋成功！", 
+								"提示");
+							gridBorrowCenterList.refresh();
+						});
+					remoteObj.deleteByBloodBagCode(lobjSelItem.detailAutoId, lobjSelItem.bloodBagCode, lobjSelItem.typeCode);
+				}
+			}
+
+			//回车事件
+			protected function keyUpCtrl(event:KeyboardEvent, ctrl:Object):void
+			{
+				if (event.keyCode == 13)
+				{
+					ctrl.setFocus();
+				}
+			}
+
+			/**
+			 * LabelFunction :根据成分编码显示成分名称
+			 * */
+			private function labFunTypeCode(item:Object, column:DataGridColumn):String
+			{
+				var ary:ArrayCollection=BaseDict.bloodTypeDict;
+				if (ary.length == 0)
+				{
+					return " ";
+				}
+				var name:String="";
+				for each (var obj:Object in ary)
+				{
+					if (obj.bloodType == item.typeCode)
+					{
+						name=obj.bloodTypeName;
+						break;
+					}
+				}
+				return name;
+			}
+			/**
+			 * LabelFunction :根据成分编码显示成分名称
+			 * */
+			private function labFunVerifier(item:Object, column:DataGridColumn):String
+			{
+				var person:Object=null;
+				person = ArrayCollUtils.findItemInArrayByValue(BaseDict.personIdDict,'personId',item.verifier);
+				return person.personIdName;
+			}
+			/**
+			 * LabelFunction :根据血型编码显示血型名
+			 * */
+			private function labFunBloodCode(item:Object, column:DataGridColumn):String
+			{
+				var ary:ArrayCollection=BaseDict.bloodDict;
+				if (ary.length == 0)
+				{
+					return " ";
+				}
+				var name:String="";
+				for each (var obj:Object in ary)
+				{
+					if (obj.blood == item.bloodCode)
+					{
+						name=obj.bloodName;
+					}
+				}
+				return name;
+			}
+
+			/**
+			 * LabelFunction :根据Rh(D)阴性：0，1，分别显示阴性，阴性
+			 * */
+			private function labFunRhSign(item:Object, column:DataGridColumn):String
+			{
+
+				switch (item.rhSign)
+				{
+					case "0":
+						return "阳性";
+						break;
+					case "1":
+						return "阴性";
+						break;
+					default:
+						return " ";
+						break;
+				}
+			}
+
+			/**
+			 * LabelFunction :格式化日期
+			 * */
+//			private function labFunBillDate(item:Object, column:DataGridColumn):String
+//			{
+//				if (item)
+//				{
+////					return	DateField.dateToString(item.billDate, "YYYY-MM-DD");
+//					return DateUtil.dateToString(item.billDate, "YYYY-MM-DD");
+////					return dateForm
+//				}
+//				return "";
+//			}
+
+			/**
+			 * 双击修改
+			 * */
+			protected function gridBorrowCenterList_doubleClickHandler(event:Event):void
+			{
+				btChange_clickHandler(event);
+			}
+
+			//审核
+			protected function btCheck_clickHandler(event:MouseEvent):void
+			{
+				if (!PurviewUtil.getPurview(AppInfo.APP_CODE, MENU_NO, "06"))
+				{
+					Alert.show("您无此按钮操作权限！", "提示");
+					return;
+				}
+				if (!gridBorrowCenterList.grid.selectedItem)
+				{
+					Alert.show("请选择信息", "提示");
+					return;
+				}
+				var testWin:BorrowCenterAdd=PopUpManager.createPopUp(this, BorrowCenterAdd, true) as BorrowCenterAdd;
+				testWin.title="审核";
+				FormUtils.fullScreenWindow(testWin);
+				testWin.data={masterItem: gridBorrowCenterList.grid.selectedItem, btnCheckBeClicked: true, parentWin: this};
+			}
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="100%"
+					   height="100%"
+					   backgroundColor="0xFFFFFF"
+					   borderVisible="false">
+		<s:VGroup x="0"
+				  y="0"
+				  width="100%"
+				  height="100%">
+			<s:Spacer height="2"/>
+
+			<!-- 查询条件区 -->
+			<s:HGroup width="100%"
+					  id="queryPanelBc"
+					  paddingLeft="5"
+					  paddingTop="5">
+				<mx:FormItem label="单据日期"
+							 fontSize="14"
+							 color="#0000FF">
+					<mx:DateField id="beginBillDate" monthNames="['1','2','3','4','5','6','7','8','9','10','11','12']" dayNames="['日','一','二','三','四','五','六']"
+								  width="120"
+								  formatString="YYYY-MM-DD"
+								  enterFrame="{beginBillDate.selectedDate==null?beginBillDate.selectedDate=new Date():beginBillDate.selectedDate}"
+								  selectableRange="{{rangeEnd:new Date()}}"
+								  showToday="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="-"
+							 fontSize="14"
+							 color="#0000FF">
+					<mx:DateField id="endBillDate" monthNames="['1','2','3','4','5','6','7','8','9','10','11','12']" dayNames="['日','一','二','三','四','五','六']"
+								  width="120"
+								  formatString="YYYY-MM-DD"
+								  enterFrame="{endBillDate.selectedDate==null?endBillDate.selectedDate=new Date():endBillDate.selectedDate}"
+								  selectableRange="{{rangeStart:new Date(beginBillDate.selectedDate.getFullYear(),
+								  								beginBillDate.selectedDate.getMonth(),
+								  								beginBillDate.selectedDate.getDate()),
+								 								rangeEnd:new Date()}}"
+								  showToday="true"/>
+				</mx:FormItem>
+				<mx:FormItem label="单据编号"
+							 fontSize="14"
+							 color="#0000FF">
+					<s:TextInput id="billNo"
+								 width="120"
+								 restrict="0-9a-zA-Z"
+								 maxChars="30"/>
+				</mx:FormItem>
+				<mx:FormItem label="血袋编号"
+							 fontSize="14"
+							 color="#0000FF">
+					<s:TextInput id="productCode"
+								 width="120"
+								 restrict="0-9 a-zA-Z"
+								 maxChars="30"/>
+				</mx:FormItem>
+				<mx:LinkButton id="btQuery"
+							   height="24"
+							   label=" 查 找"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/query20.png')"
+							   click="btQuery_clickHandler()"/>
+			</s:HGroup>
+			<!-- 表体部分 -->
+			<s:BorderContainer width="100%"
+							   height="100%"
+							   backgroundColor="0xFFFFFF"
+							   borderStyle="solid"
+							   borderColor="#9ABBE6">
+				<s:VGroup width="100%"
+						  height="100%">
+					<controls:PageGrid id="gridBorrowCenterList"
+									   itemDoubleClick="gridBorrowCenterList_doubleClickHandler(event)"
+									   styleName="dataGrid"
+									   hasRowNo="false">
+						<controls:columns>
+							<mx:DataGridColumn headerText="单据编号"
+											   width="120"
+											   textAlign="left"
+											   dataField="billNo"/>
+							<mx:DataGridColumn headerText="单据日期"
+											   dataField="billDate"
+											   width="100"/>
+							<mx:DataGridColumn headerText="产品码"
+											   dataField="productCode"
+											   textAlign="left"
+											   visible="false"/>
+							<mx:DataGridColumn headerText="血袋编号"
+											   dataField="productCode"
+											   textAlign="left"
+											   width="120"/>
+							<mx:DataGridColumn headerText="血型"
+											   dataField="bloodCode"
+											   textAlign="left"
+											   labelFunction="labFunBloodCode"
+											   width="60"/>
+							<mx:DataGridColumn headerText="血液成份"
+											   dataField="typeCode"
+											   textAlign="left"
+											   labelFunction="labFunTypeCode"
+											   width="120"/>
+							<mx:DataGridColumn headerText="Rh(D)"
+											   dataField="rhSign"
+											   textAlign="left"
+											   itemRenderer="cn.superion.blood.util.renderer.ColumnItemRendererRhSign"
+											   labelFunction="labFunRhSign"
+											   width="50"/>
+							<!--这里的规格对应:主计量数量AMOUNT-->
+							<mx:DataGridColumn headerText="规格"
+											   dataField="spec"
+											   textAlign="left"
+											   width="80"/>
+							<!--这里的规格对应:辅计量单位assiUnits-->
+							<mx:DataGridColumn headerText="单位"
+											   dataField="assiUnits"
+											   textAlign="left"
+											   width="50"/>
+							<!--	<mx:DataGridColumn headerText="献血者编号"
+								 dataField="bloodDonorCode"
+								 textAlign="left"
+								 width="140"/>-->
+							<mx:DataGridColumn headerText="采血日期"
+											   dataField="collectDate"
+											   textAlign="left"
+											   width="90"/>
+							<mx:DataGridColumn headerText="失效日期"
+											   dataField="availDate"
+											   textAlign="left"
+											   width="90"/>
+							<mx:DataGridColumn headerText="入库人"
+											   dataField="verifier"
+											   labelFunction="labFunVerifier"
+											   textAlign="left"
+											   width="60"/>
+							<mx:DataGridColumn headerText="入库时间"
+											   dataField="verifyDate"
+											   textAlign="left"
+											   width="90"/>
+						</controls:columns>
+					</controls:PageGrid>
+					<!-- 操作按钮部分 -->
+					<s:HGroup height="31"
+							  paddingBottom="10"
+							  horizontalAlign="right"
+							  gap="5"
+							  width="100%">
+						<mx:LinkButton id="btNew"
+									   label=" 新 建"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btNew_clickHandler(event)"
+									   icon="@Embed(source='/assets/images/button/new20.png')"/>
+						<mx:LinkButton id="btImport"
+									   label=" 导 入"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   click="btImport_clickHandler(event)"
+									   icon="@Embed(source='/assets/images/button/imp20.png')"/>
+						<mx:LinkButton id="btChange"
+									   label=" 修 改"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/change20.png')"
+									   click="btChange_clickHandler(event)"/>
+						<mx:LinkButton id="btDel"
+									   label=" 删 除"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/delete20.png')"
+									   click="btDel_clickHandler(event)"/>
+						<mx:LinkButton id="btCheck"
+									   label=" 审 核"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/check20.png')"
+									   click="btCheck_clickHandler(event)"/>
+						<mx:LinkButton id="btPrint"
+									   label=" 打 印"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/print20.png')"
+									   click="btPrint_clickHandler('05','1')"/>
+						<mx:LinkButton id="btReturn"
+									   label=" 返 回"
+									   fontSize="12"
+									   width="86"
+									   height="26"
+									   skin="mx.skins.halo.ButtonSkin"
+									   icon="@Embed(source='/assets/images/button/return20.png')"
+									   click="btReturn_clickHandler(event)"/>
+						<mx:Spacer width="5"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:BorderContainer>
+		</s:VGroup>
+	</s:BorderContainer>
+</mx:Module>

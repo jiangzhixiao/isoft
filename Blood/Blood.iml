@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="Flex" version="4">
+  <component name="FlexBuildConfigurationManager" active="Blood">
+    <configurations>
+      <configuration name="Blood" main-class="Blood" output-file="Blood.swf" output-folder="$MODULE_DIR$/../src/main/resources/public" use-html-wrapper="true" wrapper-template-path="$MODULE_DIR$/html-template" runtime-loaded-modules="cn.superion.main.ModFirstPage&#9;cn/superion/main/ModFirstPage.swf&#9;true">
+        <dependencies target-player="16.0">
+          <entries>
+            <entry library-id="ce8f464e-c550-43e4-a6ff-fae79c19fcc0">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="d3cd00ab-fd26-4f62-98f4-aa39da29ee9c">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="55098fa9-593c-4a52-adff-1d34cc26ab10">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="cef0c030-e680-4bcc-a8b7-b553d351517a">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="baa85d30-b34f-4dae-8233-fb4d2a2ef8b7">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="07aa2dda-542e-4aca-bc7a-e4d4a544ba45">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="ef6cb36c-3e98-4aa8-9602-41ffbf2d5ef0">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="fabe4571-43d8-4529-8513-37f607db39d0">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="c3f52674-7645-4bbb-87fa-5f7390b8d95f">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="f49cc579-95d8-4ec4-938f-bca09f5f346c">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="3ae068ba-0f25-457c-9aaa-8625964d961a">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="a254c83b-a9db-437c-b7ec-a255d3c2b190">
+              <dependency linkage="Merged" />
+            </entry>
+          </entries>
+          <sdk name="4.14.1" />
+        </dependencies>
+        <compiler-options />
+        <packaging-air-desktop />
+        <packaging-android />
+        <packaging-ios />
+      </configuration>
+    </configurations>
+    <compiler-options />
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+    </content>
+    <orderEntry type="jdk" jdkName="4.14.1" jdkType="Flex SDK Type (new)" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="ce8f464e-c550-43e4-a6ff-fae79c19fcc0" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/SupReport2.02.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="d3cd00ab-fd26-4f62-98f4-aa39da29ee9c" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/SupLib2.0.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="55098fa9-593c-4a52-adff-1d34cc26ab10" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/SupDataDict-1.56.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="cef0c030-e680-4bcc-a8b7-b553d351517a" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/SupCenterVo.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="baa85d30-b34f-4dae-8233-fb4d2a2ef8b7" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/SupBloodVo.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="07aa2dda-542e-4aca-bc7a-e4d4a544ba45" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/FusionCharts.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="ef6cb36c-3e98-4aa8-9602-41ffbf2d5ef0" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/flxcs3.2.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="fabe4571-43d8-4529-8513-37f607db39d0" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/flexlib.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="c3f52674-7645-4bbb-87fa-5f7390b8d95f" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/corelib.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="f49cc579-95d8-4ec4-938f-bca09f5f346c" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/as3xls-1.0.1.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="3ae068ba-0f25-457c-9aaa-8625964d961a" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/AlivePDF.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="a254c83b-a9db-437c-b7ec-a255d3c2b190" />
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/vamos.swc!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+  </component>
+</module>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   title="打印审核"
+			   close="PopUpManager.removePopUp(this);"
+			   xmlns:controls="cn.superion.base.components.controls.*"
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   creationComplete="{checker.setFocus();}"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="350" height="130">
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import cn.superion.vo.center.deptPerson.CdPersonDict;
+			
+			import mx.managers.PopUpManager;
+			public var data:Object;
+			[Bindable]
+			public var _parentWin:BloodPatientApplyAdd;
+			//返回
+			protected function btReturn_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				return
+			}
+
+			protected function btCheck_clickHandler(checker:String):void
+			{
+				_parentWin.btPrint_clickHandler("05","01");
+			}
+			private function showItemDict(rev:CdPersonDict):void
+			{
+				checker.text=rev.name;
+				btCheck.setFocus();
+			}
+		]]>
+	</fx:Script>
+	<mx:Spacer height="10"/>
+	<s:HGroup width="100%" horizontalAlign="left" verticalAlign="middle">
+		<s:Label text="  姓名：" color="blue" fontSize="14"/>
+		<s:RadioButton id="phoInputCode"
+					   value="phoInputCode"
+					   label="拼音"
+					   selected="true"
+					   groupName="phoFiveCode"
+					   color="#0000FF"/>
+		<s:RadioButton id="fiveInputCode"
+					   value="fiveInputCode"
+					   label="五笔"
+					   groupName="phoFiveCode"
+					   color="#0000FF"/>
+		<controls:AutoCompleteByGridTextInput id="checker"
+											  width="174"
+											  destination="baseToolImpl"
+											  method="findByInputCode"
+											  baseQueryParameter="{{serverOrderField:'personId',
+											  entityClassName:'cn.superion.center.deptPerson.entity.CdPersonDict'}}"
+											  dataFields="{['personCode','name']}"
+											  headerTexts="{['标识号','姓名']}"
+											  widths="{[100,200]}"
+											  callback="showItemDict"/>
+	</s:HGroup>
+	<mx:Spacer height="100%"/>
+	<s:HGroup width="100%" height="28" horizontalAlign="center">
+		<mx:LinkButton id="btCheck"
+					   label="确定"
+					   fontSize="12"
+					   width="86"
+					   height="26"
+					   keyDown="{if(event.keyCode != 13)return;btCheck_clickHandler(checker.text);}"
+					   click="btCheck_clickHandler(checker.text)"
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/save20.png')"/>
+		<mx:LinkButton id="btReturn"
+					   label="取消"
+					   fontSize="12"
+					   width="86"
+					   height="26"
+					   skin="mx.skins.halo.ButtonSkin"
+					   icon="@Embed(source='/assets/images/button/return20.png')"
+					   click="btReturn_clickHandler(event)"/>
+	</s:HGroup>
+</s:TitleWindow>

@@ -1,0 +1,133 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+@namespace treemap "com.flexicious.components.charts.treemap.*";
+@font-face {
+	src: url("/assets/css/fonts/OpenSans-Regular.ttf");
+	fontFamily: "OpenSans";
+	fontStyle: normal;
+	fontWeight: normal;
+	advancedAntiAliasing: true;
+	embedAsCFF: true; 		
+}
+@font-face {
+	src: url("/assets/css/fonts/OpenSans-Bold.ttf");
+	fontFamily: "OpenSans";
+	fontStyle: normal;
+	fontWeight: bold;
+	advancedAntiAliasing: true;
+	embedAsCFF: true; 		
+}  
+
+@font-face {
+	src: url("/assets/css/fonts/OpenSans-Regular.ttf");
+	fontFamily: "OpenSansMx";
+	fontStyle: normal;
+	fontWeight: normal;
+	advancedAntiAliasing: true;
+	embedAsCFF: false; 		
+}
+@font-face {
+	src: url("/assets/css/fonts/OpenSans-Bold.ttf");
+	fontFamily: "OpenSansMx";
+	fontStyle: normal;
+	fontWeight: bold;
+	advancedAntiAliasing: true;
+	embedAsCFF: false; 		
+}  
+
+s|Application{
+	fontFamily : "OpenSans";
+}
+mx|Label{
+	fontFamily : "OpenSansMx";
+}  
+mx|Form{
+	fontFamily : "OpenSansMx";
+}
+mx|DataGrid{
+	fontFamily : "OpenSansMx";
+}
+mx|Button{
+	fontFamily : "OpenSansMx";
+}
+s|Label{
+	fontFamily : "OpenSans";
+}
+
+.headerText{
+	color:#FFFFFF;
+	fontWeight:bold;
+}
+.blackText{
+	color:#000000;
+	fontWeight:bold;
+}
+.orangeText{
+	color:#FF4E02;
+	fontWeight:bold;
+}
+.darkYellowText{
+	color:#BE5001;
+	fontWeight:bold;
+}
+.darkOrangeText{
+	color:#B82D2A;
+	fontWeight:bold;
+}
+.blueText{
+	color:#35bcee;
+	fontWeight:bold;
+}
+.greenText{
+	color:#B7D034;
+	fontWeight:bold;
+}
+.whiteText{
+	color:#EFEFEF;
+	textAlign:center;
+}
+.greenTextCenter{
+	textAlign : center;
+	color:#B7D034;
+	fontWeight:bold;
+}
+
+/*treemap|TreeMapChart{
+	skinClass : ClassReference("com.flexicious.components.charts.treemap.TreemapChartSkin")
+}*/
+
+ 
+/*@namespace calendar "com.flexicious.components.calendar.*";
+@namespace iOSSkin "com.flexicious.sample.calendar.iOSSkin.*";
+@namespace charts "com.flexicious.components.charts.*";*/
+ 
+.iOSChooserHeaderStyle 
+{ 
+	textAlign:center;
+}
+
+
+/*calendar|Calendar.iOS{
+	skinClass : ClassReference("com.flexicious.sample.calendar.iOSSkin.skin.iOSCalendarSkin");  
+}
+iOSSkin|iOSCalendarItemRenderer{ 
+	verticalAlign : middle;
+	fillColor:#ffffff;
+	fillAlpha:0.8;
+	selectedFillColor:#CDE6F7;
+	fillAlpha:0.2;
+	fontSize : 11;
+	borderColor:#efefef;
+	selectedBorderColor:#99C8E9;
+	
+} */
+mx|DateChooser{
+	fontFamily : "OpenSansMx";
+}
+mx|NumericStepper{
+	fontFamily : "OpenSansMx";
+}
+mx|DateField{
+	fontFamily : "OpenSansMx";
+}

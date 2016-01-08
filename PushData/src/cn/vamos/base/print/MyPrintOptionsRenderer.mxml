@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow showCloseButton="true" close="PopUpManager.removePopUp(this);" xmlns:mx="http://www.adobe.com/2006/mxml" title="打印选项" xmlns:controls="com.flexicious.controls.*" creationComplete="onCreationComplete()">
+	<mx:Script>
+		<![CDATA[
+			import com.flexicious.utils.UIUtils;
+			/*
+			* This is the view that shows up when the user
+			* clicks on the print button. The grid has a default implementation
+			* of this view, but it is provided in the client section of the code
+			* in case there are any UI customizations that you wish to make
+			*/
+			import com.flexicious.grids.dependencies.IExtendedDataGrid;
+			import com.flexicious.grids.events.PrintExportOptions;
+			import com.flexicious.print.PrintOptions;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			[Bindable()]
+			public var printOptions:PrintOptions;
+			
+			public var _grid:IExtendedDataGrid;
+			
+			public function get grid():IExtendedDataGrid
+			{
+				return _grid;
+			}
+			
+			public function set grid(val:IExtendedDataGrid):void
+			{
+				_grid=val;
+				enablePaging=val.enablePaging;
+				pageCount=val.pageSize > 0 ? val.totalRecords / val.pageSize : 1;
+				selectedObjectsCount=val.selectedObjects ? val.selectedObjects.length : 0;
+			}
+			[Bindable()]
+			public var enablePaging:Boolean=false;
+			[Bindable()]
+			public var clientMode:Boolean=false;
+			[Bindable()]
+			public var pageCount:int=1;
+			[Bindable()]
+			public var selectedObjectsCount:int=0;
+			
+			private function onOk():void
+			{
+				printOptions.printExportOption=grpPrintOptions.selectedValue.toString();
+				if (rbnSpecifyPages.selected)
+				{
+					if (Validator.validateAll([vldTxtPageFrom, vldTxtPageTo]).length == 0)
+					{
+						printOptions.pageFrom=Number(txtPageFrom.text);
+						printOptions.pageTo=Number(txtPageTo.text);
+						if (printOptions.pageFrom <= printOptions.pageTo)
+						{
+							close(Alert.OK);
+						}
+						else
+						{
+							Alert.show("请确认 '起始页' 小于等于 '结束页'");
+						}
+					}
+				}
+				else
+				{
+					close(Alert.OK);
+				}
+			}
+			private function updatePrintColumns():void
+			{
+				printOptions.columnsToPrint=new ArrayCollection(cbxColumns.selectedItems);
+				if (printOptions.columnsToPrint.length == 1 && printOptions.columnsToPrint[0].name == "All")
+				{
+					printOptions.columnsToPrint.removeAll();
+				}
+				
+			}
+			private function close( dialogResult:uint):void{
+				var closeEvent:CloseEvent = new CloseEvent(Event.CLOSE);
+				closeEvent.detail=dialogResult;
+				dispatchEvent(closeEvent);
+			}
+			private function onCreationComplete():void
+			{
+				if(printOptions.columnsToPrint.length>0)
+				cbxColumns.selectedValues=UIUtils.extractPropertyValues(printOptions.columnsToPrint,'name');
+			}
+		]]>
+	</mx:Script>
+	<mx:NumberValidator id="vldTxtPageFrom" source="{txtPageFrom}" property="text" required="true" minValue="1" maxValue="{pageCount+1}"/>
+	<mx:NumberValidator id="vldTxtPageTo" source="{txtPageTo}" property="text" required="true" minValue="1" maxValue="{pageCount+1}"/>
+	<mx:HBox>
+		<mx:VBox>
+			<mx:Label text="打印选项:"/>
+			<mx:RadioButtonGroup id="grpPrintOptions"/>
+			<mx:RadioButton id="rbnCurrentPage" group="{grpPrintOptions}" label="当前页" selected="true" value="{PrintExportOptions.PRINT_EXPORT_CURRENT_PAGE}"/>
+			<mx:RadioButton id="rbnAllPages" group="{grpPrintOptions}" label="所有页" value="{PrintExportOptions.PRINT_EXPORT_ALL_PAGES}" enabled="{enablePaging}"/>
+			<mx:RadioButton id="rbnSpecifyPages" group="{grpPrintOptions}" label="指定页" value="{PrintExportOptions.PRINT_EXPORT_SELECTED_PAGES}" enabled="{enablePaging}"/>
+			<mx:HBox enabled="{rbnSpecifyPages.selected}">
+				<mx:TextInput id="txtPageFrom" width="50"/>
+				<mx:Label text="到"/>
+				<mx:TextInput id="txtPageTo" width="50"/>
+				<mx:Label text="(最大 {pageCount+1})"/>
+			</mx:HBox>
+			<mx:RadioButton id="rbnSelectedRecords" group="{grpPrintOptions}" label="勾选的记录 ({selectedObjectsCount==0?'无勾选记录':selectedObjectsCount})" value="{PrintExportOptions.PRINT_EXPORT_SELECTED_RECORDS}" enabled="{selectedObjectsCount>0}"/>
+			<controls:CheckBox label="打印前预览" bindingSource="{printOptions}" bindingProperty="preview" bindingTriggerEvent="change"/>
+			
+		</mx:VBox>
+		<mx:VBox>
+			<mx:Label text="打印列:"/>
+			<controls:CheckBoxList id="cbxColumns" allowMultipleSelection="true" width="200" height="150" dataProvider="{printOptions.availableColumns}" addAllItem="true" labelField="name" dataField="name" change="updatePrintColumns()"/>
+		</mx:VBox>
+	</mx:HBox>
+	<mx:ControlBar horizontalAlign="right">
+		<mx:Button label="打印" click="onOk()"/>
+		<mx:Button label="取消" click="PopUpManager.removePopUp(this);"/>
+	</mx:ControlBar>
+</mx:TitleWindow>

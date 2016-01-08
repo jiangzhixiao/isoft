@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+////////////////////////////////////////////////////////////////////////////////
+//	
+//	Copyright 2014 vamos Labs LLC. All Rights Reserved.
+//
+//	This file is licensed under the vamos Component Library License. 
+//
+//	Only license holders are entitled to use this file subject to the  
+//	conditions of the license. All other uses are expressly forbidden. Visit 
+//	http://www.vamosabs.com to view and purchase a license.
+//
+//	Apache Flex's source code notices are reproduced below.
+//
+// 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+//
+//  Licensed to the Apache Software Foundation (ASF) under one or more
+//  contributor license agreements.  See the NOTICE file distributed with
+//  this work for additional information regarding copyright ownership.
+//  The ASF licenses this file to You under the Apache License, Version 2.0
+//  (the "License"); you may not use this file except in compliance with
+//  the License.  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+-->
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark"
+		xmlns:fb="http://ns.adobe.com/flashbuilder/2009">
+	
+	<!-- host component -->
+	<fx:Metadata>
+		<![CDATA[ [HostComponent("spark.components.Button")] ]]>
+	</fx:Metadata> 
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="up" />
+		<s:State name="over" />
+		<s:State name="down" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<!-- transitions -->
+	<s:transitions>
+		<s:Transition fromState="*" toState="*">
+			<s:AnimateColor targets="{[stroke, fill]}" 
+							duration="100"/>
+		</s:Transition>
+	</s:transitions>
+	
+	<!--- background & fill -->
+	<s:Rect top="0" right="0" bottom="0" left="0">
+		<!--- use a stroke to prevent partial pixels -->
+		<s:stroke>
+			<s:SolidColorStroke id="stroke" 
+								color="#C6C6C6" color.over="#AAAAAA" color.down="#525252"
+								pixelHinting="true"
+								caps="square"
+								joints="miter"/>
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor id="fill" 
+						  color="#C6C6C6" color.over="#AAAAAA" color.down="#525252"/>
+		</s:fill>
+	</s:Rect>
+	
+</s:Skin>

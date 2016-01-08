@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"  
+			   xmlns:s="library://ns.adobe.com/flex/spark"  title="导入"   backgroundColor="0xE2E8E8"
+			   xmlns:controls="cn.superion.base.components.controls.*"  creationComplete="inita()"
+			   close="titlewindow1_closeHandler(event)"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"  width="1024" height="510">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+
+			protected function titlewindow1_closeHandler(event:CloseEvent):void
+			{
+//				Alert.show('是否关闭当前窗口？','提示',Alert.YES | Alert.NO,null,function(e:*):void{
+//					if (e.detail == Alert.YES ) {
+						PopUpManager.removePopUp(_this);
+//					}else{
+//						return;
+//					}
+//				})
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Script source="BorrowCenterImpas.as"/>
+	<mx:VBox width="100%" height="100%" paddingLeft="5" paddingRight="5"
+			 paddingTop="10" paddingBottom="10">
+		<mx:FormItem width="100%" label="选择文件" color="#0000FF">
+			<mx:HBox width="100%">
+				<mx:TextInput id="filePath" width="292" editable="false"/>
+				<mx:Button id="btUpload" toolTip="浏览" right="10" label="浏览"
+						   icon="@Embed(source='/assets/images/button/query20.png')"
+						   >
+				</mx:Button>
+				<s:Label text="部    门"
+						 verticalAlign="middle"
+						 color="#0000FF" height="22"/>
+				<controls:TextInputIcon id="deptCode"
+										width="248"
+										height="28"
+										queryIconClick="dept_clickHandler(event)"/>
+				
+				<s:Label text="经 手 人"
+						 verticalAlign="middle"
+						 color="#0000FF" height="22"/>
+				<controls:TextInputIcon id="personId"
+										height="28"
+										maxChars="20"
+										queryIconClick="personId_clickHandler(event)"
+										 width="100%"/>
+				<mx:Spacer width="20"/>
+			</mx:HBox>
+		</mx:FormItem>
+		<s:HGroup width="762"
+				  height="31"
+				  verticalAlign="middle"
+				  color="#0000FF">
+			<s:Label text="备　　注" width="62" height="16" textAlign="left"/>
+			<s:TextInput id="remark"
+						 color="#000000"
+						 maxChars="40"
+						 restrict="^" width="690"/>
+		</s:HGroup>
+		<controls:SuperDataGrid id="gridImpList"
+								width="100%" 
+								height="100%" 
+								labelFunction="labelFunRemark"
+								editable="true" 
+								allowMultipleSelection="true" 
+								textAlign="center">
+			<controls:columns>
+				<mx:DataGridColumn headerText="选择"
+								   width="1" 
+								   textAlign="center"
+								   headerRenderer="{importClassFactory}" 
+								   editable="false"
+								   >
+					<mx:itemRenderer>
+						<fx:Component>
+								<mx:CheckBox change="data.isSelected=this.selected" 
+											 selected="{data.isSelected}"/>
+						</fx:Component>
+					</mx:itemRenderer>
+				</mx:DataGridColumn>								  
+				<mx:DataGridColumn headerText="序号"  
+								   width="3" 
+								   textAlign="left"
+								   labelFunction="labFunSeriaNo"/>
+				<mx:DataGridColumn headerText="血袋编号" 
+								   dataField="productCode" 
+								   textAlign="left"
+								   wordWrap="false"  
+								   width="9" 
+								   editable="false"/>
+				<!--<mx:DataGridColumn headerText="血袋编号" 
+								   dataField="bloodBagCode"  
+								   width="13" 
+								   editable="false" 
+								   textAlign="left"/>-->
+				<mx:DataGridColumn headerText="血型" 
+								   dataField="bloodCode"
+								   wordWrap="false"  
+								   labelFunction="labFunBloodCode" 
+								   width="4" 
+								   textAlign="left"
+								   editable="false"/>
+				<mx:DataGridColumn headerText="成份"
+								   dataField="typeCode" 
+								   width="8" 
+								   labelFunction="labFunTypeCode" 
+								   editable="false"
+								   textAlign="left"/>
+				<mx:DataGridColumn headerText="Rh(D)" 
+								   dataField="rhSign"
+								   itemRenderer="cn.superion.blood.util.renderer.ColumnItemRendererRhSign"
+								   width="4"
+								   labelFunction="labFunRhSign" 
+								   editable="false"
+								   textAlign="left"/>
+				<mx:DataGridColumn headerText="规格" 
+								   dataField="spec" 
+								   width="5" 
+								   editable="false"
+								   textAlign="left"/>
+				<mx:DataGridColumn headerText="进价" 
+								   dataField="tradePrice"
+								   width="6" 
+								   editable="false"
+								   textAlign="left"/>
+				<mx:DataGridColumn headerText="售价" 
+								   dataField="retailPrice" 
+								   width="5" 
+								   editable="false"
+								   textAlign="left"/>
+				<!--<mx:DataGridColumn headerText="献血员编号" 
+								   dataField="bloodDonorCode"
+								   wordWrap="true" 
+								   width="14"
+								   visible="false"
+								   textAlign="left"/>-->
+				<mx:DataGridColumn headerText="采血日期"
+								   dataField="collectDate" 
+								   width="10" 
+								   editable="false" 
+								   textAlign="left"/>
+				<mx:DataGridColumn headerText="失效日期"
+								   dataField="availDate" 
+								   width="9.5" 
+								   editable="false"
+								   textAlign="left"/>
+				<mx:DataGridColumn headerText="备注" 
+								   dataField="remark" 
+								   width="13.5" 
+								   editable="false"
+								   textAlign="left"/>
+			</controls:columns>
+		</controls:SuperDataGrid>
+		<mx:FormItem width="100%">
+			<mx:HBox width="100%" 
+					 height="31" 
+					 horizontalAlign="right"
+					 verticalAlign="middle"
+					 horizontalGap="2">
+				<mx:Label text="下载模板:"/>
+				<mx:Text id="fileTemplete" 
+						 fontWeight="bold"
+						 text="血液入库记录模板.xls" 
+						 width="172"
+						 textDecoration="underline" 
+						 x="39"/>
+				<mx:LinkButton id="btfileTemplete" 
+							icon="@Embed(source='/assets/images/button/download20.png')"
+						   />
+				<mx:Spacer width="100%"/>
+				<mx:LinkButton id="btImp" 
+							   label=" 导 入"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/import20.png')"
+							 />
+				<mx:LinkButton id="btSave"  
+							   label=" 保 存"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/save20.png')"
+							  />
+				<mx:LinkButton id="btReturn"
+							   label=" 返 回"
+							   skin="mx.skins.halo.ButtonSkin"
+							   icon="@Embed(source='/assets/images/button/return20.png')"
+							/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:VBox>
+</s:TitleWindow>
